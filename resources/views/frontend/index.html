@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fitness Training</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="modal.css" />
+
+
+    
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="header-container">
+        <img src="images/Group.png" alt="Logo" class="logo" />
+        <nav class="nav-links">
+          <a href="#" class="home-link">HOME</a>
+          <a href="plan-pricing/plan-pricing.html">PLAN & PRICING</a>
+          <a href="programlist/programlist.html">PROGRAM LIST</a>
+          <a href="about/about.html">ABOUT US</a>
+          <a href="contact/contact.html">CONTACT US</a>
+        </nav>
+        <div class="header-actions">
+          <a href="https://play.google.com/store/apps/details?id=com.yourapp.package" target="_blank">
+            <button class="get-app-btn">GET APP</button>
+          </a>
+          <div class="profile-icon" onclick="openLoginModal()" style="text-decoration: none; cursor: pointer;">
+            <img src="images/person.png" alt="Profile" class="profile-img" />
+            <p class="profile-text">Profile</p>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeLoginModal()">×</span>
+        <img src="images/new.png" alt="Logo" class="modal-logo" />
+        <h2 class="login-txt">Login</h2>
+        <form id="modalLoginForm">
+          <!-- Email Input -->
+          <input type="email" placeholder="Email" required />
+        
+          <!-- Password Input -->
+          <input type="password" placeholder="Password" required />
+        
+          <!-- Forgot Password Link -->
+          <div class="forgot-password">
+            <a href="#" onclick="handleForgotPassword()">Forgot Password?</a>
+          </div>
+        
+          <!-- Submit Button -->
+          <button type="submit">Login</button>
+        </form>
+        
+        <div class="social-login-wrapper">
+          <div class="social-login-inline">
+            <p>Or connect with</p>
+            <div class="social-buttons-inline">
+              <a href="#" class="social-icon google"><i class="fab fa-google"></i></a>
+              <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" class="social-icon gmail"><i class="fas fa-envelope"></i></a>
+            </div>
+          </div>
+        </div>
+        <p class="signup-link">Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
+        <span class="terms-note">
+          * By continuing you agree to the Terms of <br /> Service and Privacy Policy.
+        </span>
+      </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div id="signupModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeSignupModal()">×</span>
+        <img src="images/new.png" alt="Logo" class="modal-logo" />
+        <h2 class="login-txt">Sign Up</h2>
+        <form id="modalSignupForm" onsubmit="return handleSignup(event)">
+          <!-- First Name -->
+          <input type="text" id="firstName" placeholder="First Name" required />
+        
+          <!-- Last Name -->
+          <input type="text" id="lastName" placeholder="Last Name" required />
+        
+          <!-- Email -->
+          <input
+            type="email"
+            id="email"
+            placeholder="Email"
+            required
+            title="Enter a valid email address"
+          />
+        
+          <!-- Contact Number -->
+          <div class="contact-wrapper">
+            <span class="prefix">+91</span>
+            <input
+              type="tel"
+              id="contact"
+              placeholder="Contact Number"
+              pattern="[0-9]{10}"
+              required
+              title="Enter a 10-digit phone number"
+            />
+          </div>
+        
+          <!-- Password -->
+          <div class="password-container">
+            <input
+              type="password"
+              id="password"
+              placeholder="Password"
+              required
+              pattern="[A-Za-z0-9@$!%*?&]{4,}"
+              title="Password must be at least 4 characters long and may contain letters, numbers, and symbols"
+              />
+            <i class="fas fa-eye toggle-password" onclick="togglePassword('password', this)"></i>
+          </div>
+        
+          <!-- Confirm Password -->
+          <div class="password-container">
+            <input
+              type="password"
+              id="confirmPassword"
+              placeholder="Confirm Password"
+              required
+            />
+            <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
+          </div>
+        
+          <!-- Password Match Message -->
+          <span id="matchMsg" style="color: red; font-size: 12px;"></span>
+        
+          <!-- Submit -->
+          <button type="submit">Sign Up</button>
+        </form>
+        
+        <p class="signup-linktxt">Already have an account? <a class="login" href="#" onclick="switchToLogin()">Login</a></p>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-hero">
+      <img src="images/home.png" alt="Gym" class="banner-img" />
+      <div class="main-text">
+        <h1>Transform Your Fitness<br /><span class="journey-text">Journey</span></h1>
+        <p class="download-text">Download the app now and start your<br /> transformation today!</p>
+      </div>
+      <section class="card-split-layout">
+        <h2 class="overlay-text">One Membership Endless<br />Fitness Options</h2>
+        <div class="left-column">
+          <img src="images/one.png" alt="Card 1" class="img-one" />
+          <img src="images/two.png" alt="Card 2" class="img-two" />
+          <img src="images/three.png" alt="Card 3" class="img-three" />
+        </div>
+        <div class="right-column">
+          <img src="images/four.png" alt="Card 4" class="img-four" />
+          <img src="images/five.png" alt="Card 5" class="img-five" />
+        </div>
+      </section>
+      
+
+      <!-- Membership cards -->
+      <section class="membership-cards-section">
+        <div class="explore-btn-wrapper">
+          <button class="explore-btn">Explore Our Pass</button>
+        </div>
+        <h2 class="membership-heading">Flexible Pricing Plans</h2>
+        <p class="membership-desc">
+          Perfect for beginners. Includes access to basic workout plans and community support.
+        </p>
+        <div class="membership-cards">
+          <div class="membership-card">
+            <img src="images/p1.png" alt="Basic Plan" class="card-img"/>
+            <p class="start">Start at</p>
+            <p class="price">
+              <span class="price-amount">0₹</span>
+              <span class="price-duration">/ Month</span>
+            </p>
+            <p class="features-heading">Features included in this plan:</p>
+            <ul class="features-list">
+              <li><input type="checkbox" checked disabled /> Access to basic workouts</li>
+              <li><input type="checkbox" checked disabled /> Community support</li>
+              <li><input type="checkbox" checked disabled /> Trainer consultation</li>
+              <li><input type="checkbox" checked disabled /> App Access</li>
+            </ul>
+            <button onclick="openLoginModal()">Get Started for Free</button>
+          </div>
+          <div class="membership-card">
+            <img src="images/p2.png" alt="Basic Plan" class="card-img" />
+            <p class="start">Start at</p>
+            <p class="price">
+              <span class="price-amount">0₹</span>
+              <span class="price-duration">/ Month</span>
+            </p>
+            <p class="features-heading">Features included in this plan:</p>
+            <ul class="features-list">
+              <li><input type="checkbox" checked disabled /> Access to basic workouts</li>
+              <li><input type="checkbox" checked disabled /> Community support</li>
+              <li><input type="checkbox" checked disabled /> Trainer consultation</li>
+              <li><input type="checkbox" checked disabled /> App Access</li>
+            </ul>
+            <button onclick="openLoginModal()">Get Started for Free</button>
+          </div>
+          <div class="membership-card">
+            <img src="images/p3.png" alt="Basic Plan" class="card-img" />
+            <p class="start">Start at</p>
+            <p class="price">
+              <span class="price-amount">0₹</span>
+              <span class="price-duration">/ Month</span>
+            </p>
+            <p class="features-heading">Features included in this plan:</p>
+            <ul class="features-list">
+              <li><input type="checkbox" checked disabled /> Access to basic workouts</li>
+              <li><input type="checkbox" checked disabled /> Community support</li>
+              <li><input type="checkbox" checked disabled /> Trainer consultation</li>
+              <li><input type="checkbox" checked disabled /> App Access</li>
+            </ul>
+            <button onclick="openLoginModal()">Get Started for Free</button>
+          </div>
+        </div>
+      </section>      
+      <section class="single-image-section">
+        <div class="image-overlay-container">
+          <img src="images/phone.png" alt="Fitness Showcase" class="single-image" />
+          <img src="images/playstore.png" alt="Overlay1 " class="overlay-image overlay-one" />
+          <img src="images/apple.png" alt="Overlay2" class="overlay-image overlay-two" />
+          <p class="image-overlay-text">Your Favorite fitness<br />companion just a tap away</p>
+          <p class="image-overlay-text2">Track your fitness journey effortlessly</p>
+        </div>
+      </section>
+    </main>
+    <!-- Footer -->
+    <footer class="main-footer">
+      <div class="footer-container">
+        <div class="footer-col logo-col">
+          <img src="images/footer.png" alt="Footer Logo" class="footer-logo" />        
+          <img src="images/playstore.png" alt="Footer Logo" class="footer-img1" />     
+          <img src="images/apple.png" alt="Footer Logo" class="footer-img2" />
+        </div>
+        <div class="footer-col">
+          <h5 class="heading">Use Cases</h5>
+          <div class="footer-links">
+            <a href="#">Web-designers</a>
+            <a href="#">Marketers</a>
+            <a href="#">Small Business</a>
+            <a href="#">Website Builder</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5 class="heading">Company</h5>
+          <div class="footer-links">
+            <a href="#">About Us</a>
+            <a href="#">Careers</a>
+            <a href="#">FAQ</a>
+            <a href="#">Teams</a>
+            <a href="#">Contact Us</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5 class="heading">Company</h5>
+          <div class="footer-links">
+            <a href="#">About Us</a>
+            <a href="#">Careers</a>
+            <a href="#">FAQ</a>
+            <a href="#">Teams</a>
+            <a href="#">Contact Us</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <p class="subscribe-text">Subscribe</p>
+          <p class="subscribe-description">
+            Subscribe to stay tuned for latest web designs<br/>and updates. Let's do it!
+          </p>
+          <div class="subscribe-box">
+            <input type="email" placeholder="Enter your email" />
+            <button>Subscribe</button>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-footer">
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+          <a href="#">Sales & Legal</a>
+          <a href="#">Site Map</a>
+        </div>
+        <div class="footer-copy">
+          © <span id="year"></span> All Rights Reserved.
+        </div>
+      </div>
+    </footer>
+    <script src="./script.js"></script>
+    <script src="./modal.js"></script>
+
+  </body>
+</html>

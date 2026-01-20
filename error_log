@@ -1,0 +1,10 @@
+[15-Apr-2025 05:09:10 UTC] PHP Parse error:  syntax error, unexpected '=' in /home/completepers/public_html/vendor/symfony/string/Resources/functions.php on line 34
+[15-Apr-2025 05:09:14 UTC] PHP Parse error:  syntax error, unexpected '=' in /home/completepers/public_html/vendor/symfony/string/Resources/functions.php on line 34
+[29-Apr-2025 04:58:15 UTC] PHP Parse error:  syntax error, unexpected '=' in /home/completepers/public_html/vendor/symfony/string/Resources/functions.php on line 34
+[10-May-2025 11:07:46 UTC] PHP Warning:  POST Content-Length of 31493286 bytes exceeds the limit of 8388608 bytes in Unknown on line 0
+[10-May-2025 11:11:43 UTC] PHP Warning:  POST Content-Length of 31493286 bytes exceeds the limit of 8388608 bytes in Unknown on line 0
+[10-May-2025 11:14:52 UTC] PHP Warning:  POST Content-Length of 21071834 bytes exceeds the limit of 8388608 bytes in Unknown on line 0
+[10-May-2025 11:17:50 UTC] PHP Warning:  POST Content-Length of 23410685 bytes exceeds the limit of 8388608 bytes in Unknown on line 0
+[10-May-2025 12:02:11 UTC] PHP Warning:  POST Content-Length of 23410685 bytes exceeds the limit of 8388608 bytes in Unknown on line 0
+[10-May-2025 12:02:14 UTC] PHP Warning:  POST Content-Length of 23410685 bytes exceeds the limit of 8388608 bytes in Unknown on line 0
+[13-May-2025 13:22:55 UTC] PHP Warning:  POST Content-Length of 31493286 bytes exceeds the limit of 8388608 bytes in Unknown on line 0

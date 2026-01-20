@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Program List</title>
+  <link rel="stylesheet" href="programlist.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../modal.css" />
+</head>
+<body>
+   <!-- Header -->
+ <header>
+  <div class="header-container">
+    <img src="../images/Group.png" alt="Logo" class="logo" />
+    <nav class="nav-links">
+      <a href="../index.html">HOME</a>
+      <a href="../plan-pricing/plan-pricing.html">PLAN & PRICING</a>
+      <a href="#">PROGRAM LIST</a>
+      <a href="../about/about.html" class="about-link">ABOUT US</a>
+      <a href="../contact/contact.html">CONTACT US</a>
+    </nav>    
+    <div class="header-actions">
+      <a href="https://play.google.com/store/apps/details?id=com.yourapp.package" target="_blank">
+        <button class="get-app-btn">GET APP</button>
+      </a>
+      <div class="profile-icon" onclick="openLoginModal()" style="text-decoration: none; cursor: pointer;">
+        <img src="../images/person.png" alt="Profile" class="profile-img" />
+        <p class="profile-text">Profile</p>
+      </div>
+    </div>
+  </div>
+</header>
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeLoginModal()">×</span>
+      <img src="../images/new.png" alt="Logo" class="modal-logo" />
+      <h2 class="login-txt">Login</h2>
+      <form id="modalLoginForm">
+        <!-- Email Input -->
+        <input type="email" placeholder="Email" required />
+      
+        <!-- Password Input -->
+        <input type="password" placeholder="Password" required />
+      
+        <!-- Forgot Password Link -->
+        <div class="forgot-password">
+          <a href="#" onclick="handleForgotPassword()">Forgot Password?</a>
+        </div>
+      
+        <!-- Submit Button -->
+        <button type="submit">Login</button>
+      </form>
+      
+      <div class="social-login-wrapper">
+        <div class="social-login-inline">
+          <p>Or connect with</p>
+          <div class="social-buttons-inline">
+            <a href="#" class="social-icon google"><i class="fab fa-google"></i></a>
+            <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-icon gmail"><i class="fas fa-envelope"></i></a>
+          </div>
+        </div>
+      </div>
+      <p class="signup-link">Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
+      <span class="terms-note">
+        * By continuing you agree to the Terms of <br /> Service and Privacy Policy.
+      </span>
+    </div>
+  </div>
+
+  <!-- Sign Up Modal -->
+  <div id="signupModal" class="modal">
+
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeSignupModal()">×</span>
+      <img src="../images/new.png" alt="Logo" class="modal-logo" />
+      <h2 class="login-txt">Sign Up</h2>
+      <form id="modalSignupForm" onsubmit="return handleSignup(event)">
+        <!-- First Name -->
+        <input type="text" id="firstName" placeholder="First Name" required />
+      
+        <!-- Last Name -->
+        <input type="text" id="lastName" placeholder="Last Name" required />
+      
+        <!-- Email -->
+        <input
+          type="email"
+          id="email"
+          placeholder="Email"
+          required
+          title="Enter a valid email address"
+        />
+      
+        <!-- Contact Number -->
+        <div class="contact-wrapper">
+          <span class="prefix">+91</span>
+          <input
+            type="tel"
+            id="contact"
+            placeholder="Contact Number"
+            pattern="[0-9]{10}"
+            required
+            title="Enter a 10-digit phone number"
+          />
+        </div>
+      
+        <!-- Password -->
+        <div class="password-container">
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            required
+            pattern=".{8,}"
+            title="Password must be at least 8 characters"
+          />
+          <i class="fas fa-eye toggle-password" onclick="togglePassword('password', this)"></i>
+        </div>
+      
+        <!-- Confirm Password -->
+        <div class="password-container">
+          <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Confirm Password"
+            required
+
+          />
+          <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
+        </div>
+
+      
+        <!-- Password Match Message -->
+        <span id="matchMsg" style="color: red; font-size: 12px;"></span>
+      
+        <!-- Submit -->
+        <button type="submit">Sign Up</button>
+      </form>
+      
+      <p class="signup-linktxt">Already have an account? <a class="login" href="#" onclick="switchToLogin()">Login</a></p>
+    </div>
+  </div>
+
+
+
+  <!-- main -->
+
+  <section class="programs-section" >
+    <div class="container">
+      <h1 class="section-title">OUR WORKOUT PROGRAMS</h1>
+      <p class="section-subtitle">Choose from a variety of programs designed for every fitness level and goal.</p>
+  
+      <div class="program-cards-zigzag">
+  
+        <!-- Program 1 -->
+        <div class="program-card-zigzag left">
+          <img src="../images/p3.png" alt="Strength Training">
+          <div class="program-content">
+            <h2>Strength Training</h2>
+            <p>Build muscle, improve posture, and boost metabolism with our expert-led strength sessions.</p>
+            <button onclick="openLoginModal()">View Program</button>
+          </div>
+        </div>
+      
+        <!-- Program 2 -->
+        <div class="program-card-zigzag right">
+          <img src="../images/cardio.jpg" alt="Cardio Burn" >
+
+          <div class="program-content">
+            <h2>Cardio Burn</h2>
+            <p>High-energy sessions focused on fat loss, endurance, and heart health. Suitable for all levels.</p>
+            <button onclick="openLoginModal()">View Program</button>
+          </div>
+       
+        </div>
+      
+        <!-- Program 3 -->
+        <div class="program-card-zigzag left">
+          <img src="../images/yoga.png" alt="Yoga & Flexibility" >
+          <div class="program-content">
+            <h2>Yoga & Flexibility</h2>
+            <p>Stretch, strengthen, and relax with our yoga classes designed to improve flexibility and balance.</p>
+            <button onclick="openLoginModal()">View Program</button>
+          </div>
+        </div>
+      
+        <!-- Program 4 -->
+        <div class="program-card-zigzag right" >
+          <img src="../images/p1.png" alt="HIIT Blaster" >
+
+          <div class="program-content">
+            <h2>HIIT Blaster</h2>
+            <p>Short and intense workouts to burn fat fast. Ideal for busy lifestyles and fast results.</p>
+            <button onclick="openLoginModal()">View Program</button>
+          </div>
+        </div>     
+      </div>      
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="footer-container">
+      <div class="footer-col logo-col">
+        <img src="../images/Group.png" alt="Footer Logo" class="footer-logo" />
+        <img src="../images/playstore.png" alt="Footer Logo" class="footer-img1" />
+        <img src="../images/apple.png" alt="Footer Logo" class="footer-img2" />
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Use Cases</h5>
+        <div class="footer-links">
+          <a href="#">Web-designers</a>
+          <a href="#">Marketers</a>
+          <a href="#">Small Business</a>
+          <a href="#">Website Builder</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Company</h5>
+        <div class="footer-links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">FAQ</a>
+          <a href="#">Teams</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Company</h5>
+        <div class="footer-links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">FAQ</a>
+          <a href="#">Teams</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <p class="subscribe-text">Subscribe</p>
+        <p class="subscribe-description">
+          Subscribe to stay tuned for latest web designs 
+        </p>
+          <p>
+          and updates. Let's do it!
+        </p>
+        <div class="subscribe-box">
+          <input type="email" placeholder="Enter your email"/>
+          <button>Subscribe</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-footer">
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+        <a href="#">Sales & Legal</a>
+        <a href="#">Site Map</a>
+      </div>
+      <div class="footer-copy">
+        © <span id="year"></span> All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+<script src="../modal.js"></script>
+<script src="../programlist/programlist.js"></script>
+
+</body>
+</html>

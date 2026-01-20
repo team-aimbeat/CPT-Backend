@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Header Page</title>
+  <link rel="stylesheet" href="header.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+          <img src="images/Group.png" alt="Logo" class="logo" />
+          <nav class="nav-links">
+            <a href="#" class="home-link">HOME</a>
+            <a href="plan-pricing/plan-pricing.html">PLAN & PRICING</a>
+            <a href="programlist/programlist.html">PROGRAM LIST</a>
+            <a href="about/about.html">ABOUT US</a>
+            <a href="contact/contact.html">CONTACT US</a>
+          </nav>
+          <div class="header-actions">
+            <a href="https://play.google.com/store/apps/details?id=com.yourapp.package" target="_blank">
+              <button class="get-app-btn">GET APP</button>
+            </a>
+            <div class="profile-icon" onclick="openLoginModal()" style="text-decoration: none; cursor: pointer;">
+              <img src="images/person.png" alt="Profile" class="profile-img" />
+              <p class="profile-text">Profile</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById("nav").classList.toggle("active");
+    }
+
+    function openLoginModal() {
+      alert("Open Login Modal");
+    }
+
+    function openSignupModal() {
+      alert("Open Signup Modal");
+    }
+  </script>
+
+</body>
+</html>

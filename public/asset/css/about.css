@@ -1,0 +1,186 @@
+
+/* about.css */
+
+.about-hero {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #fff;
+  background-color: #111;
+  display: flex;
+  flex-direction: column; 
+}
+
+.about-hero h1 {
+  font-size: 60px;
+  margin-bottom: 1rem;
+  color: #8B0000;
+
+}
+
+
+.about-hero p {
+  font-size: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+
+}
+
+
+
+/* Section Container */
+/* section {
+  background-color: #000;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;  
+  overflow: hidden;     
+} */
+/* Banner Image */
+/* .banner-img {
+  width: 153%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  margin: 0; 
+  border-radius: 10px; 
+  margin-left: -300px;
+  opacity: 0.5;
+} */
+
+/*story*/
+.our-story {
+  background-color: #111;
+  color: #fff;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.story-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.our-story h2 {
+  font-size: 48px;
+  margin-bottom: 40px;
+  color: #8B0000;
+}
+
+.our-story p {
+  font-size: 18px;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+
+/*vision*/
+.our-vision {
+  background-color: #000;
+  color: #fff;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.vision-heading h2 {
+  font-size: 48px;
+  color: #8B0000;
+  margin-bottom: 40px;
+  white-space: nowrap;        
+  text-align: center;               
+}
+
+
+.vision-points {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.vision-item {
+  background-color: #111;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 400px;
+  min-height: 200px;
+  text-align: center;
+  transition: transform 0.3s;
+  
+  
+}
+
+.vision-item:hover {
+  transform: translateY(-10px);
+}
+
+.vision-item i {
+  font-size: 50px;
+  color: #8B0000;
+  margin-bottom: 1rem;
+}
+
+.vision-item p {
+  font-size: 16px;
+  line-height: 1.6;
+}
+/*clients*/
+.our-clients-reviews {
+  background-color: #000;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+
+.clients-heading h2 {
+  margin-bottom: 40px;
+  color: #8B0000;
+  font-size: 48px;
+}
+
+.clients-review-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.client-box {
+  background-color: #333;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 22%;
+  transition: transform 0.3s ease;
+}
+
+.client-box:hover {
+  transform: translateY(-5px);
+}
+
+.client-box img {
+  margin-bottom: 1rem;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.client-box p {
+  font-style: italic;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.client-box h4 {
+  color: #555;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .client-box{
+    width: 40%;
+  }
+}
+@media (max-width: 426px) {
+  .client-box{
+    width: 100%;
+  }
+}

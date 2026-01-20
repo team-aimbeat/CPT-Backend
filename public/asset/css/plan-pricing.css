@@ -1,0 +1,100 @@
+
+/* Container Styling */
+.pricing-container {
+  padding: 50px 20px;
+  color: #fff;
+  min-height: 100vh;
+  background:url('../images/pricebg.jpg') no-repeat center center / cover;
+
+}
+.pricing-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  color: red;
+}
+
+/* Cards Layout */
+.pricing-cards {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+
+/* Individual Card */
+.plan-card {
+  background: linear-gradient(to right, #000000, #4b0000, #a40606);
+  border: 2px solid #ff4d4d;
+  border-radius: 12px;
+  padding: 20px;
+  width: 70%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.plan-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Plan Title */
+.plan-card h2 {
+  font-size: 47px;
+  margin-bottom: 10px;
+  color: rgb(207, 137, 15);
+
+}
+
+
+/* Button */
+.plan-card .btn-login {
+  background-color: black;
+  border: none;
+  padding: 12px 25px;
+  color: white;
+  border-radius: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 220px;
+  height: 50px;
+  float: right;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+}
+
+.plan-card .btn-login:hover {
+  background-color: #e60000;
+}
+
+.membership-cards-section{
+  padding-bottom: 110px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .plan-card{
+    width: 100%;
+  }
+}
+@media (max-width: 768px) {
+  .pricing-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+  .plan-card .btn-login{
+    float: unset;
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .heading,
+  .subscribe-text{
+    margin-top: 20px;
+  }
+}
+
+.membership-heading {
+  color: red;
+  padding-top: 40px;
+}

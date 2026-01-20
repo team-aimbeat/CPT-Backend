@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us</title>
+  <link rel="stylesheet" href="contact.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+
+
+</head>
+<body>
+  <!-- Header -->
+ <header>
+  <div class="header-container">
+    <img src="../images/Group.png" alt="Logo" class="logo" />
+    <nav class="nav-links">
+      <a href="../index.html">HOME</a>
+      <a href="../plan-pricing/plan-pricing.html">PLAN & PRICING</a>
+      <a href="../programlist/programlist.html">PROGRAM LIST</a>
+      <a href="../about//about.html" class="about-link">ABOUT US</a>
+      <a href="#">CONTACT US</a>
+    </nav>    
+    <div class="header-actions">
+      <a href="https://play.google.com/store/apps/details?id=com.yourapp.package" target="_blank">
+        <button class="get-app-btn">GET APP</button>
+      </a>
+      <div class="profile-icon" onclick="openLoginModal()" style="text-decoration: none; cursor: pointer;">
+        <img src="../images/person.png" alt="Profile" class="profile-img" />
+        <p class="profile-text">Profile</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+ <!-- Login Modal -->
+ <div id="loginModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeLoginModal()">×</span>
+    <img src="../images/new.png" alt="Logo" class="modal-logo" />
+    <h2 class="login-txt">Login</h2>
+    <form id="modalLoginForm">
+      <input type="email" placeholder="Email" required />
+      <input type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <div class="social-login-wrapper">
+      <div class="social-login-inline">
+        <p>Or connect with</p>
+        <div class="social-buttons-inline">
+          <a href="#" class="social-icon google"><i class="fab fa-google"></i></a>
+          <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-icon gmail"><i class="fas fa-envelope"></i></a>
+        </div>
+      </div>
+    </div>
+    <p class="signup-link">Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
+    <span class="terms-note">
+      * By continuing you agree to the Terms of <br /> Service and Privacy Policy.
+    </span>
+  </div>
+</div>
+
+<!-- Sign Up Modal -->
+<div id="signupModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeSignupModal()">×</span>
+    <img src="../images/new.png" alt="Logo" class="modal-logo" />
+    <h2 class="login-txt">Sign Up</h2>
+    <form id="modalSignupForm" onsubmit="return handleSignup(event)">
+      <input type="text" placeholder="Full Name" required />
+      <div class="password-container">
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          required
+          pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+          title="At least 8 characters ."
+        />
+        <i class="fas fa-eye toggle-password" onclick="togglePassword('password', this)"></i>
+      </div>
+      <div class="password-container">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+        <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
+      </div>
+      <span id="matchMsg" style="color: red; font-size: 12px;"></span>
+      <button type="submit">Sign Up</button>
+    </form>
+    <p class="signup-linktxt">Already have an account? 
+      <a class="login" href="#" onclick="switchToLogin()">Login</a>
+    </p>
+  </div>
+</div>
+
+
+<section class="contact-container">
+  <h1>Get In Touch With Us</h1>
+  <div class="contact-card-wrapper">
+    
+   
+    <!-- Google Map -->
+    <div class="map-container">
+      <iframe 
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.6757250317833!2d73.85674347494142!3d18.50076967051125!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2c097f7a82869%3A0x3c5d6e9b6ff153ae!2sPune%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1713265564017!5m2!1sen!2sin"
+        width="100%"
+        height="100%"
+        style="border:0;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </div>
+</section>
+
+<div class="info-section">
+  <!-- Head Office -->
+  <div class="info-card">
+    <i class="fas fa-map-marker-alt info-icon"></i>
+    <div class="heading-info">
+      <h3>Head Office</h3>
+      <p>Pune, Maharashtra, India</p>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <a href="tel:+919876543210" class="info-card" >
+    <i class="fas fa-phone-alt info-icon"></i>
+    <div class="heading-info">
+      <h3 class="contact">Contact</h3>
+      <p class="number">+91 98765 43210</p>
+    </div>
+  </a>
+
+  <!-- Email -->
+  <a href="mailto:support@fitnation.com" class="info-card" >
+    <i class="fas fa-envelope info-icon"></i>
+    <div class="heading-info">
+      <h3>Email</h3>
+      <p>support@fitnation.com</p>
+    </div>
+  </a>
+</div>
+
+<section class="contact-feedback-container">
+  <!-- Contact Form -->
+  <div class="form-box">
+    <h2>Contact Us</h2>
+    <p>We'd love to hear from you!</p>
+    <form class="contact-form">
+      <input type="text" placeholder="Your Name" required />
+      <input type="email" placeholder="Your Email" required />
+      <input type="text" placeholder="Subject" />
+      <textarea rows="5" placeholder="Your Message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </div>
+  </section>
+
+
+   <!-- Footer -->
+   <footer class="main-footer">
+    <div class="footer-container">
+      <div class="footer-col logo-col">
+        <img src="../images/Group.png" alt="Footer Logo" class="footer-logo" />
+        <img src="../images/playstore.png" alt="Footer Logo" class="footer-img1" />
+        <img src="../images/apple.png" alt="Footer Logo" class="footer-img2" />
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Use Cases</h5>
+        <div class="footer-links">
+          <a href="#">Web-designers</a>
+          <a href="#">Marketers</a>
+          <a href="#">Small Business</a>
+          <a href="#">Website Builder</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Company</h5>
+        <div class="footer-links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">FAQ</a>
+          <a href="#">Teams</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Company</h5>
+        <div class="footer-links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">FAQ</a>
+          <a href="#">Teams</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="subscribe-usecase">Use Cases</h5>
+        <p class="subscribe-text">Subscribe</p>
+        <p class="subscribe-description">
+          Subscribe to stay tuned for latest web designs<br/>and updates. Let's do it!
+        </p>
+        <div class="subscribe-box">
+          <input type="email" placeholder="Enter your email" />
+          <button>Subscribe</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-footer">
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+        <a href="#">Sales & Legal</a>
+        <a href="#">Site Map</a>
+      </div>
+      <div class="footer-copy">
+        © <span id="year"></span> All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Modal open/close functions
+    function openLoginModal() {
+      document.getElementById("loginModal").style.display = "block";
+    }
+
+    function closeLoginModal() {
+      document.getElementById("loginModal").style.display = "none";
+    }
+
+    function openSignupModal() {
+      document.getElementById("signupModal").style.display = "block";
+    }
+
+    function closeSignupModal() {
+      document.getElementById("signupModal").style.display = "none";
+    }
+
+    function switchToSignup() {
+      closeLoginModal();
+      openSignupModal();
+    }
+
+    function switchToLogin() {
+      closeSignupModal();
+      openLoginModal();
+    }
+
+    // Password toggle visibility
+    function togglePassword(id, icon) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+
+    // Password match validation
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+    const matchMsg = document.getElementById("matchMsg");
+
+    confirmPasswordInput.addEventListener("input", function () {
+      if (confirmPasswordInput.value !== passwordInput.value) {
+        matchMsg.textContent = "Passwords do not match";
+        matchMsg.style.color = "red";
+      } else {
+        matchMsg.textContent = "Passwords match";
+        matchMsg.style.color = "green";
+      }
+    });
+
+    // Handle signup form submission
+    function handleSignup(event) {
+      event.preventDefault();
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      if (password === confirmPassword) {
+        // Simulate successful signup and switch to login
+        closeSignupModal();
+        openLoginModal();
+      } else {
+        matchMsg.textContent = "Passwords do not match!";
+        matchMsg.style.color = "red";
+      }
+      return false;
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function (event) {
+      const loginModal = document.getElementById("loginModal");
+      const signupModal = document.getElementById("signupModal");
+      if (event.target === loginModal) closeLoginModal();
+      if (event.target === signupModal) closeSignupModal();
+    };
+
+    // Set current year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+
+</body>
+</html>

@@ -1,0 +1,156 @@
+
+
+/*  Program List Styling*/
+.programs-section {
+  position: relative;
+  padding: 60px 20px;
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+  color: white;
+  overflow: hidden;
+}
+
+.programs-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('../images/bg.jpg') no-repeat center center / cover;
+  /* opacity: 0.4;  */
+  z-index: 0;
+}
+
+.programs-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+
+.section-title {
+  font-size: 2.8rem;
+  margin-bottom: 10px;
+  color:red;
+
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  color: white;
+  margin-bottom: 40px;
+ 
+}
+
+.program-cards-zigzag {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+  padding: 60px 20px;
+  align-items: center;
+}
+
+.program-card-zigzag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  animation: fadeSlideUp 1s ease both;
+  background: rgb(0 0 0 / 24%);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: white;
+  flex-wrap: wrap;
+  width: 80%;
+  border: 1px solid black;
+}
+
+.program-card-zigzag.left {
+  flex-direction: row;
+  animation-name: slideInLeft;
+}
+
+.program-card-zigzag.right {
+  flex-direction: row-reverse;
+  animation-name: slideInRight;
+}
+
+.program-card-zigzag img {
+  width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  height: 300px;
+}
+
+.program-content {
+  max-width: 500px;
+  color: #fff;
+}
+
+.program-content h2 {
+  font-size: 28px;
+  color: red;
+  margin-bottom: 10px;
+}
+
+.program-content p {
+  font-size: 16px;
+  color: #ddd;
+  margin-bottom: 20px;
+}
+
+
+.program-content .btn-login {
+  padding: 10px 20px;
+  background-color: rgb(143, 9, 9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  text-decoration: none;
+}
+
+.program-content .btn-login:hover {
+  background-color: #ff0000;
+}
+
+/* Animation Keyframes */
+@keyframes slideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 426px) {
+ 
+  .program-cards-zigzag {
+    padding: unset;
+  }
+  .program-card-zigzag{
+    padding:10px;
+    width: 100%;
+  }
+  .program-card-zigzag img{
+    width: 100%;
+    height: auto;
+  }
+}

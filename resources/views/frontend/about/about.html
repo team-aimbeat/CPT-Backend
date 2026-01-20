@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+  <meta charset="UTF-8">
+  <title>About Us</title>
+  <link rel="stylesheet" href="about.css"> 
+</head>
+<body>
+ <!-- Header -->
+ <header>
+  <div class="header-container">
+    <img src="../images/Group.png" alt="Logo" class="logo" />
+    <nav class="nav-links">
+      <a href="../index.html">HOME</a>
+      <a href="../plan-pricing/plan-pricing.html">PLAN & PRICING</a>
+      <a href="../programlist/programlist.html">PROGRAM LIST</a>
+      <a href="#" class="about-link">ABOUT US</a>
+      <a href="../contact/contact.html">CONTACT US</a>
+    </nav>    
+    <div class="header-actions">
+      <a href="https://play.google.com/store/apps/details?id=com.yourapp.package" target="_blank">
+        <button class="get-app-btn">GET APP</button>
+      </a>
+      <div class="profile-icon" onclick="openLoginModal()" style="text-decoration: none; cursor: pointer;">
+        <img src="../images/person.png" alt="Profile" class="profile-img" />
+        <p class="profile-text">Profile</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeLoginModal()">×</span>
+      <img src="../images/new.png" alt="Logo" class="modal-logo" />
+      <h2 class="login-txt">Login</h2>
+      <form id="modalLoginForm">
+        <input type="email" placeholder="Email" required />
+        <input type="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <div class="social-login-wrapper">
+        <div class="social-login-inline">
+          <p>Or connect with</p>
+          <div class="social-buttons-inline">
+            <a href="#" class="social-icon google"><i class="fab fa-google"></i></a>
+            <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-icon gmail"><i class="fas fa-envelope"></i></a>
+          </div>
+        </div>
+      </div>
+      <p class="signup-link">Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
+      <span class="terms-note">
+        * By continuing you agree to the Terms of <br /> Service and Privacy Policy.
+      </span>
+    </div>
+  </div>
+
+  <!-- Sign Up Modal -->
+  <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeSignupModal()">×</span>
+      <img src="../images/new.png" alt="Logo" class="modal-logo" />
+      <h2 class="login-txt">Sign Up</h2>
+      <form id="modalSignupForm" onsubmit="return handleSignup(event)">
+        <input type="text" placeholder="Full Name" required />
+        <div class="password-container">
+          <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            required
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            title="At least 8 characters ."
+          />
+          <i class="fas fa-eye toggle-password" onclick="togglePassword('password', this)"></i>
+        </div>
+        <div class="password-container">
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+          <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
+        </div>
+        <span id="matchMsg" style="color: red; font-size: 12px;"></span>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p class="signup-linktxt">Already have an account? <a class="login" href="#" onclick="switchToLogin()">Login</a></p>
+    </div>
+  </div>
+
+
+ <!-- main content -->
+
+<section class="about-hero">
+  <h1 class="heading">WE ARE GYM AND FITNESS</h1>
+  <p class="">We are committed to helping you achieve your fitness goals with passion, power, and purpose.</p>
+</section>
+<section>
+  <div class="img-card">
+    <img src="../images/home.png" alt="Gym" class="banner-img" />
+  </div>
+</section>
+
+<section class="our-story">
+  <div class="story-container">
+    <h2>OUR STORY</h2>
+    <p>
+      Founded in 2015, WE ARE GYM AND FITNESS began as a small garage gym with a big dream — to empower every individual to become the strongest version of themselves. What started with a few dumbbells and a vision has now grown into a full-fledged fitness community. 
+    </p>
+    <p>
+      We're not just a gym — we're a lifestyle. Our trainers are passionate, our members are motivated, and our space is built to push your limits. Whether you're a beginner or a seasoned athlete, you'll find your place here. 
+    </p>
+    <p>
+      Join us, and be a part of a movement that transforms bodies, minds, and lives.
+    </p>
+  </div>
+</section>
+<section class="our-vision">
+  <div class="vision-heading">
+    <h2>Our Vision</h2>
+  </div>
+  <div class="vision-points">
+    <div class="vision-item">
+      <i class="fas fa-dumbbell"></i>
+      <p>Empower individuals through strength and discipline.</p>
+    </div>
+    <div class="vision-item">
+      <i class="fas fa-heartbeat"></i>
+      <p>Promote a healthy and active lifestyle for all.</p>
+    </div>
+    <div class="vision-item">
+      <i class="fas fa-users"></i>
+      <p>Build a supportive fitness community.</p>
+    </div>
+    <div class="vision-item">
+      <i class="fas fa-bullseye"></i>
+      <p>Help members achieve their personal fitness goals.</p>
+    </div>
+    <div class="vision-item">
+      <i class="fas fa-bullseye"></i>
+      <p>Help members achieve their personal fitness goals.</p>
+    </div>
+    <div class="vision-item">
+      <i class="fas fa-bullseye"></i>
+      <p>Help members achieve their personal fitness goals.</p>
+    </div>
+  </div>
+</section>
+<section class="our-clients-reviews">
+  <div class="clients-heading">
+    <h2>OUR CLIENTS</h2>
+  </div>
+
+  <div class="clients-review-boxes">
+    <div class="client-box">
+      <img src="../images/plan.jpg" alt="Client 1">
+      <p>"This team is amazing! We loved working with them."</p>
+      <h4>— Client 1</h4>
+    </div>
+
+    <div class="client-box">
+      <img src="../images/plan.jpg" alt="Client 2" >
+      <p>"Great experience and excellent results."</p>
+      <h4>— Client 2</h4>
+    </div>
+
+    <div class="client-box">
+      <img src="../images/plan.jpg" alt="Client 3">
+      <p>"Very professional and always deliver on time."</p>
+      <h4>— Client 3</h4>
+    </div>
+
+    <div class="client-box">
+      <img src="../images/plan.jpg" alt="Client 4">
+      <p>"Highly recommend their services. 10/10!"</p>
+      <h4>— Client 4</h4>
+    </div>
+  </div>
+</section>
+
+
+   <!-- Footer -->
+   <footer class="main-footer">
+    <div class="footer-container">
+      <div class="footer-col logo-col">
+        <img src="../images/Group.png" alt="Footer Logo" class="footer-logo" />
+        <img src="../images/playstore.png" alt="Footer Logo" class="footer-img1" />
+        <img src="../images/apple.png" alt="Footer Logo" class="footer-img2" />
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Use Cases</h5>
+        <div class="footer-links">
+          <a href="#">Web-designers</a>
+          <a href="#">Marketers</a>
+          <a href="#">Small Business</a>
+          <a href="#">Website Builder</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Company</h5>
+        <div class="footer-links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">FAQ</a>
+          <a href="#">Teams</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="heading">Company</h5>
+        <div class="footer-links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">FAQ</a>
+          <a href="#">Teams</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5 class="subscribe-usecase">Use Cases</h5>
+        <p class="subscribe-text">Subscribe</p>
+        <p class="subscribe-description">
+          Subscribe to stay tuned for latest web designs<br/>and updates. Let's do it!
+        </p>
+        <div class="subscribe-box">
+          <input type="email" placeholder="Enter your email" />
+          <button>Subscribe</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-footer">
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+        <a href="#">Sales & Legal</a>
+        <a href="#">Site Map</a>
+      </div>
+      <div class="footer-copy">
+        © <span id="year"></span> All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Modal open/close functions
+    function openLoginModal() {
+      document.getElementById("loginModal").style.display = "block";
+    }
+
+    function closeLoginModal() {
+      document.getElementById("loginModal").style.display = "none";
+    }
+
+    function openSignupModal() {
+      document.getElementById("signupModal").style.display = "block";
+    }
+
+    function closeSignupModal() {
+      document.getElementById("signupModal").style.display = "none";
+    }
+
+    function switchToSignup() {
+      closeLoginModal();
+      openSignupModal();
+    }
+
+    function switchToLogin() {
+      closeSignupModal();
+      openLoginModal();
+    }
+
+    // Password toggle visibility
+    function togglePassword(id, icon) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+
+    // Password match validation
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+    const matchMsg = document.getElementById("matchMsg");
+
+    confirmPasswordInput.addEventListener("input", function () {
+      if (confirmPasswordInput.value !== passwordInput.value) {
+        matchMsg.textContent = "Passwords do not match";
+        matchMsg.style.color = "red";
+      } else {
+        matchMsg.textContent = "Passwords match";
+        matchMsg.style.color = "green";
+      }
+    });
+
+    // Handle signup form submission
+    function handleSignup(event) {
+      event.preventDefault();
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      if (password === confirmPassword) {
+        // Simulate successful signup and switch to login
+        closeSignupModal();
+        openLoginModal();
+      } else {
+        matchMsg.textContent = "Passwords do not match!";
+        matchMsg.style.color = "red";
+      }
+      return false;
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function (event) {
+      const loginModal = document.getElementById("loginModal");
+      const signupModal = document.getElementById("signupModal");
+      if (event.target === loginModal) closeLoginModal();
+      if (event.target === signupModal) closeSignupModal();
+    };
+
+    // Set current year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+
+</body>
+</html>
