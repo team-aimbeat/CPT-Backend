@@ -288,28 +288,41 @@ class WorkoutController extends Controller
     // }
 
 
-    public function edit($id)
+  public function edit($id)
 {
+    if (!auth()->user()->can('workout-edit')) {
+        return redirect()->back()->withErrors(__('message.permission_denied_for_account'));
+    }
+
     $data = Workout::with([
-        'goal','level','workouttype',
         'workoutDay.workoutDayExercise.exercise'
     ])->findOrFail($id);
 
-    foreach ($data->workoutDay as $day) {
+    $pageTitle = 'Edit Workout';
+
+    foreach ($data->workoutDay as $index => $day) {
+
         if ($day->is_rest == 0) {
-            $day->exercise_data = $day->workoutDayExercise->mapWithKeys(
-                fn($e) => [$e->exercise_id => $e->exercise->title]
-            );
-            $day->exercise_ids = $day->workoutDayExercise->pluck('exercise_id')->map('strval')->toArray();
-            $day->instruction = $day->instruction;
+
+            // select2 display data
+            $day->exercise_data = $day->workoutDayExercise
+                ->pluck('exercise.title', 'exercise_id')
+                ->toArray();
+
+            // selected ids (STRING required for select2)
+            $day->exercise_ids = $day->workoutDayExercise
+                ->pluck('exercise_id')
+                ->map(fn ($v) => (string) $v)
+                ->toArray();
+
+            // instruction text (per day)
+            $day->exercise_description = $day->instruction ?? '';
         }
     }
 
-    return view('workout.form',[
-        'data'=>$data,
-        'id'=>$id
-    ]);
+    return view('workout.form', compact('data', 'id', 'pageTitle'));
 }
+
 
 
     /**
