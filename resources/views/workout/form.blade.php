@@ -3,16 +3,24 @@
 (function($){
 
     function initTinyMCE() {
-        tinymce.remove('.tinymce-description');
         tinymce.init({
             selector: '.tinymce-description',
-            height: 150,
+            height: 140,
             menubar: false,
             plugins: 'lists link',
             toolbar: 'bold italic | bullist numlist | link',
             branding: false,
-            forced_root_block: false
+            forced_root_block: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save(); // IMPORTANT
+                });
+            }
         });
+    }
+
+    function destroyTinyMCE() {
+        tinymce.remove('.tinymce-description');
     }
 
     $(document).ready(function(){
@@ -30,19 +38,30 @@
 
         let row = $('#table_list tbody tr').length - 1;
 
-        $('#add_button').click(function(){
+        $('#add_button').on('click', function(){
 
+            // ✅ STEP 1: destroy editors
+            destroyTinyMCE();
+
+            // ✅ STEP 2: destroy select2
             $('.select2tagsjs').select2('destroy');
 
             let last = $('#table_list tbody tr:last');
             let clone = last.clone();
+
             row++;
 
             clone.attr('id','row_'+row).attr('row',row).attr('data-id',0);
 
-            clone.find('input, textarea').val('');
+            // ✅ STEP 3: RESET CONTENT PROPERLY
+            clone.find('textarea').each(function(){
+                $(this).val('');
+            });
+
+            clone.find('input').val('');
             clone.find('select').val(null);
 
+            // rename inputs
             clone.find('[name^="week"]').attr('name','week['+row+']');
             clone.find('[name^="day"]').attr('name','day['+row+']');
             clone.find('[name^="exercise_ids"]').attr('name','exercise_ids['+row+'][]');
@@ -53,14 +72,20 @@
 
             last.after(clone);
 
+            // ✅ STEP 4: re-init select2
             $('.select2tagsjs').select2({ width:'100%' });
+
+            // ✅ STEP 5: re-init TinyMCE (MOST IMPORTANT)
             initTinyMCE();
+
             resetIndex();
         });
 
         $(document).on('click','.removebtn',function(){
             if($('#table_list tbody tr').length > 1){
+                destroyTinyMCE();
                 $('#row_'+$(this).attr('row')).remove();
+                initTinyMCE();
                 resetIndex();
             }
         });
@@ -70,6 +95,7 @@
 })(jQuery);
 </script>
 @endpush
+
 
 <x-app-layout :assets="$assets ?? []">
 <div>
