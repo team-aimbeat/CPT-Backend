@@ -144,6 +144,19 @@
         ]) }}
     </div>
 
+
+    <div class="col-md-4 mt-2">
+        {{ Form::label('gender','Gender *') }}
+        {{ Form::select('gender', [
+            'male' => 'Male',
+            'female' => 'Female',
+            'both' => 'Both'
+        ], old('gender','both'), [
+            'class' => 'form-control',
+            'required'
+        ]) }}
+    </div>
+
     <div class="col-md-4 mt-2">
         {{ Form::label('status','Status *') }}
         {{ Form::select('status',['active'=>'Active','inactive'=>'Inactive'],'active',[
