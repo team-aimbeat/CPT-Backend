@@ -2,22 +2,39 @@
 <script>
 (function($){
 
-    function initTinyMCE() {
-        tinymce.init({
-            selector: '.tinymce-description',
-            height: 140,
-            menubar: false,
-            plugins: 'lists link',
-            toolbar: 'bold italic | bullist numlist | link',
-            branding: false,
-            forced_root_block: false,
-            setup: function (editor) {
-                editor.on('change', function () {
-                    editor.save(); // IMPORTANT
-                });
-            }
-        });
-    }
+        function initTinyMCE() {
+            tinymce.init({
+                selector: '.tinymce-description',
+                height: 140,
+                menubar: false,
+                plugins: 'lists link',
+                toolbar: 'bold italic | bullist numlist | link',
+                branding: false,
+                forced_root_block: false,
+                setup: function (editor) {
+                    editor.on('change keyup', function () {
+                        editor.save();
+                    });
+                }
+            });
+        }
+
+    // function initTinyMCE() {
+    //     tinymce.init({
+    //         selector: '.tinymce-description',
+    //         height: 140,
+    //         menubar: false,
+    //         plugins: 'lists link',
+    //         toolbar: 'bold italic | bullist numlist | link',
+    //         branding: false,
+    //         forced_root_block: false,
+    //         setup: function (editor) {
+    //             editor.on('change', function () {
+    //                 editor.save(); // IMPORTANT
+    //             });
+    //         }
+    //     });
+    // }
 
     function destroyTinyMCE() {
         tinymce.remove('.tinymce-description');
@@ -38,48 +55,52 @@
 
         let row = $('#table_list tbody tr').length - 1;
 
-        $('#add_button').on('click', function(){
+       $('#add_button').on('click', function () {
 
-            // ✅ STEP 1: destroy editors
-            destroyTinyMCE();
+    // 1️⃣ Destroy all TinyMCE instances safely
+    tinymce.remove();
 
-            // ✅ STEP 2: destroy select2
-            $('.select2tagsjs').select2('destroy');
+    // 2️⃣ Destroy select2
+    $('.select2tagsjs').select2('destroy');
 
-            let last = $('#table_list tbody tr:last');
-            let clone = last.clone();
+    let last = $('#table_list tbody tr:last');
+    let clone = last.clone();
 
-            row++;
+    row++;
 
-            clone.attr('id','row_'+row).attr('row',row).attr('data-id',0);
+    clone.attr('id', 'row_' + row)
+         .attr('row', row)
+         .attr('data-id', 0);
 
-            // ✅ STEP 3: RESET CONTENT PROPERLY
-            clone.find('textarea').each(function(){
-                $(this).val('');
-            });
+    // 3️⃣ Reset inputs
+    clone.find('input').val('');
+    clone.find('select').val(null);
+    clone.find('textarea').val('');
 
-            clone.find('input').val('');
-            clone.find('select').val(null);
+    // 4️⃣ Update names
+    clone.find('[name^="week"]').attr('name', 'week[' + row + ']');
+    clone.find('[name^="day"]').attr('name', 'day[' + row + ']');
+    clone.find('[name^="exercise_ids"]').attr('name', 'exercise_ids[' + row + '][]');
+    clone.find('[name^="exercise_description"]')
+         .attr('name', 'exercise_description[' + row + '][]')
+         .attr('id', 'instruction_' + row); // 🔥 UNIQUE ID
 
-            // rename inputs
-            clone.find('[name^="week"]').attr('name','week['+row+']');
-            clone.find('[name^="day"]').attr('name','day['+row+']');
-            clone.find('[name^="exercise_ids"]').attr('name','exercise_ids['+row+'][]');
-            clone.find('[name^="exercise_description"]').attr('name','exercise_description['+row+'][]');
-            clone.find('[name^="is_rest"]').attr('name','is_rest['+row+']').prop('checked',false);
+    clone.find('[name^="is_rest"]').attr('name', 'is_rest[' + row + ']')
+         .prop('checked', false);
 
-            clone.find('.removebtn').attr('row',row);
+    clone.find('.removebtn').attr('row', row);
 
-            last.after(clone);
+    last.after(clone);
 
-            // ✅ STEP 4: re-init select2
-            $('.select2tagsjs').select2({ width:'100%' });
+    // 5️⃣ Re-init Select2
+    $('.select2tagsjs').select2({ width: '100%' });
 
-            // ✅ STEP 5: re-init TinyMCE (MOST IMPORTANT)
-            initTinyMCE();
+    // 6️⃣ Re-init TinyMCE (TARGET BY CLASS — IDs now unique)
+    initTinyMCE();
 
-            resetIndex();
-        });
+    resetIndex();
+});
+
 
         $(document).on('click','.removebtn',function(){
             if($('#table_list tbody tr').length > 1){
