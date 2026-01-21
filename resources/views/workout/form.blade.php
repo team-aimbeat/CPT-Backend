@@ -132,43 +132,52 @@
     </div>
 
     <div class="col-md-4">
-        {{ Form::label('goal_id','Goal *') }}
-        {{ Form::select('goal_id',[],null,[
-            'class'=>'select2js',
-            'data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),
-            'required'
-        ]) }}
+        {{ Form::select(
+            'goal_id',
+            isset($id) ? [$data->goal->id => $data->goal->title] : [],
+            old('goal_id', $data->goal_id ?? null),
+            [
+                'class'=>'select2js',
+                'data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),
+                'required'
+            ]
+        ) }}
     </div>
 
     <div class="col-md-4">
-        {{ Form::label('level_id','Level *') }}
-        {{ Form::select('level_id',[],null,[
-            'class'=>'select2js',
-            'data-ajax--url'=>route('ajax-list',['type'=>'level']),
-            'required'
-        ]) }}
+        {{ Form::select(
+            'level_id',
+            isset($id) ? [$data->level->id => $data->level->title] : [],
+            old('level_id', $data->level_id ?? null),
+            [
+                'class'=>'select2js',
+                'data-ajax--url'=>route('ajax-list',['type'=>'level']),
+                'required'
+            ]
+        ) }}
     </div>
 
     <div class="col-md-4 mt-2">
-        {{ Form::label('workout_type_id','Workout Type *') }}
-        {{ Form::select('workout_type_id',[],null,[
-            'class'=>'select2js',
-            'data-ajax--url'=>route('ajax-list',['type'=>'workout_type']),
-            'required'
-        ]) }}
+        {{ Form::select(
+            'workout_type_id',
+            isset($id) ? [$data->workouttype->id => $data->workouttype->title] : [],
+            old('workout_type_id', $data->workout_type_id ?? null),
+            [
+                'class'=>'select2js',
+                'data-ajax--url'=>route('ajax-list',['type'=>'workout_type']),
+                'required'
+            ]
+        ) }}
     </div>
 
 
     <div class="col-md-4 mt-2">
-        {{ Form::label('gender','Gender *') }}
-        {{ Form::select('gender', [
-            'male' => 'Male',
-            'female' => 'Female',
-            'both' => 'Both'
-        ], old('gender','both'), [
-            'class' => 'form-control',
-            'required'
-        ]) }}
+       {{ Form::select(
+            'gender',
+            ['male'=>'Male','female'=>'Female','both'=>'Both'],
+            old('gender', $data->gender ?? 'both'),
+            ['class'=>'form-control','required']
+        ) }}
     </div>
 
     <div class="col-md-4 mt-2">
@@ -204,8 +213,11 @@
 
 {{-- WORKOUT DESCRIPTION --}}
 <div class="form-group">
-    {{ Form::label('description','Workout Description') }}
-    {{ Form::textarea('description',null,['class'=>'form-control tinymce-description']) }}
+    {{ Form::textarea(
+    'description',
+    old('description', $data->description ?? ''),
+    ['class'=>'form-control tinymce-main']
+) }}
 </div>
 
 <hr>
