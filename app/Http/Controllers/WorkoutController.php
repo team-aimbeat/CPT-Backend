@@ -262,30 +262,55 @@ class WorkoutController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
-    {
-        if( !auth()->user()->can('workout-edit') ) {
-            $message = __('message.permission_denied_for_account');
-            return redirect()->back()->withErrors($message);
-        }
-        $data = Workout::findOrFail($id);
-        $pageTitle = __('message.update_form_title',[ 'form' => __('message.workout') ]);
-        if(isset($id) && count($data->workoutDay) > 0){
-            foreach($data->workoutDay as &$field){
-                $exercise_ids = [];
-                if($field->is_rest == 0){   
-                    $exercise_ids = $field->workoutDayExercise->mapWithKeys(function ($item) {
-                        return [ $item->exercise_id => optional($item->exercise)->title ];
-                    });
-                    $field['exercise_data'] = $exercise_ids;
+    // public function edit($id)
+    // {
+    //     if( !auth()->user()->can('workout-edit') ) {
+    //         $message = __('message.permission_denied_for_account');
+    //         return redirect()->back()->withErrors($message);
+    //     }
+    //     $data = Workout::findOrFail($id);
+    //     $pageTitle = __('message.update_form_title',[ 'form' => __('message.workout') ]);
+    //     if(isset($id) && count($data->workoutDay) > 0){
+    //         foreach($data->workoutDay as &$field){
+    //             $exercise_ids = [];
+    //             if($field->is_rest == 0){   
+    //                 $exercise_ids = $field->workoutDayExercise->mapWithKeys(function ($item) {
+    //                     return [ $item->exercise_id => optional($item->exercise)->title ];
+    //                 });
+    //                 $field['exercise_data'] = $exercise_ids;
                     
-                    $exercise_id = $field->workoutDayExercise->pluck('exercise_id')->toArray();
-                    $field['exercise_ids'] = array_map('strval', $exercise_id);
-                }
-            }
+    //                 $exercise_id = $field->workoutDayExercise->pluck('exercise_id')->toArray();
+    //                 $field['exercise_ids'] = array_map('strval', $exercise_id);
+    //             }
+    //         }
+    //     }
+    //     return view('workout.form', compact('data','id','pageTitle'));
+    // }
+
+
+    public function edit($id)
+{
+    $data = Workout::with([
+        'goal','level','workouttype',
+        'workoutDay.workoutDayExercise.exercise'
+    ])->findOrFail($id);
+
+    foreach ($data->workoutDay as $day) {
+        if ($day->is_rest == 0) {
+            $day->exercise_data = $day->workoutDayExercise->mapWithKeys(
+                fn($e) => [$e->exercise_id => $e->exercise->title]
+            );
+            $day->exercise_ids = $day->workoutDayExercise->pluck('exercise_id')->map('strval')->toArray();
+            $day->instruction = $day->instruction;
         }
-        return view('workout.form', compact('data','id','pageTitle'));
     }
+
+    return view('workout.form',[
+        'data'=>$data,
+        'id'=>$id
+    ]);
+}
+
 
     /**
      * Update the specified resource in storage.

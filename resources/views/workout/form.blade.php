@@ -11,9 +11,7 @@
     }
 
     function initSelect2() {
-        $('.select2tagsjs, .select2js').select2({
-            width: '100%'
-        });
+        $('.select2js, .select2tagsjs').select2({ width: '100%' });
     }
 
     function initTinyMCE() {
@@ -46,35 +44,21 @@
             tinymce.remove();
             $('.select2tagsjs').select2('destroy');
 
-            let last = $('#table_list tbody tr:last');
-            let clone = last.clone();
-
+            let clone = $('#table_list tbody tr:last').clone();
             row++;
 
             clone.attr('id', 'row_' + row).attr('row', row).attr('data-id', 0);
-
-            clone.find('input').val('');
+            clone.find('input, textarea').val('');
             clone.find('select').val(null);
-            clone.find('textarea').val('');
 
             clone.find('[name^="week"]').attr('name', 'week[' + row + ']').val(1);
             clone.find('[name^="day"]').attr('name', 'day[' + row + ']');
-
-            clone.find('[name^="exercise_ids"]')
-                .attr('name', 'exercise_ids[' + row + '][]')
-                .attr('id', 'exercise_ids_' + row);
-
-            clone.find('[name^="exercise_description"]')
-                .attr('name', 'exercise_description[' + row + '][]')
-                .attr('id', 'instruction_' + row);
-
-            clone.find('[name^="is_rest"]')
-                .attr('name', 'is_rest[' + row + ']')
-                .prop('checked', false);
+            clone.find('[name^="exercise_ids"]').attr('name', 'exercise_ids[' + row + '][]');
+            clone.find('[name^="exercise_description"]').attr('name', 'exercise_description[' + row + '][]');
+            clone.find('[name^="is_rest"]').attr('name', 'is_rest[' + row + ']').prop('checked', false);
 
             clone.find('.removebtn').attr('row', row);
-
-            last.after(clone);
+            $('#table_list tbody').append(clone);
 
             initSelect2();
             initTinyMCE();
@@ -88,7 +72,6 @@
                 resetIndex();
             }
         });
-
     });
 
 })(jQuery);
@@ -99,25 +82,15 @@
 <x-app-layout>
 <div>
 
-<!-- {!! Form::open(['route'=>'workout.store','method'=>'post','enctype'=>'multipart/form-data']) !!} -->
-
 @if(isset($id))
-    {!! Form::model($data, [
-        'route' => ['workout.update', $id],
-        'method' => 'patch',
-        'enctype'=>'multipart/form-data'
-    ]) !!}
+{!! Form::model($data, ['route'=>['workout.update',$id],'method'=>'patch','enctype'=>'multipart/form-data']) !!}
 @else
-    {!! Form::open([
-        'route'=>'workout.store',
-        'method'=>'post',
-        'enctype'=>'multipart/form-data'
-    ]) !!}
+{!! Form::open(['route'=>'workout.store','method'=>'post','enctype'=>'multipart/form-data']) !!}
 @endif
 
 <div class="card">
 <div class="card-header d-flex justify-content-between">
-    <h4>Add Workout</h4>
+    <h4>{{ $id ? 'Edit Workout' : 'Add Workout' }}</h4>
     <a href="{{ route('workout.index') }}" class="btn btn-primary btn-sm">Back</a>
 </div>
 
@@ -125,73 +98,51 @@
 
 {{-- BASIC INFO --}}
 <div class="row">
-
     <div class="col-md-4">
         {{ Form::label('title','Title *') }}
         {{ Form::text('title',null,['class'=>'form-control','required']) }}
     </div>
 
     <div class="col-md-4">
-        {{ Form::select(
-            'goal_id',
-            isset($id) ? [$data->goal->id => $data->goal->title] : [],
-            old('goal_id', $data->goal_id ?? null),
-            [
-                'class'=>'select2js',
-                'data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),
-                'required'
-            ]
-        ) }}
+        {{ Form::label('goal_id','Goal *') }}
+        {{ Form::select('goal_id',
+            isset($id)?[$data->goal->id=>$data->goal->title]:[],
+            old('goal_id',$data->goal_id ?? null),
+            ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),'required']
+        )}}
     </div>
 
     <div class="col-md-4">
-        {{ Form::select(
-            'level_id',
-            isset($id) ? [$data->level->id => $data->level->title] : [],
-            old('level_id', $data->level_id ?? null),
-            [
-                'class'=>'select2js',
-                'data-ajax--url'=>route('ajax-list',['type'=>'level']),
-                'required'
-            ]
-        ) }}
+        {{ Form::label('level_id','Level *') }}
+        {{ Form::select('level_id',
+            isset($id)?[$data->level->id=>$data->level->title]:[],
+            old('level_id',$data->level_id ?? null),
+            ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'level']),'required']
+        )}}
     </div>
 
     <div class="col-md-4 mt-2">
-        {{ Form::select(
-            'workout_type_id',
-            isset($id) ? [$data->workouttype->id => $data->workouttype->title] : [],
-            old('workout_type_id', $data->workout_type_id ?? null),
-            [
-                'class'=>'select2js',
-                'data-ajax--url'=>route('ajax-list',['type'=>'workout_type']),
-                'required'
-            ]
-        ) }}
+        {{ Form::label('workout_type_id','Workout Type *') }}
+        {{ Form::select('workout_type_id',
+            isset($id)?[$data->workouttype->id=>$data->workouttype->title]:[],
+            old('workout_type_id',$data->workout_type_id ?? null),
+            ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'workout_type']),'required']
+        )}}
     </div>
 
-
     <div class="col-md-4 mt-2">
-       {{ Form::select(
-            'gender',
-            ['male'=>'Male','female'=>'Female','both'=>'Both'],
-            old('gender', $data->gender ?? 'both'),
-            ['class'=>'form-control','required']
-        ) }}
+        {{ Form::label('gender','Gender *') }}
+        {{ Form::select('gender',['male'=>'Male','female'=>'Female','both'=>'Both'],null,['class'=>'form-control']) }}
     </div>
 
     <div class="col-md-4 mt-2">
         {{ Form::label('status','Status *') }}
-        {{ Form::select('status',['active'=>'Active','inactive'=>'Inactive'],'active',[
-            'class'=>'form-control','required'
-        ]) }}
+        {{ Form::select('status',['active'=>'Active','inactive'=>'Inactive'],null,['class'=>'form-control']) }}
     </div>
 
     <div class="col-md-4 mt-2">
-        {{ Form::label('is_premium','Premium') }}<br>
-        {{ Form::checkbox('is_premium',1,null) }}
+        {{ Form::checkbox('is_premium',1,null) }} Premium
     </div>
-
 </div>
 
 <hr>
@@ -202,7 +153,6 @@
         {{ Form::label('video_url','Warmup Video (YouTube ID)') }}
         {{ Form::text('video_url',null,['class'=>'form-control']) }}
     </div>
-
     <div class="col-md-6">
         {{ Form::label('stetch_video','Stretching Video (YouTube ID)') }}
         {{ Form::text('stetch_video',null,['class'=>'form-control']) }}
@@ -212,10 +162,8 @@
 <hr>
 
 {{-- WORKOUT DESCRIPTION --}}
-<div class="form-group">
-    {{ Form::label('description','Workout Description') }}
-    {{ Form::textarea('description',null,['class'=>'form-control tinymce-description']) }}
-</div>
+{{ Form::label('description','Workout Description') }}
+{{ Form::textarea('description',null,['class'=>'form-control tinymce-description']) }}
 
 <hr>
 
@@ -232,43 +180,59 @@
     <th>Week</th>
     <th>Day</th>
     <th>Exercise</th>
-    <th>Instruction (Per Day)</th>
+    <th>Instruction</th>
     <th>Rest</th>
     <th></th>
 </tr>
 </thead>
 
 <tbody>
-<tr id="row_0" row="0" data-id="0">
+
+@if(isset($id) && $data->workoutDay->count())
+@foreach($data->workoutDay as $k=>$day)
+<tr id="row_{{ $k }}" row="{{ $k }}">
 <td></td>
 
-<td>{{ Form::select('week[0]',range(1,12),1,['class'=>'form-control']) }}</td>
+<td>{{ Form::select("week[$k]",range(1,12),$day->week,['class'=>'form-control']) }}</td>
 
-<td>{{ Form::select('day[0]',[
-    'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
-],null,['class'=>'form-control']) }}</td>
+<td>{{ Form::select("day[$k]",
+['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+$day->day,['class'=>'form-control']) }}</td>
 
 <td>
-{{ Form::select('exercise_ids[0][]',[],null,[
-    'class'=>'select2tagsjs',
-    'multiple',
-    'data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
-]) }}
+{{ Form::select("exercise_ids[$k][]",$day->exercise_data,$day->exercise_ids,[
+'class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
+])}}
 </td>
 
 <td>
-<textarea name="exercise_description[0][]" class="form-control tinymce-description"></textarea>
+<textarea name="exercise_description[{{ $k }}][]" class="form-control tinymce-description">
+{!! $day->instruction !!}
+</textarea>
 </td>
 
 <td>
-<input type="hidden" name="is_rest[0]" value="0">
-<input type="checkbox" name="is_rest[0]" value="1">
+<input type="hidden" name="is_rest[{{ $k }}]" value="0">
+<input type="checkbox" name="is_rest[{{ $k }}]" value="1" {{ $day->is_rest?'checked':'' }}>
 </td>
 
 <td>
-<button type="button" class="btn btn-danger btn-sm removebtn" row="0">X</button>
+<button type="button" class="btn btn-danger btn-sm removebtn" row="{{ $k }}">X</button>
 </td>
 </tr>
+@endforeach
+@else
+<tr id="row_0" row="0">
+<td></td>
+<td>{{ Form::select('week[0]',range(1,12),1,['class'=>'form-control']) }}</td>
+<td>{{ Form::select('day[0]',['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],null,['class'=>'form-control']) }}</td>
+<td>{{ Form::select('exercise_ids[0][]',[],null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}</td>
+<td><textarea name="exercise_description[0][]" class="form-control tinymce-description"></textarea></td>
+<td><input type="hidden" name="is_rest[0]" value="0"><input type="checkbox" name="is_rest[0]" value="1"></td>
+<td><button type="button" class="btn btn-danger btn-sm removebtn" row="0">X</button></td>
+</tr>
+@endif
+
 </tbody>
 </table>
 
