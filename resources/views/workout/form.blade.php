@@ -99,7 +99,21 @@
 <x-app-layout>
 <div>
 
-{!! Form::open(['route'=>'workout.store','method'=>'post','enctype'=>'multipart/form-data']) !!}
+<!-- {!! Form::open(['route'=>'workout.store','method'=>'post','enctype'=>'multipart/form-data']) !!} -->
+
+@if(isset($id))
+    {!! Form::model($data, [
+        'route' => ['workout.update', $id],
+        'method' => 'patch',
+        'enctype'=>'multipart/form-data'
+    ]) !!}
+@else
+    {!! Form::open([
+        'route'=>'workout.store',
+        'method'=>'post',
+        'enctype'=>'multipart/form-data'
+    ]) !!}
+@endif
 
 <div class="card">
 <div class="card-header d-flex justify-content-between">
