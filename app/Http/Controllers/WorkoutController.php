@@ -110,84 +110,140 @@ class WorkoutController extends Controller
 
     //     return redirect()->route('workout.index')->withSuccess(__('message.save_form', ['form' => __('message.workout')]));
     // }
-    
-    
-    
-    public function store(WorkoutRequest $request)
-        {
-            if( !auth()->user()->can('workout-add') ) {
-                $message = __('message.permission_denied_for_account');
-                return redirect()->back()->withErrors($message);
-            }
-        
-            $workout = Workout::create($request->all());
-            
-            // dd($workout);
-        
-            storeMediaFile($workout,$request->workout_image, 'workout_image'); 
-            if( $workout->video_type == 'upload_video' ) {
-                storeMediaFile($workout,$request->workout_video, 'workout_video');
-            }
-            
-            
-             if ($request->hasFile('video_url')) {
-                $file = $request->file('video_url');
-            
-                $filename = time() . '_' . $file->getClientOriginalName();
-            
-                $targetFolder = public_path('storage/uploads/exercise_gif');
-            
-                $file->move($targetFolder, $filename);
-            
-                $workout->video_url = 'uploads/exercise_gif/' . $filename;
-                $workout->save();
-            }
-            
-            
-            
-        
-            if(isset($request->is_rest) && $request->is_rest != null ){
-                foreach($request->is_rest as $i => $value){
-                    if($value != null ){
 
-                        $week = isset($request->week[$i]) ? $request->week[$i] : null;
-                        $day = isset($request->day[$i]) ? $request->day[$i] : null;
-        
-                        if($value == 1){
-                            $exercise_ids = null;
-                        } else {
-                            $exercise_ids = isset($request->exercise_ids[$i]) ? $request->exercise_ids[$i] : null;
-                        }
-                        
-                        $save_workdays_data = [
-                            'id' => null,
-                            'workout_id' => $workout->id,
-                            'is_rest' => $value,
-                            'sequence' => $i,
-                            'week' => $week, 
-                            'day' => $day,   
-                        ];
-        
-                        $workoutday = WorkoutDay::create($save_workdays_data);
-        
-                        if( $workoutday->is_rest == 0 && !empty($exercise_ids) ) {
-                            foreach ($exercise_ids as $key => $value) {
-                                $days_exercise = [
-                                    'id' => null,
-                                    'workout_id' => $workout->id,
-                                    'workout_day_id' => $workoutday->id,
-                                    'exercise_id' => (int) $value,
-                                    'sequence' => $key,
-                                ];
-                                $workout_days_exercise = WorkoutDayExercise::create($days_exercise);
-                            }
-                        }
-                    }
+
+    public function store(WorkoutRequest $request)
+{
+    if (!auth()->user()->can('workout-add')) {
+        return redirect()->back()
+            ->withErrors(__('message.permission_denied_for_account'));
+    }
+
+    $workout = Workout::create($request->all());
+
+    // ✅ Gender safety
+    $workout->gender = $request->gender ?? 'both';
+
+    // ✅ Warmup video URL (text)
+    if ($request->filled('video_url')) {
+        $workout->video_url = $request->video_url;
+    }
+
+    // ✅ Stretching video
+    if ($request->filled('stetch_video')) {
+        $workout->stetch_video = $request->stetch_video;
+    }
+
+    $workout->save();
+
+    // ✅ Workout days & exercises
+    if (!empty($request->is_rest)) {
+        foreach ($request->is_rest as $i => $value) {
+
+            $workoutday = WorkoutDay::create([
+                'workout_id' => $workout->id,
+                'is_rest' => $value,
+                'sequence' => $i,
+                'week' => $request->week[$i] ?? null,
+                'day' => $request->day[$i] ?? null,
+            ]);
+
+            if ($value == 0 && !empty($request->exercise_ids[$i])) {
+                foreach ($request->exercise_ids[$i] as $key => $exerciseId) {
+                    WorkoutDayExercise::create([
+                        'workout_id' => $workout->id,
+                        'workout_day_id' => $workoutday->id,
+                        'exercise_id' => (int)$exerciseId,
+                        'sequence' => $key,
+                    ]);
                 }
             }
-        
-            return redirect()->route('workout.index')->withSuccess(__('message.save_form', ['form' => __('message.workout')]));
         }
+    }
+
+    return redirect()
+        ->route('workout.index')
+        ->withSuccess(__('message.save_form', ['form' => __('message.workout')]));
+}
+
+    
+    
+    
+    // public function store(WorkoutRequest $request)
+    //     {
+    //         if( !auth()->user()->can('workout-add') ) {
+    //             $message = __('message.permission_denied_for_account');
+    //             return redirect()->back()->withErrors($message);
+    //         }
+        
+    //         $workout = Workout::create($request->all());
+            
+    //         // dd($workout);
+        
+    //         storeMediaFile($workout,$request->workout_image, 'workout_image'); 
+    //         if( $workout->video_type == 'upload_video' ) {
+    //             storeMediaFile($workout,$request->workout_video, 'workout_video');
+    //         }
+            
+            
+    //          if ($request->hasFile('video_url')) {
+    //             $file = $request->file('video_url');
+            
+    //             $filename = time() . '_' . $file->getClientOriginalName();
+            
+    //             $targetFolder = public_path('storage/uploads/exercise_gif');
+            
+    //             $file->move($targetFolder, $filename);
+            
+    //             $workout->video_url = 'uploads/exercise_gif/' . $filename;
+    //             $workout->save();
+    //         }
+            
+            
+            
+        
+    //         if(isset($request->is_rest) && $request->is_rest != null ){
+    //             foreach($request->is_rest as $i => $value){
+    //                 if($value != null ){
+
+    //                     $week = isset($request->week[$i]) ? $request->week[$i] : null;
+    //                     $day = isset($request->day[$i]) ? $request->day[$i] : null;
+        
+    //                     if($value == 1){
+    //                         $exercise_ids = null;
+    //                     } else {
+    //                         $exercise_ids = isset($request->exercise_ids[$i]) ? $request->exercise_ids[$i] : null;
+    //                     }
+                        
+    //                     $save_workdays_data = [
+    //                         'id' => null,
+    //                         'workout_id' => $workout->id,
+    //                         'is_rest' => $value,
+    //                         'sequence' => $i,
+    //                         'week' => $week, 
+    //                         'day' => $day,   
+    //                     ];
+        
+    //                     $workoutday = WorkoutDay::create($save_workdays_data);
+        
+    //                     if( $workoutday->is_rest == 0 && !empty($exercise_ids) ) {
+    //                         foreach ($exercise_ids as $key => $value) {
+    //                             $days_exercise = [
+    //                                 'id' => null,
+    //                                 'workout_id' => $workout->id,
+    //                                 'workout_day_id' => $workoutday->id,
+    //                                 'exercise_id' => (int) $value,
+    //                                 'sequence' => $key,
+    //                             ];
+    //                             $workout_days_exercise = WorkoutDayExercise::create($days_exercise);
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+        
+    //         return redirect()->route('workout.index')->withSuccess(__('message.save_form', ['form' => __('message.workout')]));
+    //     }
 
     /**
      * Display the specified resource.
