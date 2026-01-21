@@ -111,10 +111,10 @@
 <hr>
 
 {{-- DESCRIPTION --}}
-<div class="form-group">
+<!-- <div class="form-group">
     {{ Form::label('description','Workout Description') }}
     {{ Form::textarea('description',null,['class'=>'form-control tinymce-description']) }}
-</div>
+</div> -->
 
 <hr>
 
