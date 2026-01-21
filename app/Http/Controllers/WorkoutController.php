@@ -408,105 +408,192 @@ class WorkoutController extends Controller
     //     return redirect()->back()->withSuccess(__('message.update_form',['form' => __('message.workout') ] ));
 
     // }
-    
-    
+
+
+
+
     public function update(WorkoutRequest $request, $id)
 {
-    if( !auth()->user()->can('workout-edit') ) {
-        $message = __('message.permission_denied_for_account');
-        return redirect()->back()->withErrors($message);
+    if (!auth()->user()->can('workout-edit')) {
+        return redirect()->back()->withErrors(__('message.permission_denied_for_account'));
     }
 
     $workout = Workout::findOrFail($id);
-    // workout data...
-    $workout->fill($request->all())->update();
 
-    // Save workout image...
-    if (isset($request->workout_image) && $request->workout_image != null) {
+    /* ---------------- BASIC DATA ---------------- */
+    $workout->update($request->except([
+        'week',
+        'day',
+        'exercise_ids',
+        'exercise_description',
+        'is_rest',
+        'workout_days_id'
+    ]));
+
+    /* ---------------- IMAGE ---------------- */
+    if ($request->hasFile('workout_image')) {
         $workout->clearMediaCollection('workout_image');
         $workout->addMediaFromRequest('workout_image')->toMediaCollection('workout_image');
     }
 
-    if( $workout->video_type == 'upload_video' ) {
-        if (isset($request->workout_video) && $request->workout_video != null) {
-            $workout->clearMediaCollection('workout_video');
-            $workout->addMediaFromRequest('workout_video')->toMediaCollection('workout_video');
-        }
+    /* ---------------- VIDEO UPLOAD ---------------- */
+    if ($workout->video_type === 'upload_video' && $request->hasFile('workout_video')) {
+        $workout->clearMediaCollection('workout_video');
+        $workout->addMediaFromRequest('workout_video')->toMediaCollection('workout_video');
     }
-    
-    if ($request->hasFile('video_url')) {
-        if ($workout->video_url) {
-            $oldFile = public_path('storage/' . $workout->video_url);
-            if (file_exists($oldFile)) {
-                unlink($oldFile); 
+
+    /* ---------------- YOUTUBE IDS (NOT FILE) ---------------- */
+    $workout->update([
+        'video_url'    => $request->video_url,
+        'stetch_video' => $request->stetch_video,
+    ]);
+
+    /* ---------------- CLEAN OLD DAYS ---------------- */
+    $existingDayIds = $request->workout_days_id ?? [];
+    WorkoutDay::where('workout_id', $workout->id)
+        ->whereNotIn('id', array_filter($existingDayIds))
+        ->delete();
+
+    /* ---------------- WORKOUT DAYS ---------------- */
+    if (!empty($request->week)) {
+
+        foreach ($request->week as $i => $week) {
+
+            $workoutDay = WorkoutDay::updateOrCreate(
+                ['id' => $request->workout_days_id[$i] ?? null],
+                [
+                    'workout_id' => $workout->id,
+                    'week'       => $week,
+                    'day'        => $request->day[$i] ?? null,
+                    'is_rest'    => $request->is_rest[$i] ?? 0,
+                    'sequence'   => $i,
+                ]
+            );
+
+            /* REMOVE OLD EXERCISES */
+            $workoutDay->workoutDayExercise()->delete();
+
+            /* ---------------- SAVE EXERCISES ---------------- */
+            if (($request->is_rest[$i] ?? 0) == 0 && !empty($request->exercise_ids[$i])) {
+
+                foreach ($request->exercise_ids[$i] as $key => $exerciseId) {
+
+                    WorkoutDayExercise::create([
+                        'workout_id'      => $workout->id,
+                        'workout_day_id'  => $workoutDay->id,
+                        'exercise_id'     => (int) $exerciseId,
+                        'instruction'     => $request->exercise_description[$i][$key] ?? null,
+                        'sequence'        => $key,
+                    ]);
+                }
             }
         }
-    
-        $file = $request->file('video_url');
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-        $workout->video_url = 'uploads/exercise_gif/' . $filename;
-        $workout->save();
     }
+
+    return redirect()
+        ->route('workout.index')
+        ->withSuccess(__('message.update_form', ['form' => __('message.workout')]));
+}
+
+    
+    
+//     public function update(WorkoutRequest $request, $id)
+// {
+//     if( !auth()->user()->can('workout-edit') ) {
+//         $message = __('message.permission_denied_for_account');
+//         return redirect()->back()->withErrors($message);
+//     }
+
+//     $workout = Workout::findOrFail($id);
+//     // workout data...
+//     $workout->fill($request->all())->update();
+
+//     // Save workout image...
+//     if (isset($request->workout_image) && $request->workout_image != null) {
+//         $workout->clearMediaCollection('workout_image');
+//         $workout->addMediaFromRequest('workout_image')->toMediaCollection('workout_image');
+//     }
+
+//     if( $workout->video_type == 'upload_video' ) {
+//         if (isset($request->workout_video) && $request->workout_video != null) {
+//             $workout->clearMediaCollection('workout_video');
+//             $workout->addMediaFromRequest('workout_video')->toMediaCollection('workout_video');
+//         }
+//     }
+    
+//     if ($request->hasFile('video_url')) {
+//         if ($workout->video_url) {
+//             $oldFile = public_path('storage/' . $workout->video_url);
+//             if (file_exists($oldFile)) {
+//                 unlink($oldFile); 
+//             }
+//         }
+    
+//         $file = $request->file('video_url');
+//         $filename = time() . '_' . $file->getClientOriginalName();
+    
+//         $targetFolder = public_path('storage/uploads/exercise_gif');
+    
+//         $file->move($targetFolder, $filename);
+//         $workout->video_url = 'uploads/exercise_gif/' . $filename;
+//         $workout->save();
+//     }
     
     
     
     
 
-    if(isset($request->is_rest) && $request->is_rest != null ){
-        foreach($request->is_rest as $i => $value){
-            if($value != null ){
+//     if(isset($request->is_rest) && $request->is_rest != null ){
+//         foreach($request->is_rest as $i => $value){
+//             if($value != null ){
                 
-                $week = isset($request->week[$i]) ? $request->week[$i] : null;
-                $day = isset($request->day[$i]) ? $request->day[$i] : null;
+//                 $week = isset($request->week[$i]) ? $request->week[$i] : null;
+//                 $day = isset($request->day[$i]) ? $request->day[$i] : null;
 
-                if($value == 1){
-                    $exercise_ids = null;
-                } else {
-                    $exercise_ids = isset($request->exercise_ids[$i]) ? $request->exercise_ids[$i] : null;
-                }
+//                 if($value == 1){
+//                     $exercise_ids = null;
+//                 } else {
+//                     $exercise_ids = isset($request->exercise_ids[$i]) ? $request->exercise_ids[$i] : null;
+//                 }
                 
-                $save_workdays_data = [
-                    'id' => $request->workout_days_id[$i] ?? null,
-                    'workout_id' => $workout->id,
-                    'is_rest' => $value,
-                    'sequence' => $i,
-                    'week' => $week, 
-                    'day' => $day,  
-                ];
+//                 $save_workdays_data = [
+//                     'id' => $request->workout_days_id[$i] ?? null,
+//                     'workout_id' => $workout->id,
+//                     'is_rest' => $value,
+//                     'sequence' => $i,
+//                     'week' => $week, 
+//                     'day' => $day,  
+//                 ];
 
-                $workoutday = WorkoutDay::updateOrCreate(['id' => $save_workdays_data['id']],$save_workdays_data);
+//                 $workoutday = WorkoutDay::updateOrCreate(['id' => $save_workdays_data['id']],$save_workdays_data);
                 
                
-                $workoutday->workoutDayExercise()->delete();
+//                 $workoutday->workoutDayExercise()->delete();
                 
-                if( $workoutday->is_rest == 0 && !empty($exercise_ids) ) {
-                    foreach ($exercise_ids as $key => $value) {
-                        $days_exercise = [
-                            'id' => null,
-                            'workout_id' => $workout->id,
-                            'workout_day_id' => $workoutday->id,
-                            'exercise_id' => (int) $value,
-                            'sequence' => $key,
-                        ];
-                        $workout_days_exercise = WorkoutDayExercise::create($days_exercise);
-                    }
-                }
-            }
-        }
+//                 if( $workoutday->is_rest == 0 && !empty($exercise_ids) ) {
+//                     foreach ($exercise_ids as $key => $value) {
+//                         $days_exercise = [
+//                             'id' => null,
+//                             'workout_id' => $workout->id,
+//                             'workout_day_id' => $workoutday->id,
+//                             'exercise_id' => (int) $value,
+//                             'sequence' => $key,
+//                         ];
+//                         $workout_days_exercise = WorkoutDayExercise::create($days_exercise);
+//                     }
+//                 }
+//             }
+//         }
         
       
-    }
+//     }
 
-    if(auth()->check()){
-        return redirect()->route('workout.index')->withSuccess(__('message.update_form',['form' => __('message.workout')]));
-    }
-    return redirect()->back()->withSuccess(__('message.update_form',['form' => __('message.workout') ] ));
+//     if(auth()->check()){
+//         return redirect()->route('workout.index')->withSuccess(__('message.update_form',['form' => __('message.workout')]));
+//     }
+//     return redirect()->back()->withSuccess(__('message.update_form',['form' => __('message.workout') ] ));
 
-}
+// }
 
     /**
      * Remove the specified resource from storage.
