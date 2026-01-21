@@ -82,6 +82,10 @@
 <x-app-layout>
 <div>
 
+@php
+    $id = $id ?? null;
+@endphp
+
 @if(isset($id))
 {!! Form::model($data, ['route'=>['workout.update',$id],'method'=>'patch','enctype'=>'multipart/form-data']) !!}
 @else
