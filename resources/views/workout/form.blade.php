@@ -213,11 +213,8 @@
 
 {{-- WORKOUT DESCRIPTION --}}
 <div class="form-group">
-    {{ Form::textarea(
-    'description',
-    old('description', $data->description ?? ''),
-    ['class'=>'form-control tinymce-main']
-) }}
+    {{ Form::label('description','Workout Description') }}
+    {{ Form::textarea('description',null,['class'=>'form-control tinymce-description']) }}
 </div>
 
 <hr>
