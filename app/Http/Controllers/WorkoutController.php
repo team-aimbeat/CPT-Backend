@@ -295,33 +295,46 @@ class WorkoutController extends Controller
     }
 
     $data = Workout::with([
-        'workoutDay.workoutDayExercise.exercise'
+        'workoutDay.workoutDayExercise.exercise',
+        'goal',
+        'level',
+        'workouttype'
     ])->findOrFail($id);
 
-    $pageTitle = 'Edit Workout';
-
-    foreach ($data->workoutDay as $index => $day) {
+    // Prepare workout day data
+    foreach ($data->workoutDay as $day) {
 
         if ($day->is_rest == 0) {
 
-            // select2 display data
             $day->exercise_data = $day->workoutDayExercise
-                ->pluck('exercise.title', 'exercise_id')
+                ->mapWithKeys(function ($item) {
+                    return [
+                        $item->exercise_id => $item->exercise->title
+                    ];
+                })
                 ->toArray();
 
-            // selected ids (STRING required for select2)
             $day->exercise_ids = $day->workoutDayExercise
                 ->pluck('exercise_id')
                 ->map(fn ($v) => (string) $v)
                 ->toArray();
 
-            // instruction text (per day)
-            $day->exercise_description = $day->instruction ?? '';
+            $day->exercise_description = $day->workoutDayExercise
+                ->pluck('instruction')
+                ->toArray();
+
+        } else {
+            $day->exercise_data = [];
+            $day->exercise_ids = [];
+            $day->exercise_description = [];
         }
     }
 
+    $pageTitle = 'Edit Workout';
+
     return view('workout.form', compact('data', 'id', 'pageTitle'));
 }
+
 
 
 

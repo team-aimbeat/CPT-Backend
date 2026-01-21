@@ -11,7 +11,7 @@
     }
 
     function initSelect2() {
-        $('.select2js, .select2tagsjs').select2({ width: '100%' });
+        $('.select2tagsjs, .select2js').select2({ width: '100%' });
     }
 
     function initTinyMCE() {
@@ -44,21 +44,32 @@
             tinymce.remove();
             $('.select2tagsjs').select2('destroy');
 
-            let clone = $('#table_list tbody tr:last').clone();
+            let last = $('#table_list tbody tr:last');
+            let clone = last.clone();
+
             row++;
 
             clone.attr('id', 'row_' + row).attr('row', row).attr('data-id', 0);
+
             clone.find('input, textarea').val('');
             clone.find('select').val(null);
 
             clone.find('[name^="week"]').attr('name', 'week[' + row + ']').val(1);
             clone.find('[name^="day"]').attr('name', 'day[' + row + ']');
-            clone.find('[name^="exercise_ids"]').attr('name', 'exercise_ids[' + row + '][]');
-            clone.find('[name^="exercise_description"]').attr('name', 'exercise_description[' + row + '][]');
-            clone.find('[name^="is_rest"]').attr('name', 'is_rest[' + row + ']').prop('checked', false);
+
+            clone.find('[name^="exercise_ids"]')
+                .attr('name', 'exercise_ids[' + row + '][]');
+
+            clone.find('[name^="exercise_description"]')
+                .attr('name', 'exercise_description[' + row + '][]');
+
+            clone.find('[name^="is_rest"]')
+                .attr('name', 'is_rest[' + row + ']')
+                .prop('checked', false);
 
             clone.find('.removebtn').attr('row', row);
-            $('#table_list tbody').append(clone);
+
+            last.after(clone);
 
             initSelect2();
             initTinyMCE();
@@ -72,6 +83,7 @@
                 resetIndex();
             }
         });
+
     });
 
 })(jQuery);
@@ -79,18 +91,22 @@
 @endpush
 
 
+@php
+    $id = $id ?? null;
+    $data = $data ?? null;
+@endphp
 <x-app-layout>
 <div>
 
-@php
-    $id = $id ?? null;
-@endphp
-
-@if(isset($id))
-{!! Form::model($data, ['route'=>['workout.update',$id],'method'=>'patch','enctype'=>'multipart/form-data']) !!}
+@if($id)
+    {!! Form::model($data, ['route'=>['workout.update',$id],'method'=>'patch']) !!}
 @else
-{!! Form::open(['route'=>'workout.store','method'=>'post','enctype'=>'multipart/form-data']) !!}
+    {!! Form::open(['route'=>'workout.store','method'=>'post']) !!}
 @endif
+
+
+
+
 
 <div class="card">
 <div class="card-header d-flex justify-content-between">
@@ -192,60 +208,77 @@
 
 <tbody>
 
-@if(isset($id) && $data->workoutDay->count())
-@foreach($data->workoutDay as $k=>$day)
-<tr id="row_{{ $k }}" row="{{ $k }}">
+@if($id && $data->workoutDay->count())
+@foreach($data->workoutDay as $i => $day)
+
+@php
+    $exerciseData = $day->exercise_data ?? [];
+    $exerciseIds  = $day->exercise_ids ?? [];
+    $instructions = $day->exercise_description ?? [];
+@endphp
+
+<tr id="row_{{ $i }}" row="{{ $i }}">
 <td></td>
 
-<td>{{ Form::select("week[$k]",range(1,12),$day->week,['class'=>'form-control']) }}</td>
+<td>{{ Form::select("week[$i]",range(1,12),$day->week,['class'=>'form-control']) }}</td>
 
-<td>{{ Form::select("day[$k]",
-['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
-$day->day,['class'=>'form-control']) }}</td>
+<td>{{ Form::select("day[$i]",
+    ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    $day->day,['class'=>'form-control']) }}</td>
 
 <td>
-{{ Form::select("exercise_ids[$k][]",$day->exercise_data,$day->exercise_ids,[
-'class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
-])}}
+{{ Form::select("exercise_ids[$i][]",$exerciseData,$exerciseIds,[
+    'class'=>'select2tagsjs',
+    'multiple',
+    'data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
+]) }}
 </td>
 
 <td>
-<textarea name="exercise_description[{{ $k }}][]" class="form-control tinymce-description">
-{!! $day->instruction !!}
+<textarea name="exercise_description[{{ $i }}][]" class="form-control tinymce-description">
+{{ $instructions[0] ?? '' }}
 </textarea>
 </td>
 
 <td>
-<input type="hidden" name="is_rest[{{ $k }}]" value="0">
-<input type="checkbox" name="is_rest[{{ $k }}]" value="1" {{ $day->is_rest?'checked':'' }}>
+<input type="hidden" name="is_rest[{{ $i }}]" value="0">
+<input type="checkbox" name="is_rest[{{ $i }}]" value="1" {{ $day->is_rest ? 'checked' : '' }}>
 </td>
 
 <td>
-<button type="button" class="btn btn-danger btn-sm removebtn" row="{{ $k }}">X</button>
+<button type="button" class="btn btn-danger btn-sm removebtn" row="{{ $i }}">X</button>
 </td>
 </tr>
+
 @endforeach
 @else
 <tr id="row_0" row="0">
 <td></td>
 <td>{{ Form::select('week[0]',range(1,12),1,['class'=>'form-control']) }}</td>
 <td>{{ Form::select('day[0]',['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],null,['class'=>'form-control']) }}</td>
-<td>{{ Form::select('exercise_ids[0][]',[],null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}</td>
-<td><textarea name="exercise_description[0][]" class="form-control tinymce-description"></textarea></td>
-<td><input type="hidden" name="is_rest[0]" value="0"><input type="checkbox" name="is_rest[0]" value="1"></td>
-<td><button type="button" class="btn btn-danger btn-sm removebtn" row="0">X</button></td>
+<td>
+{{ Form::select('exercise_ids[0][]',[],null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}
+</td>
+<td>
+<textarea name="exercise_description[0][]" class="form-control tinymce-description"></textarea>
+</td>
+<td>
+<input type="hidden" name="is_rest[0]" value="0">
+<input type="checkbox" name="is_rest[0]" value="1">
+</td>
+<td>
+<button type="button" class="btn btn-danger btn-sm removebtn" row="0">X</button>
+</td>
 </tr>
 @endif
 
 </tbody>
 </table>
 
+
 <hr>
 
 {{ Form::submit('Save Workout',['class'=>'btn btn-success float-end']) }}
-
-</div>
-</div>
 
 {!! Form::close() !!}
 </div>
