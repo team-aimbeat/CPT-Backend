@@ -11,9 +11,8 @@
     }
 
     function initSelect2() {
-        $('.select2tagsjs').select2({
-            width: '100%',
-            tags: true
+        $('.select2tagsjs, .select2js').select2({
+            width: '100%'
         });
     }
 
@@ -100,7 +99,7 @@
 <x-app-layout>
 <div>
 
-{!! Form::open(['route'=>'workout.store','method'=>'post']) !!}
+{!! Form::open(['route'=>'workout.store','method'=>'post','enctype'=>'multipart/form-data']) !!}
 
 <div class="card">
 <div class="card-header d-flex justify-content-between">
@@ -112,19 +111,65 @@
 
 {{-- BASIC INFO --}}
 <div class="row">
+
     <div class="col-md-4">
         {{ Form::label('title','Title *') }}
         {{ Form::text('title',null,['class'=>'form-control','required']) }}
     </div>
 
     <div class="col-md-4">
-        {{ Form::label('status','Status') }}
-        {{ Form::select('status',['active'=>'Active','inactive'=>'Inactive'],'active',['class'=>'form-control']) }}
+        {{ Form::label('goal_id','Goal *') }}
+        {{ Form::select('goal_id',[],null,[
+            'class'=>'select2js',
+            'data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),
+            'required'
+        ]) }}
     </div>
 
     <div class="col-md-4">
+        {{ Form::label('level_id','Level *') }}
+        {{ Form::select('level_id',[],null,[
+            'class'=>'select2js',
+            'data-ajax--url'=>route('ajax-list',['type'=>'level']),
+            'required'
+        ]) }}
+    </div>
+
+    <div class="col-md-4 mt-2">
+        {{ Form::label('workout_type_id','Workout Type *') }}
+        {{ Form::select('workout_type_id',[],null,[
+            'class'=>'select2js',
+            'data-ajax--url'=>route('ajax-list',['type'=>'workout_type']),
+            'required'
+        ]) }}
+    </div>
+
+    <div class="col-md-4 mt-2">
+        {{ Form::label('status','Status *') }}
+        {{ Form::select('status',['active'=>'Active','inactive'=>'Inactive'],'active',[
+            'class'=>'form-control','required'
+        ]) }}
+    </div>
+
+    <div class="col-md-4 mt-2">
         {{ Form::label('is_premium','Premium') }}<br>
         {{ Form::checkbox('is_premium',1,null) }}
+    </div>
+
+</div>
+
+<hr>
+
+{{-- VIDEOS --}}
+<div class="row">
+    <div class="col-md-6">
+        {{ Form::label('video_url','Warmup Video (YouTube ID)') }}
+        {{ Form::text('video_url',null,['class'=>'form-control']) }}
+    </div>
+
+    <div class="col-md-6">
+        {{ Form::label('stetch_video','Stretching Video (YouTube ID)') }}
+        {{ Form::text('stetch_video',null,['class'=>'form-control']) }}
     </div>
 </div>
 
@@ -158,44 +203,36 @@
 </thead>
 
 <tbody>
-
 <tr id="row_0" row="0" data-id="0">
 <td></td>
 
+<td>{{ Form::select('week[0]',range(1,12),1,['class'=>'form-control']) }}</td>
+
+<td>{{ Form::select('day[0]',[
+    'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
+],null,['class'=>'form-control']) }}</td>
+
 <td>
-    {{ Form::select('week[0]',range(1,12),1,['class'=>'form-control']) }}
+{{ Form::select('exercise_ids[0][]',[],null,[
+    'class'=>'select2tagsjs',
+    'multiple',
+    'data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
+]) }}
 </td>
 
 <td>
-    {{ Form::select('day[0]',[
-        'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
-    ],null,['class'=>'form-control']) }}
+<textarea name="exercise_description[0][]" class="form-control tinymce-description"></textarea>
 </td>
 
 <td>
-    {{ Form::select('exercise_ids[0][]',[],null,[
-        'class'=>'select2tagsjs',
-        'multiple',
-        'data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
-    ]) }}
+<input type="hidden" name="is_rest[0]" value="0">
+<input type="checkbox" name="is_rest[0]" value="1">
 </td>
 
 <td>
-    <textarea name="exercise_description[0][]"
-              id="instruction_0"
-              class="form-control tinymce-description"></textarea>
-</td>
-
-<td>
-    <input type="hidden" name="is_rest[0]" value="0">
-    <input type="checkbox" name="is_rest[0]" value="1">
-</td>
-
-<td>
-    <button type="button" class="btn btn-danger btn-sm removebtn" row="0">X</button>
+<button type="button" class="btn btn-danger btn-sm removebtn" row="0">X</button>
 </td>
 </tr>
-
 </tbody>
 </table>
 
