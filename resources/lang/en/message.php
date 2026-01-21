@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'dashboard' => 'Dashboard111',
+    'dashboard' => 'Dashboard',
     'list_form_title' => ':form List',
     'pending_list_form_title' => 'Pending :form',
     'add_form_title' => 'Add :form',
