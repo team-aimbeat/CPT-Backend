@@ -1,3 +1,30 @@
+@push('styles')
+<style>
+/* 🔥 VERY IMPORTANT FIX */
+#table_list td {
+    overflow: visible !important;
+}
+
+/* Select2 dropdown fix */
+.select2-container {
+    width: 100% !important;
+    z-index: 9999;
+}
+
+.select2-dropdown {
+    z-index: 10000 !important;
+}
+
+/* Instruction editor spacing */
+.instruction-editor {
+    min-height: 120px;
+}
+</style>
+@endpush
+
+
+
+
 @push('scripts')
 <script>
 (function ($) {
@@ -11,26 +38,28 @@
     }
 
     function initSelect2(ctx = document) {
-        $(ctx).find('.select2tagsjs, .select2js').select2({ width:'100%' });
+        $(ctx).find('.select2tagsjs, .select2js').select2({
+            width:'100%',
+            dropdownParent: $('body')
+        });
     }
 
     function initEditor(id) {
         tinymce.init({
-            selector: '#' + id,
+            selector: '#'+id,
             height: 140,
             menubar: false,
             plugins: 'lists link',
             toolbar: 'bold italic | bullist numlist | link',
-            branding: false,
-            setup(editor) {
-                editor.on('change keyup', () => editor.save());
+            setup(editor){
+                editor.on('change keyup',()=>editor.save());
             }
         });
     }
 
-    $(document).ready(function () {
+    $(document).ready(function(){
 
-        $('.instruction-editor').each(function () {
+        $('.instruction-editor').each(function(){
             initEditor(this.id);
         });
 
@@ -45,14 +74,13 @@
         initSelect2();
         resetIndex();
 
-        $('#add_button').click(function () {
+        $('#add_button').click(function(){
 
             let last = $('#table_list tbody tr:last');
             let clone = last.clone();
             row++;
 
             clone.attr('id','row_'+row).attr('row',row);
-
             clone.find('input,select').val('');
             clone.find('.select2').remove();
 
@@ -61,11 +89,8 @@
             clone.find('[name^="exercise_ids"]').attr('name','exercise_ids['+row+'][]');
 
             clone.find('td:nth-child(5)').html(`
-                <textarea
-                    name="exercise_description[${row}][]"
-                    id="instruction_${row}"
-                    class="form-control instruction-editor"
-                ></textarea>
+                <textarea name="exercise_description[${row}][]" id="instruction_${row}"
+                    class="form-control instruction-editor"></textarea>
             `);
 
             clone.find('[name^="is_rest"]').attr('name','is_rest['+row+']').prop('checked',false);
@@ -79,9 +104,8 @@
         });
 
         $(document).on('click','.removebtn',function(){
-            let r = $(this).attr('row');
-            let id = 'instruction_'+r;
-            if(tinymce.get(id)) tinymce.get(id).remove();
+            let r=$(this).attr('row');
+            if(tinymce.get('instruction_'+r)) tinymce.get('instruction_'+r).remove();
             $('#row_'+r).remove();
             resetIndex();
         });
@@ -91,7 +115,6 @@
 })(jQuery);
 </script>
 @endpush
-
 
 
 @php
@@ -126,7 +149,7 @@
     <div class="col-md-4">
         {{ Form::label('goal_id','Goal *') }}
         {{ Form::select('goal_id',
-            $id ? [$data->goal->id => $data->goal->title] : [],
+            $id ? [$data->goal->id=>$data->goal->title] : [],
             old('goal_id',$data->goal_id ?? null),
             ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),'required']
         )}}
@@ -135,7 +158,7 @@
     <div class="col-md-4">
         {{ Form::label('level_id','Level *') }}
         {{ Form::select('level_id',
-            $id ? [$data->level->id => $data->level->title] : [],
+            $id ? [$data->level->id=>$data->level->title] : [],
             old('level_id',$data->level_id ?? null),
             ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'level']),'required']
         )}}
@@ -144,7 +167,7 @@
     <div class="col-md-4 mt-2">
         {{ Form::label('workout_type_id','Workout Type *') }}
         {{ Form::select('workout_type_id',
-            $id ? [$data->workouttype->id => $data->workouttype->title] : [],
+            $id ? [$data->workouttype->id=>$data->workouttype->title] : [],
             old('workout_type_id',$data->workout_type_id ?? null),
             ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'workout_type']),'required']
         )}}
@@ -169,7 +192,22 @@
 
 <hr>
 
-{{-- DESCRIPTION --}}
+{{-- 🔥 VIDEOS (RESTORED) --}}
+<div class="row">
+    <div class="col-md-6">
+        {{ Form::label('warmup_video','Warmup Video (YouTube ID)') }}
+        {{ Form::text('warmup_video',old('warmup_video',$data->warmup_video ?? null),['class'=>'form-control']) }}
+    </div>
+
+    <div class="col-md-6">
+        {{ Form::label('stretch_video','Stretching Video (YouTube ID)') }}
+        {{ Form::text('stretch_video',old('stretch_video',$data->stretch_video ?? null),['class'=>'form-control']) }}
+    </div>
+</div>
+
+<hr>
+
+{{-- WORKOUT DESCRIPTION --}}
 {{ Form::label('description','Workout Description') }}
 {{ Form::textarea('description',null,['class'=>'form-control tinymce-main']) }}
 
@@ -187,7 +225,7 @@
     <th>#</th>
     <th>Week</th>
     <th>Day</th>
-    <th>Exercise</th>
+    <th style="width:260px">Exercise</th>
     <th>Instruction</th>
     <th>Rest</th>
     <th></th>
@@ -208,11 +246,13 @@
 $day->day,['class'=>'form-control']) }}</td>
 
 <td>
+<div>
 {{ Form::select("exercise_ids[$i][]",
 $day->exercise_data ?? [],
 $day->exercise_ids ?? [],
 ['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]
 )}}
+</div>
 </td>
 
 <td>
@@ -236,15 +276,16 @@ $day->exercise_ids ?? [],
 @else
 <tr id="row_0" row="0">
 <td></td>
-
 <td>{{ Form::select('week[0]',range(1,12),1,['class'=>'form-control']) }}</td>
 <td>{{ Form::select('day[0]',
 ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
 null,['class'=>'form-control']) }}</td>
 
 <td>
+<div>
 {{ Form::select('exercise_ids[0][]',[],
 null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}
+</div>
 </td>
 
 <td>
