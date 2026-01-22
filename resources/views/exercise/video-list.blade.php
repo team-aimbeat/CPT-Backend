@@ -23,7 +23,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($exerciseVideos as $index => $video)
+                                    @forelse($equipmentVideos as $index => $video)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ optional($video->equipment)->title ?? 'N/A' }}</td>

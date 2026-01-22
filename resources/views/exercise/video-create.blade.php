@@ -11,7 +11,7 @@
                     </div>
 
                     <div class="card-body">
-                        {!! Form::open(['route' => 'exercise.store_video', 'method' => 'post']) !!}
+                        {!! Form::open(['route' => 'exercise.equipment_video.store', 'method' => 'post']) !!}
 
                         <div class="row">
                             <div class="form-group col-md-4">

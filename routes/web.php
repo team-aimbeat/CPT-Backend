@@ -216,6 +216,8 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
         ->name('exercise.equipment_video.destroy');
     Route::post('exercise/store-video', [ExerciseController::class, 'storeVideo'])
         ->name('exercise.store_video');
+    Route::post('exercise/equipment-video', [ExerciseController::class, 'storeEquipmentVideo'])
+        ->name('exercise.equipment_video.store');
 
     Route::resource('exercise', ExerciseController::class);
     

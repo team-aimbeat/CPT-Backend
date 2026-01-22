@@ -59,12 +59,12 @@ class ExerciseController extends Controller
             return redirect()->back()->withErrors(__('message.permission_denied_for_account'));
         }
 
-        $pageTitle = 'Exercise Videos';
-        $exerciseVideos = EquipmentVideo::with(['languageList', 'equipment'])
+        $pageTitle = 'Equipment Videos';
+        $equipmentVideos = EquipmentVideo::with(['languageList', 'equipment'])
             ->orderByDesc('id')
             ->get();
 
-        return view('exercise.video-list', compact('pageTitle', 'exerciseVideos'));
+        return view('exercise.video-list', compact('pageTitle', 'equipmentVideos'));
     }
 
     public function videoCreate()
@@ -73,7 +73,7 @@ class ExerciseController extends Controller
             return redirect()->back()->withErrors(__('message.permission_denied_for_account'));
         }
 
-        $pageTitle = 'Add Exercise Video';
+        $pageTitle = 'Add Equipment Video';
         $languages = LanguageList::all();
 
         return view('exercise.video-create', compact('pageTitle', 'languages'));
@@ -92,18 +92,18 @@ class ExerciseController extends Controller
     public function storeVideo(Request $request)
     {
         $request->validate([
-            'equipment_id' => 'required|exists:equipment,id',
+            'exercise_id' => 'required|exists:exercises,id',
             'language_id' => 'required|exists:language_lists,id', 
             'video_url' => 'required',
         ]);
 
-        EquipmentVideo::create([
-            'equipment_id' => $request->equipment_id,
+        ExerciseVideo::create([
+            'exercise_id' => $request->exercise_id,
             'languagelist_id' => $request->language_id,
             'video_url' => $request->video_url,
         ]);
 
-        return redirect()->route('exercise.video.list')->with('success', 'Video added successfully!');
+        return redirect()->route('exercise.index')->with('success', 'Exercise video added successfully!');
     }
 
     public function destroyEquipmentVideo(EquipmentVideo $equipmentVideo)
@@ -113,6 +113,25 @@ class ExerciseController extends Controller
         return redirect()
             ->route('exercise.video.list')
             ->with('success', 'Video deleted successfully!');
+    }
+
+    public function storeEquipmentVideo(Request $request)
+    {
+        $request->validate([
+            'equipment_id' => 'required|exists:equipment,id',
+            'language_id' => 'required|exists:language_lists,id',
+            'video_url' => 'required',
+        ]);
+
+        EquipmentVideo::create([
+            'equipment_id' => $request->equipment_id,
+            'languagelist_id' => $request->language_id,
+            'video_url' => $request->video_url,
+        ]);
+
+        return redirect()
+            ->route('exercise.video.list')
+            ->with('success', 'Equipment video added successfully!');
     }
      
     public function create()
