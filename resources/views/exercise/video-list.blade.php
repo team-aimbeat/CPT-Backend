@@ -16,7 +16,7 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Exercise</th>
+                                        <th>Equipment</th>
                                         <th>{{ __('message.language') }}</th>
                                         <th>Video URL</th>
                                         <th>Actions</th>
@@ -26,7 +26,7 @@
                                     @forelse($exerciseVideos as $index => $video)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>{{ optional($video->exercise)->title ?? 'N/A' }}</td>
+                                            <td>{{ optional($video->equipment)->title ?? 'N/A' }}</td>
                                             <td>{{ optional($video->languageList)->language_name ?? 'N/A' }}</td>
                                             <td>
                                                 <a href="{{ $video->video_url }}" target="_blank" rel="noopener noreferrer">
@@ -42,7 +42,7 @@
                                                     Delete
                                                 </a>
                                                 <form id="delete-form-{{ $video->id }}"
-                                                      action="{{ route('exercise.video.destroy', $video->id) }}"
+                                                      action="{{ route('exercise.equipment_video.destroy', $video->id) }}"
                                                       method="POST"
                                                       style="display: none;">
                                                     @csrf

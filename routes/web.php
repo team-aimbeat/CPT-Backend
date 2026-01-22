@@ -214,6 +214,8 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
         ->name('exercise.video.list');
     Route::get('exercise/videos/create', [ExerciseController::class, 'videoCreate'])
         ->name('exercise.video.create');
+    Route::delete('exercise/equipment-video/{equipmentVideo}', [ExerciseController::class, 'destroyEquipmentVideo'])
+        ->name('exercise.equipment_video.destroy');
     
     // Route for storing the new video/language entry
 Route::post('/exercise/store-video', [ExerciseController::class, 'storeVideo'])

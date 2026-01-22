@@ -8,6 +8,8 @@ use App\Models\Exercise;
 use App\Helpers\AuthHelper;
 use App\Models\BodyPart;
 use App\Models\ExerciseVideo;
+use App\Models\EquipmentVideo;
+use App\Models\Equipment;
 use App\Models\LanguageList;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ExerciseRequest;
@@ -58,7 +60,7 @@ class ExerciseController extends Controller
         }
 
         $pageTitle = 'Exercise Videos';
-        $exerciseVideos = ExerciseVideo::with(['languageList', 'exercise'])
+        $exerciseVideos = EquipmentVideo::with(['languageList', 'equipment'])
             ->orderByDesc('id')
             ->get();
 
@@ -73,9 +75,8 @@ class ExerciseController extends Controller
 
         $pageTitle = 'Add Exercise Video';
         $languages = LanguageList::all();
-        $exercises = Exercise::orderBy('title')->get(['id', 'title']);
 
-        return view('exercise.video-create', compact('pageTitle', 'languages', 'exercises'));
+        return view('exercise.video-create', compact('pageTitle', 'languages'));
     }
 
 
@@ -91,19 +92,27 @@ class ExerciseController extends Controller
     public function storeVideo(Request $request)
     {
         $request->validate([
-            'exercise_id' => 'required|exists:exercises,id',
+            'equipment_id' => 'required|exists:equipment,id',
             'language_id' => 'required|exists:language_lists,id', 
             'video_url' => 'required',
         ]);
 
-        
-        ExerciseVideo::create([
-            'exercise_id' => $request->exercise_id,
+        EquipmentVideo::create([
+            'equipment_id' => $request->equipment_id,
             'languagelist_id' => $request->language_id,
             'video_url' => $request->video_url,
         ]);
 
-        return redirect()->route('exercise.index')->with('success', 'Exercise video added successfully!');
+        return redirect()->route('exercise.video.list')->with('success', 'Video added successfully!');
+    }
+
+    public function destroyEquipmentVideo(EquipmentVideo $equipmentVideo)
+    {
+        $equipmentVideo->delete();
+
+        return redirect()
+            ->route('exercise.video.list')
+            ->with('success', 'Video deleted successfully!');
     }
      
     public function create()
