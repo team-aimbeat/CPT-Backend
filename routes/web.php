@@ -208,18 +208,16 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
 
     Route::resource('bodypart', BodyPartController::class);
 
-    Route::resource('exercise', ExerciseController::class);
-
     Route::get('exercise/videos', [ExerciseController::class, 'videoList'])
         ->name('exercise.video.list');
     Route::get('exercise/videos/create', [ExerciseController::class, 'videoCreate'])
         ->name('exercise.video.create');
     Route::delete('exercise/equipment-video/{equipmentVideo}', [ExerciseController::class, 'destroyEquipmentVideo'])
         ->name('exercise.equipment_video.destroy');
-    
-    // Route for storing the new video/language entry
-Route::post('/exercise/store-video', [ExerciseController::class, 'storeVideo'])
-    ->name('exercise.store_video');
+    Route::post('exercise/store-video', [ExerciseController::class, 'storeVideo'])
+        ->name('exercise.store_video');
+
+    Route::resource('exercise', ExerciseController::class);
     
     //added by pooja
 //     Route::get('/exercise/video', function () {
