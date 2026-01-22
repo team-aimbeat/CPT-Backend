@@ -177,10 +177,10 @@
         {{ Form::label('video_url','Warmup Video (MP4)') }}
         {{ Form::file('video_url',['class'=>'form-control','accept'=>'video/*']) }}
         @if(!empty($data->video_url))
-            <div class="mt-1">
-                <a href="{{ Storage::disk('s3')->url($data->video_url) }}" target="_blank" rel="noopener">
-                    View current warmup video
-                </a>
+            <div class="mt-2">
+                <video controls preload="metadata" class="w-100">
+                    <source src="{{ Storage::disk('s3')->url($data->video_url) }}" type="video/mp4">
+                </video>
             </div>
         @endif
     </div>
@@ -188,10 +188,10 @@
         {{ Form::label('stetch_video','Stretching Video (MP4)') }}
         {{ Form::file('stetch_video',['class'=>'form-control','accept'=>'video/*']) }}
         @if(!empty($data->stetch_video))
-            <div class="mt-1">
-                <a href="{{ Storage::disk('s3')->url($data->stetch_video) }}" target="_blank" rel="noopener">
-                    View current stretching video
-                </a>
+            <div class="mt-2">
+                <video controls preload="metadata" class="w-100">
+                    <source src="{{ Storage::disk('s3')->url($data->stetch_video) }}" type="video/mp4">
+                </video>
             </div>
         @endif
     </div>
