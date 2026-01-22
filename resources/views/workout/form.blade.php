@@ -16,6 +16,9 @@
 
     function initTinyMCE() {
         tinymce.remove();
+        $('.tinymce-description').each(function (i) {
+            this.id = 'tinymce_description_' + i + '_' + Date.now();
+        });
         tinymce.init({
             selector: '.tinymce-description',
             height: 140,
@@ -62,6 +65,7 @@
 
             clone.find('[name^="exercise_description"]')
                 .attr('name', 'exercise_description[' + row + '][]');
+            clone.find('.tinymce-description').removeAttr('id');
 
             clone.find('[name^="is_rest"]')
                 .attr('name', 'is_rest[' + row + ']')
