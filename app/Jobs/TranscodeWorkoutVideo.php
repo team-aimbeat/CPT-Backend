@@ -52,6 +52,7 @@ class TranscodeWorkoutVideo implements ShouldQueue
 
         $sourceDir = dirname($this->sourcePath);
         $processedDir = preg_replace('#^videos/originals/#', 'videos/processed/', $sourceDir);
+        $thumbDir = preg_replace('#^videos/originals/#', 'thumbnails/videos/', $sourceDir);
 
         $variants = [
             '720p' => 720,
@@ -77,6 +78,32 @@ class TranscodeWorkoutVideo implements ShouldQueue
             if (file_exists($outputFile)) {
                 $disk->putFileAs($processedDir, new File($outputFile), $label . '.mp4');
                 unlink($outputFile);
+            }
+        }
+
+        $thumbs = [
+            ['name' => 'thumb_1.jpg', 'time' => '00:00:03'],
+            ['name' => 'thumb_2.jpg', 'time' => '00:00:10'],
+            ['name' => 'poster.jpg', 'time' => '00:00:20'],
+        ];
+
+        foreach ($thumbs as $thumb) {
+            $thumbFile = $tempDir . '/' . $thumb['name'];
+            $cmd = implode(' ', [
+                escapeshellcmd($ffmpeg),
+                '-y -ss',
+                escapeshellarg($thumb['time']),
+                '-i',
+                escapeshellarg($inputFile),
+                '-vframes 1 -q:v 2',
+                escapeshellarg($thumbFile),
+            ]);
+
+            shell_exec($cmd);
+
+            if (file_exists($thumbFile)) {
+                $disk->putFileAs($thumbDir, new File($thumbFile), $thumb['name']);
+                unlink($thumbFile);
             }
         }
 
