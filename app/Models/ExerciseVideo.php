@@ -23,4 +23,9 @@ class ExerciseVideo extends Model
         return $this->belongsTo(LanguageList::class, 'languagelist_id');
     }
 
+    public function exercise()
+    {
+        return $this->belongsTo(Exercise::class, 'exercise_id');
+    }
+
 }

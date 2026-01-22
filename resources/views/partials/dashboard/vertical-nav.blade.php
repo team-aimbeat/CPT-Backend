@@ -127,6 +127,16 @@
                 ->data('permission', [ 'exercise-add', 'exercise-edit'])
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('exercise.create')) || request()->is('exercise/*/edit') ? 'nav-link active' : 'nav-link']);
+
+            $menu->exercise->add('<span class="item-name">Video List</span>', ['route' => 'exercise.video.list'])
+                ->data('permission', 'exercise-list')
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('exercise.video.list')) ? 'nav-link active' : 'nav-link']);
+
+            $menu->exercise->add('<span class="item-name">Add Video</span>', ['route' => 'exercise.video.create'])
+                ->data('permission', [ 'exercise-add', 'exercise-edit'])
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('exercise.video.create')) ? 'nav-link active' : 'nav-link']);
         
         $menu->add('<span class="item-name">'.__('message.workout').'</span>', ['class' => ''])
             ->prepend('<i class="icon">

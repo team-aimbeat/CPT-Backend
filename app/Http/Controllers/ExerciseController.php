@@ -51,6 +51,33 @@ class ExerciseController extends Controller
         return view('exercise.video', compact('pageTitle', 'languages', 'exercise', 'exerciseVideos'));
     }
 
+    public function videoList()
+    {
+        if (!auth()->user()->can('exercise-list')) {
+            return redirect()->back()->withErrors(__('message.permission_denied_for_account'));
+        }
+
+        $pageTitle = 'Exercise Videos';
+        $exerciseVideos = ExerciseVideo::with(['languageList', 'exercise'])
+            ->orderByDesc('id')
+            ->get();
+
+        return view('exercise.video-list', compact('pageTitle', 'exerciseVideos'));
+    }
+
+    public function videoCreate()
+    {
+        if (!auth()->user()->can('exercise-add')) {
+            return redirect()->back()->withErrors(__('message.permission_denied_for_account'));
+        }
+
+        $pageTitle = 'Add Exercise Video';
+        $languages = LanguageList::all();
+        $exercises = Exercise::orderBy('title')->get(['id', 'title']);
+
+        return view('exercise.video-create', compact('pageTitle', 'languages', 'exercises'));
+    }
+
 
 
     public function destroyVideo(ExerciseVideo $exerciseVideo)
@@ -61,9 +88,10 @@ class ExerciseController extends Controller
                          ->with('success', 'Exercise video deleted successfully!');
     }
      
-     public function storeVideo(Request $request)
+    public function storeVideo(Request $request)
     {
         $request->validate([
+            'exercise_id' => 'required|exists:exercises,id',
             'language_id' => 'required|exists:language_lists,id', 
             'video_url' => 'required',
         ]);

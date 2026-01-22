@@ -209,6 +209,11 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
     Route::resource('bodypart', BodyPartController::class);
 
     Route::resource('exercise', ExerciseController::class);
+
+    Route::get('exercise/videos', [ExerciseController::class, 'videoList'])
+        ->name('exercise.video.list');
+    Route::get('exercise/videos/create', [ExerciseController::class, 'videoCreate'])
+        ->name('exercise.video.create');
     
     // Route for storing the new video/language entry
 Route::post('/exercise/store-video', [ExerciseController::class, 'storeVideo'])
