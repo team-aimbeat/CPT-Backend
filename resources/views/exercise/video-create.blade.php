@@ -15,14 +15,15 @@
 
                         <div class="row">
                             <div class="form-group col-md-4">
-                                <label for="exercise_id" class="form-label">Exercise</label>
-                                <select class="form-control" id="exercise_id" name="exercise_id" required>
-                                    <option value="">Select exercise</option>
-                                    @foreach($exercises as $exercise)
-                                        <option value="{{ $exercise->id }}">{{ $exercise->title }}</option>
-                                    @endforeach
-                                </select>
-                                @error('exercise_id')<div class="text-danger">{{ $message }}</div>@enderror
+                                {{ Form::label('equipment_id', __('message.equipment'),[ 'class' => 'form-control-label' ]) }}
+                                <a id="equipment_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
+                                {{ Form::select('equipment_id', [], old('equipment_id'), [
+                                        'class' => 'select2js form-group equipment',
+                                        'data-placeholder' => __('message.select_name',['select' => __('message.equipment')]),
+                                        'data-ajax--url' => route('ajax-list', ['type' => 'equipment'])
+                                    ])
+                                }}
+                                @error('equipment_id')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
 
                             <div class="form-group col-md-4">
