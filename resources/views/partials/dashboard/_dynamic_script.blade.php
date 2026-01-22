@@ -273,7 +273,7 @@
                 var field_name = $(input).attr('name');
                 var msg = "{{ __('message.image_png_jpg') }}";
                 
-                if (jQuery.inArray(field_name, ['exercise_video', 'workout_video', 'equipment_video', 'diet_video', 'post_video', 'class_schedule_video']) !== -1) {
+                if (jQuery.inArray(field_name, ['exercise_video', 'workout_video', 'equipment_video', 'diet_video', 'post_video', 'class_schedule_video', 'video_file']) !== -1) {
                     res = isVideoAttachments(input.files[0].name);
 
                     if(res == false) {
