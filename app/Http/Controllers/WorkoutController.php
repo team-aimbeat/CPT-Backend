@@ -12,6 +12,8 @@ use App\Models\WorkoutDay;
 use App\Http\Requests\WorkoutRequest;
 use App\Models\Exercise;
 use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class WorkoutController extends Controller
 {
@@ -65,19 +67,19 @@ class WorkoutController extends Controller
                 ->withErrors(__('message.permission_denied_for_account'));
         }
 
-        $workout = Workout::create($request->all());
+        $workout = Workout::create($request->except(['video_url', 'stetch_video']));
 
         // ✅ Gender safety
         $workout->gender = $request->gender ?? 'both';
 
         // ✅ Warmup video URL (text)
-        if ($request->filled('video_url')) {
-            $workout->video_url = $request->video_url;
+        if ($request->hasFile('video_url')) {
+            $workout->video_url = $this->storeWorkoutVideo($request->file('video_url'), 'warmup');
         }
 
         // ✅ Stretching video
-        if ($request->filled('stetch_video')) {
-            $workout->stetch_video = $request->stetch_video;
+        if ($request->hasFile('stetch_video')) {
+            $workout->stetch_video = $this->storeWorkoutVideo($request->file('stetch_video'), 'stretching');
         }
 
         $workout->save();
@@ -188,14 +190,16 @@ class WorkoutController extends Controller
         $workout = Workout::findOrFail($id);
 
         /* ---------------- BASIC DATA ---------------- */
-        $workout->update($request->except([
-            'week',
-            'day',
-            'exercise_ids',
-            'exercise_description',
-            'is_rest',
-            'workout_days_id'
-        ]));
+    $workout->update($request->except([
+        'week',
+        'day',
+        'exercise_ids',
+        'exercise_description',
+        'is_rest',
+        'workout_days_id',
+        'video_url',
+        'stetch_video'
+    ]));
 
         /* ---------------- IMAGE ---------------- */
         if ($request->hasFile('workout_image')) {
@@ -209,11 +213,21 @@ class WorkoutController extends Controller
             $workout->addMediaFromRequest('workout_video')->toMediaCollection('workout_video');
         }
 
-        /* ---------------- YOUTUBE IDS (NOT FILE) ---------------- */
-        $workout->update([
-            'video_url'    => $request->video_url,
-            'stetch_video' => $request->stetch_video,
-        ]);
+    if ($request->hasFile('video_url')) {
+        if (!empty($workout->video_url)) {
+            Storage::disk('s3')->delete($workout->video_url);
+        }
+        $workout->video_url = $this->storeWorkoutVideo($request->file('video_url'), 'warmup');
+    }
+
+    if ($request->hasFile('stetch_video')) {
+        if (!empty($workout->stetch_video)) {
+            Storage::disk('s3')->delete($workout->stetch_video);
+        }
+        $workout->stetch_video = $this->storeWorkoutVideo($request->file('stetch_video'), 'stretching');
+    }
+
+    $workout->save();
 
         /* ---------------- CLEAN OLD DAYS ---------------- */
         $existingDayIds = $request->workout_days_id ?? [];
@@ -257,9 +271,19 @@ class WorkoutController extends Controller
             }
         }
 
-        return redirect()
-            ->route('workout.index')
-            ->withSuccess(__('message.update_form', ['form' => __('message.workout')]));
+    return redirect()
+        ->route('workout.index')
+        ->withSuccess(__('message.update_form', ['form' => __('message.workout')]));
+}
+
+    protected function storeWorkoutVideo($file, $label)
+    {
+        $now = now();
+        $uuid = (string) Str::uuid();
+        $dir = 'videos/originals/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
+        $filename = $label . '.' . $file->getClientOriginalExtension();
+
+        return Storage::disk('s3')->putFileAs($dir, $file, $filename);
     }
 
 

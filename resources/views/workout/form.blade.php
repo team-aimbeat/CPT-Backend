@@ -103,9 +103,9 @@
 <div>
 
 @if($id)
-    {!! Form::model($data, ['route'=>['workout.update',$id],'method'=>'patch']) !!}
+    {!! Form::model($data, ['route'=>['workout.update',$id],'method'=>'patch','files'=>true]) !!}
 @else
-    {!! Form::open(['route'=>'workout.store','method'=>'post']) !!}
+    {!! Form::open(['route'=>'workout.store','method'=>'post','files'=>true]) !!}
 @endif
 
 
@@ -174,12 +174,12 @@
 {{-- VIDEOS --}}
 <div class="row">
     <div class="col-md-6">
-        {{ Form::label('video_url','Warmup Video (YouTube ID)') }}
-        {{ Form::text('video_url',null,['class'=>'form-control']) }}
+        {{ Form::label('video_url','Warmup Video (MP4)') }}
+        {{ Form::file('video_url',['class'=>'form-control','accept'=>'video/*']) }}
     </div>
     <div class="col-md-6">
-        {{ Form::label('stetch_video','Stretching Video (YouTube ID)') }}
-        {{ Form::text('stetch_video',null,['class'=>'form-control']) }}
+        {{ Form::label('stetch_video','Stretching Video (MP4)') }}
+        {{ Form::file('stetch_video',['class'=>'form-control','accept'=>'video/*']) }}
     </div>
 </div>
 

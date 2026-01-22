@@ -32,11 +32,15 @@ class WorkoutRequest extends FormRequest
             case 'post':
                 $rules = [
                     'title' => 'required',
+                    'video_url' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
+                    'stetch_video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                 ];
                 break;
             case 'patch':
                 $rules = [
                     'title' => 'required',
+                    'video_url' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
+                    'stetch_video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                 ];
                 break;
         }
