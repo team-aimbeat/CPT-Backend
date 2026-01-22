@@ -45,6 +45,8 @@ use App\Http\Controllers\SubAdminController;
 use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\Web\HomeController as WebHomeController;
 
+use Illuminate\Support\Facades\Storage;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -57,6 +59,11 @@ use App\Http\Controllers\Web\HomeController as WebHomeController;
 */
 
 require __DIR__.'/auth.php';
+
+Route::get('/__s3_test', function () {
+    Storage::disk('s3')->put('health-check.txt', 'S3 is connected');
+    return 'S3 OK';
+});
 
 Route::get('/storage', function () {
     Artisan::call('storage:link');
