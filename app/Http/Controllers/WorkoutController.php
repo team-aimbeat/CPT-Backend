@@ -14,6 +14,7 @@ use App\Models\Exercise;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Jobs\TranscodeWorkoutVideo;
 
 class WorkoutController extends Controller
 {
@@ -83,6 +84,14 @@ class WorkoutController extends Controller
         }
 
         $workout->save();
+
+        if (!empty($workout->video_url)) {
+            TranscodeWorkoutVideo::dispatch($workout->id, 'video_url', $workout->video_url);
+        }
+
+        if (!empty($workout->stetch_video)) {
+            TranscodeWorkoutVideo::dispatch($workout->id, 'stetch_video', $workout->stetch_video);
+        }
 
         // ✅ Workout days & exercises
         if (!empty($request->is_rest)) {
@@ -228,6 +237,14 @@ class WorkoutController extends Controller
     }
 
     $workout->save();
+
+    if ($request->hasFile('video_url') && !empty($workout->video_url)) {
+        TranscodeWorkoutVideo::dispatch($workout->id, 'video_url', $workout->video_url);
+    }
+
+    if ($request->hasFile('stetch_video') && !empty($workout->stetch_video)) {
+        TranscodeWorkoutVideo::dispatch($workout->id, 'stetch_video', $workout->stetch_video);
+    }
 
         /* ---------------- CLEAN OLD DAYS ---------------- */
         $existingDayIds = $request->workout_days_id ?? [];
