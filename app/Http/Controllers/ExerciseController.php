@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use App\Http\Requests\ExerciseRequest;
 use App\Jobs\ConvertToHLS;
 use App\Jobs\TranscodeEquipmentVideo;
+use App\Jobs\TranscodeExerciseVideo;
 
 class ExerciseController extends Controller
 {
@@ -96,14 +97,18 @@ class ExerciseController extends Controller
         $request->validate([
             'exercise_id' => 'required|exists:exercises,id',
             'language_id' => 'required|exists:language_lists,id', 
-            'video_url' => 'required',
+            'video_file' => 'required|file|mimetypes:video/*|max:512000',
         ]);
 
-        ExerciseVideo::create([
+        $videoPath = $this->storeExerciseVideoFile($request->file('video_file'));
+
+        $exerciseVideo = ExerciseVideo::create([
             'exercise_id' => $request->exercise_id,
             'languagelist_id' => $request->language_id,
-            'video_url' => $request->video_url,
+            'video_url' => $videoPath,
         ]);
+
+        TranscodeExerciseVideo::dispatch($exerciseVideo->id, $videoPath);
 
         return redirect()->route('exercise.index')->with('success', 'Exercise video added successfully!');
     }
@@ -145,6 +150,16 @@ class ExerciseController extends Controller
         $now = now();
         $uuid = (string) Str::uuid();
         $dir = 'videos/originals/equipment/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
+        $filename = 'original.' . $file->getClientOriginalExtension();
+
+        return Storage::disk('s3')->putFileAs($dir, $file, $filename);
+    }
+
+    protected function storeExerciseVideoFile($file)
+    {
+        $now = now();
+        $uuid = (string) Str::uuid();
+        $dir = 'videos/originals/exercise/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
         $filename = 'original.' . $file->getClientOriginalExtension();
 
         return Storage::disk('s3')->putFileAs($dir, $file, $filename);
