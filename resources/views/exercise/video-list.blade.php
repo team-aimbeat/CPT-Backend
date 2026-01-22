@@ -28,10 +28,23 @@
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ optional($video->equipment)->title ?? 'N/A' }}</td>
                                             <td>{{ optional($video->languageList)->language_name ?? 'N/A' }}</td>
+                                            @php
+                                                $videoPath = $video->video_url;
+                                                $useSignedUrls = (bool) env('MEDIA_SIGNED_URLS', false);
+                                                $videoHref = $videoPath
+                                                    ? ($useSignedUrls
+                                                        ? Storage::disk('s3')->temporaryUrl($videoPath, now()->addMinutes(30))
+                                                        : Storage::disk('s3')->url($videoPath))
+                                                    : '';
+                                            @endphp
                                             <td>
-                                                <a href="{{ $video->video_url }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ Str::limit($video->video_url, 50) }}
-                                                </a>
+                                                @if($videoHref)
+                                                    <a href="{{ $videoHref }}" target="_blank" rel="noopener noreferrer">
+                                                        {{ Str::limit($videoHref, 50) }}
+                                                    </a>
+                                                @else
+                                                    N/A
+                                                @endif
                                             </td>
                                             <td>
                                                 <a href="#" class="btn btn-sm btn-danger"

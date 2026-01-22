@@ -11,7 +11,7 @@
                     </div>
 
                     <div class="card-body">
-                        {!! Form::open(['route' => 'exercise.equipment_video.store', 'method' => 'post']) !!}
+                        {!! Form::open(['route' => 'exercise.equipment_video.store', 'method' => 'post', 'files' => true]) !!}
 
                         <div class="row">
                             <div class="form-group col-md-4">
@@ -38,11 +38,11 @@
                             </div>
 
                             <div class="form-group col-md-4">
-                                <label class="form-control-label" for="video_url">Video URL</label>
+                                <label class="form-control-label" for="video_url">Video File</label>
                                 <div>
-                                    <input class="form-control file-input" type="text" name="video_url" id="video_url" required />
+                                    <input class="form-control file-input" type="file" name="video_file" id="video_url" accept="video/*" required />
                                 </div>
-                                @error('video_url')<div class="text-danger">{{ $message }}</div>@enderror
+                                @error('video_file')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
 
                             <div class="form-group col-md-4 align-self-end">

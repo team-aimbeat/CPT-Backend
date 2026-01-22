@@ -12,8 +12,10 @@ use App\Models\EquipmentVideo;
 use App\Models\Equipment;
 use App\Models\LanguageList;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Http\Requests\ExerciseRequest;
 use App\Jobs\ConvertToHLS;
+use App\Jobs\TranscodeEquipmentVideo;
 
 class ExerciseController extends Controller
 {
@@ -120,18 +122,32 @@ class ExerciseController extends Controller
         $request->validate([
             'equipment_id' => 'required|exists:equipment,id',
             'language_id' => 'required|exists:language_lists,id',
-            'video_url' => 'required',
+            'video_file' => 'required|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
         ]);
 
-        EquipmentVideo::create([
+        $videoPath = $this->storeEquipmentVideoFile($request->file('video_file'));
+
+        $equipmentVideo = EquipmentVideo::create([
             'equipment_id' => $request->equipment_id,
             'languagelist_id' => $request->language_id,
-            'video_url' => $request->video_url,
+            'video_url' => $videoPath,
         ]);
+
+        TranscodeEquipmentVideo::dispatch($equipmentVideo->id, $videoPath);
 
         return redirect()
             ->route('exercise.video.list')
             ->with('success', 'Equipment video added successfully!');
+    }
+
+    protected function storeEquipmentVideoFile($file)
+    {
+        $now = now();
+        $uuid = (string) Str::uuid();
+        $dir = 'videos/originals/equipment/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
+        $filename = 'original.' . $file->getClientOriginalExtension();
+
+        return Storage::disk('s3')->putFileAs($dir, $file, $filename);
     }
      
     public function create()
