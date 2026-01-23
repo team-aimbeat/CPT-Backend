@@ -154,26 +154,11 @@
 
                     <div class="card-body">
                         <div class="row">
-                            {{-- Row 1: Basic Details --}}
                             <div class="form-group col-md-4">
                                 {{ Form::label('title', __('message.title').' *',[ 'class' => 'form-control-label' ], false ) }}
                                 {{ Form::text('title', old('title'),[ 'placeholder' => __('message.title'),'class' =>'form-control','required']) }}
                             </div>
                             
-                            
-                            <div class="form-group col-md-4">
-                                {{ Form::label('equipment_id', __('message.equipment'),[ 'class' => 'form-control-label' ]) }}
-                                <a id="equipment_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
-                                {{ Form::select('equipment_id', $is_update && $data->equipment ? [ $data->equipment->id => $data->equipment->title ] : [], old('equipment_id'), [
-                                        'class' => 'select2js form-group equipment',
-                                        'data-placeholder' => __('message.select_name',['select' => __('message.equipment')]),
-                                        'data-ajax--url' => route('ajax-list', ['type' => 'equipment'])
-                                    ])
-                                }}
-                            </div>
-                           
-                            
-                             {{-- Row 2: alternate exercise --}}
                             <div class="form-group col-md-4">
                                 {{ Form::label('alternate_exercise_id', __('message.alternate_exercise'), [ 'class' => 'form-control-label' ]) }}
                                 <a id="alternate_exercise_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
@@ -205,71 +190,19 @@
                                     <label class="custom-control-label" for="is_premium"></label>
                                 </div>
                             </div>
-
-                            <div class="form-group col-md-4">
-                                <label class="form-control-label" for="exercise_video">Video url</label>
-                                <div><input class="form-control file-input" type="text" name="exercise_video" id="exercise_video" /></div>
-                            </div>
-                            
-                            
-                             @if(!empty($data->video_url))
-                                    <div class="mt-2">
-                                        <label class="text-muted small d-block mb-1">Current Primary Video:</label>
-                                        <div class="embed-responsive embed-responsive-16by9">
-                                    <iframe 
-                                        class="embed-responsive-item" 
-                                        src="https://www.youtube.com/embed/{{ $data->video_url }}?rel=0&modestbranding=1&controls=0&loop=1&playlist={{ $data->video_url }}" 
-                                        frameborder="0"
-                                        allow="autoplay; encrypted-media" 
-                                        allowfullscreen>
-                                    </iframe>
-                                    </div>
-                                    <a href="https://www.youtube.com/watch?v={{ $data->video_url }}" target="_blank" class="d-block mt-2 text-primary">
-                                        View on YouTube
-                                    </a>
-                                    </div>
-                                @endif
-                            
-
-                            
                             
                              <div class="form-group col-md-4">
                                 <label class="form-control-label" for="primary_video">Gif Image</label>
                                 <div><input class="form-control" type="file" name="primary_video" accept="image/*" id="primary_video" /></div>
                             </div>
                             
-                            {{-- ✅ Show existing uploaded video if available --}}
-                            
                                    @if(!empty($data->exercise_gif))
                                     <div class="mt-2">
                                         <label class="text-muted small d-block mb-1">Current Gif Image:</label>
                                         <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_gif) }}">
-                                        <a href="{{ Storage::disk('s3')->url($data->exercise_gif) }}" target="_blank" class="d-block mt-2 text-primary">
-                                            View / Download Video
-                                        </a>
                                     </div>
                                 @endif
                                 
-                                
-                                
-                            
-
-                            {{-- Row 4: Existing Video/Image Display --}}
-                            @if($is_update && getMediaFileExit($data, 'exercise_video'))
-                            <div class="col-md-2 mb-2 position-relative">
-                                @php
-                                    $image = getSingleMedia($data, 'exercise_video');
-                                    $is_image = in_array(strtolower(imageExtention($image)), config('constant.IMAGE_EXTENTIONS'));
-                                @endphp
-                                @if($is_image)
-                                <img id="exercise_video_preview" src="{{ $image}}" alt="equipment-video" class="avatar-100 mt-1" />
-                                @else
-                                    <img id="exercise_video_preview" src="{{ asset('images/file.png') }}" class="avatar-100" />
-                                    <a href="{{ $image }}" download>{{ __('message.download') }}</a>
-                                @endif
-                                {!! $file_remove_macro($data->id, 'exercise_video', __('message.video')) !!}
-                            </div>
-                            @endif
 
                             <div class="form-group col-md-4">
                                 <label class="form-control-label" for="image">{{ __('message.image') }} </label>
@@ -289,18 +222,12 @@
                           @if(!empty($data->exercise_image))
                             <div class="mt-2">
                                 <label class="text-muted small d-block mb-1">thumbnail:</label>
-                              
                                     <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_image) }}">
-                                   
-                               
-                                <a href="{{ Storage::disk('s3')->url($data->exercise_image) }}" target="_blank" class="d-block mt-2 text-primary">
-                                    View / Download Video
-                                </a>
                             </div>
                         @endif
 
                         <hr>
-                        {{-- Instructions and Tips (TinyMCE) --}}
+
                         <div class="form-group col-md-12">
                             {{ Form::label('instruction',__('message.instruction'), ['class' => 'form-control-label']) }}
                             {{ Form::textarea('instruction', null, ['class'=> 'form-control tinymce-instruction' , 'placeholder'=> __('message.instruction') ]) }}
@@ -310,8 +237,6 @@
                             {{ Form::textarea('tips', null, ['class'=> 'form-control tinymce-tips' , 'placeholder'=> __('message.tips') ]) }}
                         </div>                        
                         <hr>
-                        
-                        {{-- Submit Button --}}
                         {{ Form::submit( __('message.save'), ['class'=>'btn btn-md btn-primary float-end']) }}
                     </div>
                 </div>
