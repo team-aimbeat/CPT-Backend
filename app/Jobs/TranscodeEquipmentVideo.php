@@ -51,6 +51,7 @@ class TranscodeEquipmentVideo implements ShouldQueue
         $thumbDir = preg_replace('#^videos/originals/#', 'thumbnails/videos/', $sourceDir);
 
         $variants = [
+            '1080p' => 1080,
             '720p' => 720,
             '480p' => 480,
         ];
