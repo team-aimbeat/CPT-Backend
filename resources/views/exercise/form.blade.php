@@ -270,7 +270,7 @@
                             
                             
                              <div class="form-group col-md-4">
-                                <label class="form-control-label" for="primary_video">Primary Video</label>
+                                <label class="form-control-label" for="primary_video">Gif Image</label>
                                 <div><input class="form-control" type="file" name="primary_video" accept="image/*" id="primary_video" /></div>
                             </div>
                             
@@ -278,7 +278,7 @@
                             
                                    @if(!empty($data->exercise_gif))
                                     <div class="mt-2">
-                                        <label class="text-muted small d-block mb-1">Current Gif Video:</label>
+                                        <label class="text-muted small d-block mb-1">Current Gif Image:</label>
                                         
                                          <img width="320" height="240" src="{{ asset('storage/' . $data->exercise_gif) }}">
                                         <!--<video width="320" height="240" controls>-->

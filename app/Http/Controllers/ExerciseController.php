@@ -236,18 +236,11 @@ class ExerciseController extends Controller
         
        
         
-         if ($request->hasFile('exercise_image')) {
-        $file = $request->file('exercise_image');
-    
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-    
-        $exercise->exercise_image = 'uploads/exercise_gif/' . $filename;
-        $exercise->save();
-    }
+        if ($request->hasFile('exercise_image')) {
+            $path = $this->storeExerciseAsset($request->file('exercise_image'), 'images');
+            $exercise->exercise_image = $path;
+            $exercise->save();
+        }
         
         
         
@@ -282,17 +275,10 @@ class ExerciseController extends Controller
         
         
         if ($request->hasFile('primary_video')) {
-        $file = $request->file('primary_video');
-    
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-    
-        $exercise->exercise_gif = 'uploads/exercise_gif/' . $filename;
-        $exercise->save();
-    }
+            $path = $this->storeExerciseAsset($request->file('primary_video'), 'gifs');
+            $exercise->exercise_gif = $path;
+            $exercise->save();
+        }
     
     
     
@@ -404,23 +390,13 @@ class ExerciseController extends Controller
         $exercise->update($data);
     
         if ($request->hasFile('exercise_image')) {
-            if ($exercise->exercise_image) {
-                $oldFile = public_path('storage/' . $exercise->exercise_image); 
-                if (file_exists($oldFile)) {
-                    unlink($oldFile); 
-                }
+            if (!empty($exercise->exercise_image)) {
+                Storage::disk('s3')->delete($exercise->exercise_image);
             }
-    
-            $file = $request->file('exercise_image');
-    
-            $filename = time() . '_' . $file->getClientOriginalName();
-    
-            $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-            $file->move($targetFolder, $filename);
-    
-            $exercise->exercise_image = 'uploads/exercise_gif/' . $filename;
-            $exercise->save(); 
+
+            $path = $this->storeExerciseAsset($request->file('exercise_image'), 'images');
+            $exercise->exercise_image = $path;
+            $exercise->save();
         }
     
        
@@ -444,22 +420,14 @@ class ExerciseController extends Controller
     }
     
         if ($request->hasFile('primary_video')) {
-        if ($exercise->exercise_gif) {
-            $oldFile = public_path('storage/' . $exercise->exercise_gif);
-            if (file_exists($oldFile)) {
-                unlink($oldFile); 
+            if (!empty($exercise->exercise_gif)) {
+                Storage::disk('s3')->delete($exercise->exercise_gif);
             }
+
+            $path = $this->storeExerciseAsset($request->file('primary_video'), 'gifs');
+            $exercise->exercise_gif = $path;
+            $exercise->save();
         }
-    
-        $file = $request->file('primary_video');
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-        $exercise->exercise_gif = 'uploads/exercise_gif/' . $filename;
-        $exercise->save();
-    }
     
     
      if ($request->hasFile('english_video')) {
@@ -516,5 +484,15 @@ class ExerciseController extends Controller
         }
 
         return redirect()->back()->with($status,$message);
+    }
+
+    protected function storeExerciseAsset($file, $type)
+    {
+        $now = now();
+        $uuid = (string) Str::uuid();
+        $dir = 'images/exercise/' . $type . '/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
+        $filename = 'file.' . $file->getClientOriginalExtension();
+
+        return Storage::disk('s3')->putFileAs($dir, $file, $filename);
     }
 }
