@@ -279,13 +279,12 @@
                                    @if(!empty($data->exercise_gif))
                                     <div class="mt-2">
                                         <label class="text-muted small d-block mb-1">Current Gif Image:</label>
-                                        
-                                         <img width="320" height="240" src="{{ asset('storage/' . $data->exercise_gif) }}">
+                                        <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_gif) }}">
                                         <!--<video width="320" height="240" controls>-->
-                                        <!--    <source src="{{ asset('storage/' . $data->exercise_gif) }}" type="video/mp4">-->
+                                        <!--    <source src="{{ Storage::disk('s3')->url($data->exercise_gif) }}" type="video/mp4">-->
                                         <!--    Your browser does not support the video tag.-->
                                         <!--</video>-->
-                                        <a href="{{ asset('storage/' . $data->exercise_gif) }}" target="_blank" class="d-block mt-2 text-primary">
+                                        <a href="{{ Storage::disk('s3')->url($data->exercise_gif) }}" target="_blank" class="d-block mt-2 text-primary">
                                             View / Download Video
                                         </a>
                                     </div>
@@ -331,10 +330,10 @@
                             <div class="mt-2">
                                 <label class="text-muted small d-block mb-1">thumbnail:</label>
                               
-                                    <img width="320" height="240" src="{{ asset('storage/' . $data->exercise_image) }}">
+                                    <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_image) }}">
                                    
                                
-                                <a href="{{ asset('storage/' . $data->exercise_image) }}" target="_blank" class="d-block mt-2 text-primary">
+                                <a href="{{ Storage::disk('s3')->url($data->exercise_image) }}" target="_blank" class="d-block mt-2 text-primary">
                                     View / Download Video
                                 </a>
                             </div>
