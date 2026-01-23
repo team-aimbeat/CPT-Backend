@@ -15,6 +15,7 @@ class ExerciseVideo extends Model
         'languagelist_id',
         'exercise_id',
         'video_url',
+        'hls_master_url',
     ];
     
     
