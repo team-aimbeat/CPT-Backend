@@ -7,14 +7,7 @@
             tinymceEditor('.tinymce-instruction', ' ', function (ed) {}, 450);
             tinymceEditor('.tinymce-tips', ' ', function (ed) {}, 450);
 
-            // 2. Video Type and File Upload Toggle Logic
-            const videoTypeSelect = $('select[name=video_type]');
-            changeUploadFile(videoTypeSelect.val());
-            videoTypeSelect.on('change', function () {
-                changeUploadFile(this.value);
-            });
-
-            // 3. Select2 Initialization
+            // 2. Select2 Initialization
             $(".select2tagsjs").select2({ width: "100%", tags: true });
 
             // 4. Sets Table - Add Row Logic
@@ -82,12 +75,6 @@
             $('input[name=type]').val(type);
         }
         
-        function changeUploadFile(type) {
-            const isUrl = (type === 'url');
-            $('.video_url').toggleClass('d-none', !isUrl);
-            $('.video_upload').toggleClass('d-none', isUrl);
-        }
-
         // Initialize Flatpickr for timepicker
         if ($('.timepicker').length) {
             flatpickr('.timepicker', {
@@ -219,20 +206,9 @@
                                 </div>
                             </div>
 
-                            {{-- Row 3: Video Type and Input Fields --}}
                             <div class="form-group col-md-4">
-                                {{ Form::label('video_type', __('message.video_type').' *',['class'=>'form-control-label'], false) }}
-                                {{ Form::select('video_type', [ 'url' => __('message.url'), 'upload_video' => __('message.upload_video') ], old('video_type'), [ 'class' => 'form-control select2js video_type','required']) }}
-                            </div>
-                            
-                            <!--<div class="form-group col-md-4 video_upload d-none">-->
-                            <!--    <label class="form-control-label" for="exercise_video">Video url</label>-->
-                            <!--    <div><input class="form-control file-input" type="file" name="exercise_video" accept="video/*" id="exercise_video" /></div>-->
-                            <!--</div>-->
-                            
-                             <div class="form-group col-md-4 video_upload d-none">
                                 <label class="form-control-label" for="exercise_video">Video url</label>
-                                <div><input class="form-control file-input" type="text" name="exercise_video"  id="exercise_video" /></div>
+                                <div><input class="form-control file-input" type="text" name="exercise_video" id="exercise_video" /></div>
                             </div>
                             
                             
@@ -254,18 +230,6 @@
                                     </div>
                                 @endif
                             
-                             <!--@if(!empty($data->video_url))-->
-                             <!--       <div class="mt-2">-->
-                             <!--           <label class="text-muted small d-block mb-1">Current Primary Video:</label>-->
-                             <!--           <video width="320" height="240" controls>-->
-                             <!--               <source src="{{ asset('storage/' . $data->video_url) }}" type="video/mp4">-->
-                             <!--               Your browser does not support the video tag.-->
-                             <!--           </video>-->
-                             <!--           <a href="{{ asset('storage/' . $data->exercise_gif) }}" target="_blank" class="d-block mt-2 text-primary">-->
-                             <!--               View / Download Video-->
-                             <!--           </a>-->
-                             <!--       </div>-->
-                             <!--   @endif-->
 
                             
                             
@@ -280,10 +244,6 @@
                                     <div class="mt-2">
                                         <label class="text-muted small d-block mb-1">Current Gif Image:</label>
                                         <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_gif) }}">
-                                        <!--<video width="320" height="240" controls>-->
-                                        <!--    <source src="{{ Storage::disk('s3')->url($data->exercise_gif) }}" type="video/mp4">-->
-                                        <!--    Your browser does not support the video tag.-->
-                                        <!--</video>-->
                                         <a href="{{ Storage::disk('s3')->url($data->exercise_gif) }}" target="_blank" class="d-block mt-2 text-primary">
                                             View / Download Video
                                         </a>
@@ -339,110 +299,7 @@
                             </div>
                         @endif
 
-                        <!--<h5 class="text-danger mt-3"> <i><u>{{ __('message.notes')}}:</u></i> {{ __('message.exercise_info') }}</h5>-->
                         <hr>
-                        
-                        {{-- ** Sets/Duration Tab Logic ** --}}
-                        <!--<ul class="nav nav-pills nav-fill mb-3 text-center exercise-tab" id="exercise-pills-tab" role="tablist">-->
-                        <!--    <li class="nav-item" role="presentation">-->
-                        <!--        <a class="nav-link {{ $type == 'sets' ? 'active show' : '' }}" data-bs-toggle="tab" href="#exercise-sets" data-type="sets" role="tab">{{ __('message.sets') }}</a>-->
-                        <!--    </li>-->
-                        <!--    <li class="nav-item" role="presentation">-->
-                        <!--        <a class="nav-link {{ $type == 'duration' ? 'active show' : '' }}" data-bs-toggle="tab" href="#exercise-duration" data-type="duration" role="tab" tabindex="-1">{{ __('message.duration') }}</a>-->
-                        <!--    </li>-->
-                        <!--</ul>-->
-
-                        <!--<div class="exercise-content tab-content">-->
-                        <!--    {{-- Sets Tab Content --}}-->
-                        <!--    <div id="exercise-sets" class="tab-pane fade {{ $type == 'sets' ? 'active show' : '' }}" role="tabpanel">-->
-                        <!--        <div class="row normal_row">-->
-                        <!--            <div class="col-md-4">-->
-                        <!--                <h5 class="mb-3">{{__('message.sets')}} -->
-                        <!--                    <span class="text-danger" data-bs-toggle="tooltip" title="{{ __('message.exercise_sets_based_info') }}">-->
-                        <!--                        <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M16.334 2.75H7.665C4.644 2.75 2.75 4.889 2.75 7.916V16.084C2.75 19.111 4.635 21.25 7.665 21.25H16.333C19.364 21.25 21.25 19.111 21.25 16.084V7.916C21.25 4.889 19.364 2.75 16.334 2.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M11.9946 16V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M11.9896 8.2041H11.9996" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>-->
-                        <!--                    </span>-->
-                        <!--                </h5>-->
-                        <!--            </div>-->
-                        <!--            <div class="col-md-4">-->
-                        <!--                <div class="form-check">-->
-                        <!--                    <div class="custom-control custom-radio d-inline-block col-4">-->
-                        <!--                        <label class="form-check-label" for="based-reps"> {{__('message.reps')}}(x)</label>-->
-                        <!--                        {{ Form::radio('based', 'reps', $based_value == 'reps', [ 'class' => 'form-check-input', 'id' => 'based-reps']) }}-->
-                        <!--                    </div>-->
-                        <!--                    <div class="custom-control custom-radio d-inline-block col-4">-->
-                        <!--                        <label class="form-check-label" for="based-time"> {{__('message.time')}}(s)</label>-->
-                        <!--                        {{ Form::radio('based', 'time', $based_value == 'time', [ 'class' => 'form-check-input', 'id' => 'based-time']) }}-->
-                        <!--                    </div>-->
-                        <!--                </div>-->
-                        <!--            </div>-->
-                        <!--            <div class="col-md-4">-->
-                        <!--                <button type="button" id="add_button" class="btn btn-sm btn-primary float-end me-2">{{ __('message.add',['name' => '']) }}</button>-->
-                        <!--                <a id="sets_clear" class="float-end me-2" href="javascript:void(0)" title="{{ __('message.clear_sets') }}">{{ __('message.l_clear') }}</a> -->
-                        <!--            </div>-->
-                        <!--            <div class="col-md-12">-->
-                        <!--                <table id="table_list" class="table table-responsive">-->
-                        <!--                    <thead>-->
-                        <!--                        <tr>-->
-                        <!--                             <th class="col-md-3">{{ __('message.set') }}<span>(s)</span></th>-->
-                        <!--                            <th class="col-md-3">{{ __('message.reps') }}<span>(x)</span></th>-->
-                                                   
-                        <!--                            <th class="col-md-3 weight">{{ __('message.weight') }}<span>(kg)</span></th>-->
-                                                   
-                        <!--                             <th class="col-md-3">{{ __('message.note') }}<span>(s)</span></th>-->
-                        <!--                            <th class="col-md-1">{{ __('message.action') }}</th>-->
-                        <!--                        </tr>-->
-                        <!--                    </thead>-->
-                        <!--                    <tbody>-->
-                        <!--                        @foreach($sets_data as $key => $field)-->
-                        <!--                        <tr id="row_{{ $key }}" row="{{ $key }}" data-id="{{ $key }}">-->
-                        <!--                             <td><div class="form-group">{{ Form::text('set[]', $field['set'] ?? null,[ 'placeholder' => __('message.set'), 'class' =>'form-control']) }}</div></td>-->
-                        <!--                            <td><div class="form-group">{{ Form::text('reps[]', $field['reps'] ?? null,[ 'placeholder' => __('message.reps'), 'class' =>'form-control', 'min' => 0 ]) }}</div></td>-->
-                                       
-                        <!--                            <td class="weight"><div class="form-group">{{ Form::text('weight[]', $field['weight'] ?? null,[ 'placeholder' => __('message.weight'), 'class' =>'form-control', 'min' => 0 ]) }}</div></td>-->
-                                                   
-                                                    
-                        <!--                            <td><div class="form-group">{{ Form::text('note[]', $field['note'] ?? null,[ 'placeholder' => __('message.note'), 'class' =>'form-control' ]) }}</div></td>-->
-                        <!--                            <td>-->
-                        <!--                                {{-- Set Row Remove Button --}}-->
-                        <!--                                <a href="javascript:void(0)" id="remove_{{ $key }}"-->
-                        <!--                                    class="removebtn btn btn-sm btn-icon btn-danger" row="{{ $key }}">-->
-                        <!--                                    <span class="btn-inner">-->
-                        <!--                                        <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor"><path d="M19.3248 9.46826C19.3248 9.46826 18.7818 16.2033 18.4668 19.0403C18.3168 20.3953 17.4798 21.1893 16.1088 21.2143C13.4998 21.2613 10.8878 21.2643 8.27979 21.2093C6.96079 21.1823 6.13779 20.3783 5.99079 19.0473C5.67379 16.1853 5.13379 9.46826 5.13379 9.46826" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M20.708 6.23975H3.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M17.4406 6.23973C16.6556 6.23973 15.9796 5.68473 15.8256 4.91573L15.5826 3.69973C15.4326 3.13873 14.9246 2.75073 14.3456 2.75073H10.1126C9.53358 2.75073 9.02558 3.13873 8.87558 3.69973L8.63258 4.91573C8.47858 5.68473 7.80258 6.23973 7.01758 6.23973" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>-->
-                        <!--                                    </span>-->
-                        <!--                                </a>-->
-                        <!--                            </td>-->
-                        <!--                        </tr>-->
-                        <!--                        @endforeach-->
-                        <!--                    </tbody>-->
-                        <!--                </table>-->
-                        <!--            </div>-->
-                        <!--        </div>-->
-                        <!--    </div>-->
-
-                        <!--    {{-- Duration Tab Content --}}-->
-                        <!--    <div id="exercise-duration" class="tab-pane fade {{ $type == 'duration' ? 'active show' : '' }}" role="tabpanel">-->
-                        <!--        <div class="row duration_row">-->
-                        <!--            <h5 class="mb-3 col-md-12">{{__('message.duration')}}-->
-                        <!--                <a id="duration_clear" class="float-end" href="javascript:void(0)" title="{{ __('message.clear_duration') }}">{{ __('message.l_clear') }}</a> -->
-                        <!--            </h5>-->
-                        <!--            {{-- Time Selects --}}-->
-                        <!--            <div class="form-group col-md-2">-->
-                        <!--                {{ Form::label('hours',__('message.hours').' *',['class'=>'form-control-label'],false) }}-->
-                        <!--                {{ Form::select('hours', $duration[0] ? [ $duration[0] => $duration[0] ] : [], old('hours', $duration[0]), [ 'class' => 'form-control select2js', 'id' => 'hours', 'data-placeholder' => __('message.select_name',['select' => __('message.hours')]), 'data-ajax--url' => route('ajax-list', ['type' => 'hours'])]) }}-->
-                        <!--            </div>-->
-                        <!--            <div class="form-group col-md-2">-->
-                        <!--                {{ Form::label('minute',__('message.minute').' *',['class'=>'form-control-label'],false) }}-->
-                        <!--                {{ Form::select('minute', $duration[1] ? [$duration[1] => $duration[1] ] : [], old('minute', $duration[1]), [ 'class' => 'form-control select2js', 'id' => 'minute', 'data-placeholder' => __('message.select_name',['select' => __('message.minute')]), 'data-ajax--url' => route('ajax-list', ['type' => 'minute'])]) }}-->
-                        <!--            </div>-->
-                        <!--            <div class="form-group col-md-2">-->
-                        <!--                {{ Form::label('second',__('message.second').' *',['class'=>'form-control-label'],false) }}-->
-                        <!--                {{ Form::select('second', $duration[2] ? [$duration[2] => $duration[2] ] : [], old('second', $duration[2]), [ 'class' => 'form-control select2js', 'id' => 'second', 'data-placeholder' => __('message.select_name',['select' => __('message.second')]), 'data-ajax--url' => route('ajax-list', ['type' => 'second'])]) }}-->
-                        <!--            </div>-->
-                        <!--        </div>-->
-                        <!--    </div>-->
-                        <!--</div>-->
-                       
-                        
                         {{-- Instructions and Tips (TinyMCE) --}}
                         <div class="form-group col-md-12">
                             {{ Form::label('instruction',__('message.instruction'), ['class' => 'form-control-label']) }}
