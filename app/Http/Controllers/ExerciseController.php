@@ -194,43 +194,6 @@ class ExerciseController extends Controller
         }
     
         $data = $request->all();
-       
-       
-        
-      
-        if( request('type') == 'duration' ) {
-            if(request('hours') != null && request('minute') != null && request('second') != null ) {
-                $data['duration'] = request('hours').':'.request('minute').':'.request('second') ?? null;
-                $data['based'] = null;
-                $data['sets'] = null;
-            }
-        }
-    
-        
-        if( request('type') == 'sets' ) {
-            if(request('reps') != null && !in_array(null, request('reps')) ) {
-                $save_data = [];
-                foreach($request->reps as $i => $value) {
-                    $save_data[] = [
-                        'set' => $request->set[$i] ?? null,
-                        'reps' => $value,
-                        'weight' => $request->weight[$i] != null ? $request->weight[$i] : null,
-                        'note' => $request->note[$i] ?? null,
-                    ];
-                }
-                $data['sets'] = $save_data;
-                $data['duration'] = null;
-            }
-        }
-    
-     
-        unset($data['set']);
-        unset($data['weight']);
-        unset($data['reps']);
-        unset($data['note']);    
-        unset($data['hours']);
-        unset($data['minute']);
-        unset($data['second']);
     
         $exercise = Exercise::create($data);
         
@@ -244,32 +207,10 @@ class ExerciseController extends Controller
         
         
         
-    //     if ($request->hasFile('exercise_video')) {
-    
-    //     $file = $request->file('exercise_video');
-    //     $filename = time() . '_' . $file->getClientOriginalName();
-    
-    //     $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-    //     if (!file_exists($targetFolder)) {
-    //         mkdir($targetFolder, 0755, true);
-    //     }
-    
-    //     $file->move($targetFolder, $filename);
-    
-    //     $exercise->video_url = 'uploads/exercise_gif/' . $filename;
-    //     $exercise->save();
-    // }
-    
-    if (request()->has('exercise_video') && !empty(request('exercise_video'))) {
-    
-    $youtube_url_or_id = request('exercise_video');
-  
-    // $youtube_id = $this->extractYoutubeId($youtube_url_or_id);
-    
-    $exercise->video_url = $youtube_url_or_id; 
-    $exercise->save();
-}
+        if (request()->has('exercise_video') && !empty(request('exercise_video'))) {
+            $exercise->video_url = request('exercise_video');
+            $exercise->save();
+        }
     
     
         
@@ -282,18 +223,6 @@ class ExerciseController extends Controller
     
     
     
-     if ($request->hasFile('english_video')) {
-        $file = $request->file('english_video');
-    
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-    
-        $exercise->english_video = 'uploads/exercise_gif/' . $filename;
-        $exercise->save();
-    }
     
     
         return redirect()->route('exercise.index')->withSuccess(__('message.save_form', ['form' => __('message.exercise')]));
@@ -354,34 +283,7 @@ class ExerciseController extends Controller
     
         $data = $request->all();
     
-        $data['equipment_id'] = $request->input('equipment_id') ?? null;
         $data['exercise_id']  = $request->input('exercise_id') ?? null;
-    
-        if ($request->input('type') === 'duration') {
-            if ($request->filled('hours') && $request->filled('minute') && $request->filled('second')) {
-                $data['duration'] = $request->hours . ':' . $request->minute . ':' . $request->second;
-                $data['sets'] = null;
-                $data['based'] = null;
-            }
-        }
-    
-        if ($request->input('type') === 'sets') {
-            if ($request->reps != null && !in_array(null, $request->reps)) {
-                $save_data = []; 
-                foreach ($request->reps as $i => $value) {
-                    $save_data[] = [
-                        'set'    => $request->set[$i] ?? null,
-                        'reps'   => $value,
-                        'weight' => $request->weight[$i] ?? null,
-                        'note'   => $request->note[$i] ?? null,
-                    ];
-                }
-                $data['sets']     = $save_data;
-                $data['duration'] = null;
-            }
-        }
-    
-        unset($data['set'], $data['weight'], $data['reps'], $data['note'], $data['hours'], $data['minute'], $data['second']);
     
         if (!isset($data['exercise_gif'])) {
             $data['exercise_gif'] = $exercise->exercise_gif;
@@ -400,24 +302,10 @@ class ExerciseController extends Controller
         }
     
        
-        if ($request->hasFile('exercise_video')) {
-        if ($exercise->video_url) {
-            $oldFile = public_path('storage/' . $exercise->exercise_gif);
-            if (file_exists($oldFile)) {
-                unlink($oldFile); 
-            }
+        if (request()->has('exercise_video') && !empty(request('exercise_video'))) {
+            $exercise->video_url = request('exercise_video');
+            $exercise->save();
         }
-    
-        $file = $request->file('exercise_video');
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-    
-        $exercise->video_url = 'uploads/exercise_gif/' . $filename;
-        $exercise->save();
-    }
     
         if ($request->hasFile('primary_video')) {
             if (!empty($exercise->exercise_gif)) {
@@ -430,23 +318,6 @@ class ExerciseController extends Controller
         }
     
     
-     if ($request->hasFile('english_video')) {
-        if ($exercise->english_video) {
-            $oldFile = public_path('storage/' . $exercise->english_video);
-            if (file_exists($oldFile)) {
-                unlink($oldFile); 
-            }
-        }
-    
-        $file = $request->file('english_video');
-        $filename = time() . '_' . $file->getClientOriginalName();
-    
-        $targetFolder = public_path('storage/uploads/exercise_gif');
-    
-        $file->move($targetFolder, $filename);
-        $exercise->english_video = 'uploads/exercise_gif/' . $filename;
-        $exercise->save();
-    }
     
     
         return redirect()->route('exercise.index')->withSuccess(__('message.update_form', ['form' => __('message.exercise')]));
