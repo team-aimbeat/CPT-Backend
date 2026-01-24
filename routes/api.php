@@ -43,6 +43,7 @@ Route::post('user/login/mail_otp/register',[API\UserController::class, 'register
 
 
 Route::get('equipment-list', [ API\EquipmentController::class, 'getList' ]);
+Route::get('equipment-videos', [ API\EquipmentVideoController::class, 'getList' ]);
 Route::get('injury-list', [ API\InjuryController::class, 'getList' ]);
 
 
