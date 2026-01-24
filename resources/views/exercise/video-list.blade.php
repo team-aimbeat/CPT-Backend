@@ -30,12 +30,7 @@
                                             <td>{{ optional($video->languageList)->language_name ?? 'N/A' }}</td>
                                             @php
                                                 $videoPath = $video->video_url;
-                                                $useSignedUrls = (bool) env('MEDIA_SIGNED_URLS', false);
-                                                $videoHref = $videoPath
-                                                    ? ($useSignedUrls
-                                                        ? Storage::disk('s3')->temporaryUrl($videoPath, now()->addMinutes(30))
-                                                        : Storage::disk('s3')->url($videoPath))
-                                                    : '';
+                                                $videoHref = $videoPath ? cloudfrontUrl($videoPath) : '';
                                             @endphp
                                             <td>
                                                 @if($videoHref)

@@ -817,6 +817,13 @@ function snakeCashToTitleCash($string){
     return ucfirst(str_replace('_', ' ', strtolower($string)));
 }
 
+if (!function_exists('cloudfrontUrl')) {
+    function cloudfrontUrl(string $objectKey): string
+    {
+        return 'https://' . env('CLOUDFRONT_DOMAIN') . '/' . ltrim($objectKey, '/');
+    }
+}
+
 
 
 if (!function_exists('setEnvironmentValue')) {
