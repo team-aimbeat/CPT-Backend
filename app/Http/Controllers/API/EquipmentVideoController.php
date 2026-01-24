@@ -61,8 +61,18 @@ class EquipmentVideoController extends Controller
                 return $query->orderByDesc('id')->get();
             });
 
-        $videos = $videos->map(function ($video) {
-            $preferredPath = $video->hls_master_url ?: $video->video_url;
+        $requestedRes = (string) $request->query('res', '');
+        $resolutionMap = [
+            '1080' => 'hls_1080p_url',
+            '720' => 'hls_720p_url',
+            '480' => 'hls_480p_url',
+            '420' => 'hls_480p_url',
+        ];
+        $selectedField = $resolutionMap[$requestedRes] ?? null;
+
+        $videos = $videos->map(function ($video) use ($selectedField) {
+            $resolutionPath = $selectedField ? $video->{$selectedField} : null;
+            $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
 
             return [
                 'id' => $video->id,
