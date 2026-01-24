@@ -16,6 +16,7 @@ class EquipmentVideo extends Model
         'languagelist_id',
         'video_url',
         'hls_master_url',
+        'transcoding_status',
     ];
 
     public function languageList()

@@ -106,6 +106,7 @@ class ExerciseController extends Controller
             'exercise_id' => $request->exercise_id,
             'languagelist_id' => $request->language_id,
             'video_url' => $videoPath,
+            'transcoding_status' => 'pending',
         ]);
 
         TranscodeExerciseVideo::dispatch($exerciseVideo->id, $videoPath);
@@ -136,6 +137,7 @@ class ExerciseController extends Controller
             'equipment_id' => $request->equipment_id,
             'languagelist_id' => $request->language_id,
             'video_url' => $videoPath,
+            'transcoding_status' => 'pending',
         ]);
 
         TranscodeEquipmentVideo::dispatch($equipmentVideo->id, $videoPath);

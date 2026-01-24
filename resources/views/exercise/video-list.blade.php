@@ -19,6 +19,7 @@
                                         <th>Equipment</th>
                                         <th>{{ __('message.language') }}</th>
                                         <th>Video URL</th>
+                                        <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -29,7 +30,7 @@
                                             <td>{{ optional($video->equipment)->title ?? 'N/A' }}</td>
                                             <td>{{ optional($video->languageList)->language_name ?? 'N/A' }}</td>
                                             @php
-                                                $videoPath = $video->video_url;
+                                                $videoPath = $video->hls_master_url ?: $video->video_url;
                                                 $videoHref = $videoPath ? cloudfrontUrl($videoPath) : '';
                                             @endphp
                                             <td>
@@ -41,6 +42,7 @@
                                                     N/A
                                                 @endif
                                             </td>
+                                            <td>{{ $video->transcoding_status ?? 'pending' }}</td>
                                             <td>
                                                 <a href="#" class="btn btn-sm btn-danger"
                                                    onclick="event.preventDefault();
@@ -60,7 +62,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-center">No videos found.</td>
+                                            <td colspan="6" class="text-center">No videos found.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

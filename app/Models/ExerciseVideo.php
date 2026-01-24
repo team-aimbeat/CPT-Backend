@@ -16,6 +16,7 @@ class ExerciseVideo extends Model
         'exercise_id',
         'video_url',
         'hls_master_url',
+        'transcoding_status',
     ];
     
     

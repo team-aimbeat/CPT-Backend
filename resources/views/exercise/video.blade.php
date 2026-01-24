@@ -62,6 +62,7 @@
                                         <th>#</th>
                                         <th>{{ __('message.language') }}</th>
                                         <th>Video</th>
+                                        <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -72,13 +73,8 @@
                                             {{-- Assuming the languageList relationship is defined and working --}}
                                             <td>{{ optional($video->languageList)->language_name ?? 'N/A' }}</td>
                                             @php
-                                                $videoPath = $video->video_url;
-                                                $useSignedUrls = (bool) env('MEDIA_SIGNED_URLS', false);
-                                                $videoHref = $videoPath
-                                                    ? ($useSignedUrls
-                                                        ? Storage::disk('s3')->temporaryUrl($videoPath, now()->addMinutes(30))
-                                                        : Storage::disk('s3')->url($videoPath))
-                                                    : '';
+                                                $videoPath = $video->hls_master_url ?: $video->video_url;
+                                                $videoHref = $videoPath ? cloudfrontUrl($videoPath) : '';
                                             @endphp
                                             <td>
                                                 @if($videoHref)
@@ -87,6 +83,7 @@
                                                     N/A
                                                 @endif
                                             </td>
+                                            <td>{{ $video->transcoding_status ?? 'pending' }}</td>
                                             {{-- This is the table cell action that triggers deletion --}}
                                         <td>
                                             <a href="#" class="btn btn-sm btn-danger" 
@@ -109,7 +106,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center">No videos have been added for this exercise yet.</td>
+                                            <td colspan="5" class="text-center">No videos have been added for this exercise yet.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
