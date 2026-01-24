@@ -820,7 +820,8 @@ function snakeCashToTitleCash($string){
 if (!function_exists('cloudfrontUrl')) {
     function cloudfrontUrl(string $objectKey): string
     {
-        return 'https://' . env('CLOUDFRONT_DOMAIN') . '/' . ltrim($objectKey, '/');
+        $domain = config('services.cloudfront_domain') ?: env('CLOUDFRONT_DOMAIN');
+        return 'https://' . $domain . '/' . ltrim($objectKey, '/');
     }
 }
 
