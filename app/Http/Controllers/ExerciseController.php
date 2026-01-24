@@ -101,6 +101,11 @@ class ExerciseController extends Controller
         ]);
 
         $videoPath = $this->storeExerciseVideoFile($request->file('video_file'));
+        if (empty($videoPath) || !Storage::disk('s3')->exists($videoPath)) {
+            return redirect()
+                ->back()
+                ->withErrors('Video upload failed. Please try again.');
+        }
 
         $exerciseVideo = ExerciseVideo::create([
             'exercise_id' => $request->exercise_id,
@@ -132,6 +137,11 @@ class ExerciseController extends Controller
         ]);
 
         $videoPath = $this->storeEquipmentVideoFile($request->file('video_file'));
+        if (empty($videoPath) || !Storage::disk('s3')->exists($videoPath)) {
+            return redirect()
+                ->back()
+                ->withErrors('Video upload failed. Please try again.');
+        }
 
         $equipmentVideo = EquipmentVideo::create([
             'equipment_id' => $request->equipment_id,
