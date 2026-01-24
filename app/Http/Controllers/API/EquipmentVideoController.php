@@ -71,12 +71,12 @@ class EquipmentVideoController extends Controller
                 'language_id' => $video->languagelist_id,
                 'language_name' => optional($video->languageList)->language_name,
                 'video_url' => $preferredPath ? cloudfrontUrl($preferredPath) : null,
-                'hls_master_url' => $video->hls_master_url ? cloudfrontUrl($video->hls_master_url) : null,
-                'hls_1080p_url' => $video->hls_1080p_url ? cloudfrontUrl($video->hls_1080p_url) : null,
-                'hls_720p_url' => $video->hls_720p_url ? cloudfrontUrl($video->hls_720p_url) : null,
-                'hls_480p_url' => $video->hls_480p_url ? cloudfrontUrl($video->hls_480p_url) : null,
-                'transcoding_status' => $video->transcoding_status,
-                'created_at' => $video->created_at,
+                // 'hls_master_url' => $video->hls_master_url ? cloudfrontUrl($video->hls_master_url) : null,
+                // 'hls_1080p_url' => $video->hls_1080p_url ? cloudfrontUrl($video->hls_1080p_url) : null,
+                // 'hls_720p_url' => $video->hls_720p_url ? cloudfrontUrl($video->hls_720p_url) : null,
+                // 'hls_480p_url' => $video->hls_480p_url ? cloudfrontUrl($video->hls_480p_url) : null,
+                // 'transcoding_status' => $video->transcoding_status,
+                // 'created_at' => $video->created_at,
             ];
         });
 
