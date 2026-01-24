@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\EquipmentVideo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class EquipmentVideoController extends Controller
 {
@@ -16,10 +17,23 @@ class EquipmentVideoController extends Controller
 
         $languageId = $request->input('language_id', $request->input('lang_id'));
 
-        $query = EquipmentVideo::with([
-            'equipment:id,title',
-            'languageList:id,language_name',
-        ]);
+        $query = EquipmentVideo::query()
+            ->select([
+                'id',
+                'equipment_id',
+                'languagelist_id',
+                'video_url',
+                'hls_master_url',
+                'hls_1080p_url',
+                'hls_720p_url',
+                'hls_480p_url',
+                'transcoding_status',
+                'created_at',
+            ])
+            ->with([
+                'equipment:id,title',
+                'languageList:id,language_name',
+            ]);
 
         if (!empty($equipmentIds)) {
             $query->whereIn('equipment_id', $equipmentIds);
@@ -35,7 +49,19 @@ class EquipmentVideoController extends Controller
             $query->where('transcoding_status', 'done');
         }
 
-        $videos = $query->orderByDesc('id')->get()->map(function ($video) {
+        $cacheKey = 'equipment_videos:' . md5(json_encode([
+            'equipment_ids' => $equipmentIds,
+            'language_id' => $languageId,
+            'status' => $request->input('status', 'done'),
+        ]));
+
+        $videos = $request->boolean('no_cache')
+            ? $query->orderByDesc('id')->get()
+            : Cache::remember($cacheKey, now()->addMinutes(5), function () use ($query) {
+                return $query->orderByDesc('id')->get();
+            });
+
+        $videos = $videos->map(function ($video) {
             $preferredPath = $video->hls_master_url ?: $video->video_url;
 
             return [
