@@ -222,7 +222,7 @@
                           @if(!empty($data->exercise_image))
                             <div class="mt-2">
                                 <label class="text-muted small d-block mb-1">thumbnail:</label>
-                                    <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_image) }}">
+                                    <img width="320" height="240" src="{{ cloudfrontUrl($data->exercise_image) }}">
                             </div>
                         @endif
 
