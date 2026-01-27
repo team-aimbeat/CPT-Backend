@@ -316,8 +316,10 @@ class DietController extends Controller
 
         $diet = $diet->orderBy('title', 'asc')->paginate($per_page);
 
-        $items = $diet->getCollection()->map(function ($row) {
-            return [
+        $debug = $request->boolean('debug');
+
+        $items = $diet->getCollection()->map(function ($row) use ($debug) {
+            $item = [
                 'id' => $row->id,
                 'title' => $row->title,
                 'variety' => $row->variety,
@@ -333,6 +335,20 @@ class DietController extends Controller
                 'created_at' => $row->created_at,
                 'updated_at' => $row->updated_at,
             ];
+
+            if ($debug) {
+                $item['debug'] = [
+                    'raw_title' => $row->getRawOriginal('title'),
+                    'raw_ingredients' => $row->getRawOriginal('ingredients'),
+                    'raw_description' => $row->getRawOriginal('description'),
+                    'row_attributes' => array_intersect_key(
+                        $row->getAttributes(),
+                        array_flip(['gender', 'variety', 'categorydiet_id'])
+                    ),
+                ];
+            }
+
+            return $item;
         });
 
         $pagination = [
