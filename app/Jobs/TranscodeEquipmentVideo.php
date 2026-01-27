@@ -162,6 +162,11 @@ class TranscodeEquipmentVideo implements ShouldQueue
                 }
             }
 
+            $thumbnailKey = $thumbDir . '/poster.jpg';
+            EquipmentVideo::where('id', $this->equipmentVideoId)->update([
+                'thumbnail_url' => $thumbnailKey,
+            ]);
+
             if (file_exists($inputFile)) {
                 unlink($inputFile);
             }
