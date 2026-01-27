@@ -79,7 +79,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     
     //get all exercise video
     Route::get('/exercises/video-urls', [API\ExerciseController::class, 'getVideoUrls']);
-    Route::get('equipment-videos', [ API\EquipmentVideoController::class, 'getList' ]);
+    Route::get('all-videos', [ API\EquipmentVideoController::class, 'getList' ]);
 
     
 
