@@ -330,9 +330,9 @@ class DietController extends Controller
                 'id' => $row->id,
                 'title' => $row->title,
                 'variety' => $row->variety,
-                'diet_image' => $row->diet_image,
-                'diet_image_url' => $row->diet_image ? asset('https://fitness.completepersonaltraining.com/storage/' . $row->diet_image) : null,
-                'is_featured' => $row->is_featured,
+                // 'diet_image' => $row->diet_image,
+                // 'diet_image_url' => $row->diet_image ? asset('https://fitness.completepersonaltraining.com/storage/' . $row->diet_image) : null,
+                // 'is_featured' => $row->is_featured,
                 'status' => $row->status,
                 'ingredients' => $row->ingredients,
                 'description' => $row->description,
@@ -342,23 +342,6 @@ class DietController extends Controller
                 'created_at' => $row->created_at,
                 'updated_at' => $row->updated_at,
             ];
-
-            // if ($debug) {
-            //     $item['debug'] = [
-            //         'requested_lang_id' => $languageId,
-            //         'translation_language_id' => $row->translation_language_id,
-            //         'translation_title' => $row->translation_title,
-            //         'translation_ingredients' => $row->translation_ingredients,
-            //         'translation_description' => $row->translation_description,
-            //         'raw_title' => $row->getRawOriginal('title'),
-            //         'raw_ingredients' => $row->getRawOriginal('ingredients'),
-            //         'raw_description' => $row->getRawOriginal('description'),
-            //         'row_attributes' => array_intersect_key(
-            //             $row->getAttributes(),
-            //             array_flip(['gender', 'variety', 'categorydiet_id'])
-            //         ),
-            //     ];
-            // }
 
             return $item;
         });
