@@ -138,6 +138,9 @@ class EquipmentVideoController extends Controller
 
         $response = [
             'has_access' => $hasAccess,
+            'message' => $hasAccess
+                ? null
+                : 'Please subscribe to a 12-month or 24-month plan to unlock and watch all workout videos.',
             'data' => $videos,
         ];
 
