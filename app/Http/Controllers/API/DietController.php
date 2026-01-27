@@ -129,7 +129,15 @@ class DietController extends Controller
                  ->where('diet_translations.language_id', $languageId);
         })
         ->select(
-            'diets.*',
+            'diets.id',
+            'diets.variety',
+            'diets.diet_image',
+            'diets.is_featured',
+            'diets.status',
+            'diets.is_premium',
+            'diets.categorydiet_id',
+            'diets.created_at',
+            'diets.updated_at',
             DB::raw('COALESCE(diet_translations.title, diets.title) as title'),
             DB::raw('COALESCE(diet_translations.ingredients, diets.ingredients) as ingredients'),
             DB::raw('COALESCE(diet_translations.description, diets.description) as description')
