@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\EquipmentVideo;
+use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -11,6 +12,22 @@ class EquipmentVideoController extends Controller
 {
     public function getList(Request $request)
     {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access',
+            ], 401);
+        }
+
+        $hasAccess = Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('payment_status', 'paid')
+            ->whereHas('package', function ($q) {
+                $q->whereIn('package_type', ['workout', 'both']);
+            })
+            ->exists();
+
         $equipmentIds = $request->filled('equipment_ids')
             ? array_filter(explode(',', $request->equipment_ids))
             : ($request->filled('equipment_id') ? [$request->equipment_id] : []);
@@ -50,18 +67,6 @@ class EquipmentVideoController extends Controller
             $query->where('transcoding_status', 'done');
         }
 
-        $cacheKey = 'equipment_videos:' . md5(json_encode([
-            'equipment_ids' => $equipmentIds,
-            'language_id' => $languageId,
-            'status' => $request->input('status', 'done'),
-        ]));
-
-        $videos = $request->boolean('no_cache')
-            ? $query->orderByDesc('id')->get()
-            : Cache::remember($cacheKey, now()->addMinutes(5), function () use ($query) {
-                return $query->orderByDesc('id')->get();
-            });
-
         $requestedRes = (string) $request->query('res', '');
         $resolutionMap = [
             '1080' => 'hls_1080p_url',
@@ -71,28 +76,68 @@ class EquipmentVideoController extends Controller
         ];
         $selectedField = $resolutionMap[$requestedRes] ?? null;
 
-        $videos = $videos->map(function ($video) use ($selectedField) {
-            $resolutionPath = $selectedField ? $video->{$selectedField} : null;
-            $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
+        $cacheKey = 'equipment_videos:' . md5(json_encode([
+            'user_id' => $user->id,
+            'has_access' => $hasAccess,
+            'equipment_ids' => $equipmentIds,
+            'language_id' => $languageId,
+            'status' => $request->input('status', 'done'),
+            'res' => $requestedRes,
+        ]));
 
-            return [
-                'id' => $video->id,
-                'equipment_id' => $video->equipment_id,
-                'equipment_title' => optional($video->equipment)->title,
-                'language_id' => $video->languagelist_id,
-                'language_name' => optional($video->languageList)->language_name,
-                'video_url' => $preferredPath ? cloudfrontUrl($preferredPath) : null,
-                'thumbnail_url' => $video->thumbnail_url ? cloudfrontUrl($video->thumbnail_url) : null,
-                // 'hls_master_url' => $video->hls_master_url ? cloudfrontUrl($video->hls_master_url) : null,
-                // 'hls_1080p_url' => $video->hls_1080p_url ? cloudfrontUrl($video->hls_1080p_url) : null,
-                // 'hls_720p_url' => $video->hls_720p_url ? cloudfrontUrl($video->hls_720p_url) : null,
-                // 'hls_480p_url' => $video->hls_480p_url ? cloudfrontUrl($video->hls_480p_url) : null,
-                // 'transcoding_status' => $video->transcoding_status,
-                // 'created_at' => $video->created_at,
-            ];
-        });
+        $videos = $request->boolean('no_cache')
+            ? $query->orderByDesc('id')->get()
+            : Cache::remember($cacheKey, now()->addMinutes(5), function () use ($query) {
+                return $query->orderByDesc('id')->get();
+            });
+
+        if ($hasAccess) {
+            $videos = $videos->map(function ($video) use ($selectedField) {
+                $resolutionPath = $selectedField ? $video->{$selectedField} : null;
+                $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
+
+                return [
+                    'id' => $video->id,
+                    'equipment_id' => $video->equipment_id,
+                    'equipment_title' => optional($video->equipment)->title,
+                    'language_id' => $video->languagelist_id,
+                    'language_name' => optional($video->languageList)->language_name,
+                    'video_url' => $preferredPath ? cloudfrontUrl($preferredPath) : null,
+                    'thumbnail_url' => $video->thumbnail_url ? cloudfrontUrl($video->thumbnail_url) : null,
+                    'is_locked' => false,
+                ];
+            });
+        } else {
+            $grouped = $videos->groupBy('equipment_id');
+            $lockedData = collect();
+
+            foreach ($grouped as $equipmentId => $items) {
+                $isFirst = true;
+
+                foreach ($items as $video) {
+                    $resolutionPath = $selectedField ? $video->{$selectedField} : null;
+                    $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
+
+                    $lockedData->push([
+                        'id' => $video->id,
+                        'equipment_id' => $video->equipment_id,
+                        'equipment_title' => optional($video->equipment)->title,
+                        'language_id' => $video->languagelist_id,
+                        'language_name' => optional($video->languageList)->language_name,
+                        'video_url' => $isFirst ? ($preferredPath ? cloudfrontUrl($preferredPath) : null) : null,
+                        'thumbnail_url' => $video->thumbnail_url ? cloudfrontUrl($video->thumbnail_url) : null,
+                        'is_locked' => !$isFirst,
+                    ]);
+
+                    $isFirst = false;
+                }
+            }
+
+            $videos = $lockedData->values();
+        }
 
         $response = [
+            'has_access' => $hasAccess,
             'data' => $videos,
         ];
 
