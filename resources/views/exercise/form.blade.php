@@ -199,7 +199,7 @@
                                    @if(!empty($data->exercise_gif))
                                     <div class="mt-2">
                                         <label class="text-muted small d-block mb-1">Current Gif Image:</label>
-                                        <img width="320" height="240" src="{{ Storage::disk('s3')->url($data->exercise_gif) }}">
+                                        <img width="320" height="240" src="{{ cloudfrontUrl($data->exercise_gif) }}">
                                     </div>
                                 @endif
                                 
