@@ -136,8 +136,9 @@ class DietController extends Controller
         );
 
     /* ---------------- USER GENDER FILTER ---------------- */
-    if (!empty($user->gender)) {
-        $diet->whereIn('diets.gender', [$user->gender, 'unisex']);
+    $gender = $request->input('gender', $user->gender);
+    if (!empty($gender)) {
+        $diet->whereIn('diets.gender', [$gender, 'unisex']);
     }
 
     /* ---------------- REQUEST FILTERS ---------------- */
@@ -150,7 +151,11 @@ class DietController extends Controller
     });
 
     $diet->when($request->category, function ($q, $category) {
-        $q->where('category_diets.title', 'LIKE', "%{$category}%");
+        if (is_numeric($category)) {
+            $q->where('category_diets.id', (int) $category);
+        } else {
+            $q->where('category_diets.title', 'LIKE', "%{$category}%");
+        }
     });
 
     $diet->when($request->categorydiet_id, function ($q, $id) {
