@@ -343,22 +343,22 @@ class DietController extends Controller
                 'updated_at' => $row->updated_at,
             ];
 
-            if ($debug) {
-                $item['debug'] = [
-                    'requested_lang_id' => $languageId,
-                    'translation_language_id' => $row->translation_language_id,
-                    'translation_title' => $row->translation_title,
-                    'translation_ingredients' => $row->translation_ingredients,
-                    'translation_description' => $row->translation_description,
-                    'raw_title' => $row->getRawOriginal('title'),
-                    'raw_ingredients' => $row->getRawOriginal('ingredients'),
-                    'raw_description' => $row->getRawOriginal('description'),
-                    'row_attributes' => array_intersect_key(
-                        $row->getAttributes(),
-                        array_flip(['gender', 'variety', 'categorydiet_id'])
-                    ),
-                ];
-            }
+            // if ($debug) {
+            //     $item['debug'] = [
+            //         'requested_lang_id' => $languageId,
+            //         'translation_language_id' => $row->translation_language_id,
+            //         'translation_title' => $row->translation_title,
+            //         'translation_ingredients' => $row->translation_ingredients,
+            //         'translation_description' => $row->translation_description,
+            //         'raw_title' => $row->getRawOriginal('title'),
+            //         'raw_ingredients' => $row->getRawOriginal('ingredients'),
+            //         'raw_description' => $row->getRawOriginal('description'),
+            //         'row_attributes' => array_intersect_key(
+            //             $row->getAttributes(),
+            //             array_flip(['gender', 'variety', 'categorydiet_id'])
+            //         ),
+            //     ];
+            // }
 
             return $item;
         });
