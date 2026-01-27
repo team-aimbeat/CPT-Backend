@@ -262,6 +262,10 @@ class DietController extends Controller
                 DB::raw('COALESCE(dt.title, diets.title) as title'),
                 DB::raw('COALESCE(dt.ingredients, diets.ingredients) as ingredients'),
                 DB::raw('COALESCE(dt.description, diets.description) as description'),
+                'dt.language_id as translation_language_id',
+                'dt.title as translation_title',
+                'dt.ingredients as translation_ingredients',
+                'dt.description as translation_description',
                 'diets.variety',
                 'diets.gender',
                 'diets.diet_image',
@@ -318,7 +322,7 @@ class DietController extends Controller
 
         $debug = $request->boolean('debug');
 
-        $items = $diet->getCollection()->map(function ($row) use ($debug) {
+        $items = $diet->getCollection()->map(function ($row) use ($debug, $languageId) {
             $item = [
                 'id' => $row->id,
                 'title' => $row->title,
@@ -338,6 +342,11 @@ class DietController extends Controller
 
             if ($debug) {
                 $item['debug'] = [
+                    'requested_lang_id' => $languageId,
+                    'translation_language_id' => $row->translation_language_id,
+                    'translation_title' => $row->translation_title,
+                    'translation_ingredients' => $row->translation_ingredients,
+                    'translation_description' => $row->translation_description,
                     'raw_title' => $row->getRawOriginal('title'),
                     'raw_ingredients' => $row->getRawOriginal('ingredients'),
                     'raw_description' => $row->getRawOriginal('description'),
