@@ -223,6 +223,131 @@ class DietController extends Controller
     ]);
 }
 
+    public function getListV2(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access'
+            ], 401);
+        }
+
+        $hasAccess = Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('payment_status', 'paid')
+            ->whereHas('package', function ($query) {
+                $query->whereIn('package_type', ['diet', 'both']);
+            })
+            ->exists();
+
+        if (!$hasAccess) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please Subscribe Diet Plan.'
+            ], 403);
+        }
+
+        $languageId = (int) $request->input('lang_id', 2);
+
+        $diet = Diet::query()
+            ->leftJoin('diet_translations as dt', function ($join) use ($languageId) {
+                $join->on('diets.id', '=', 'dt.diet_id')
+                     ->where('dt.language_id', $languageId);
+            })
+            ->leftJoin('category_diets as cd', 'diets.categorydiet_id', '=', 'cd.id')
+            ->select(
+                'diets.id',
+                DB::raw('COALESCE(dt.title, diets.title) as title'),
+                DB::raw('COALESCE(dt.ingredients, diets.ingredients) as ingredients'),
+                DB::raw('COALESCE(dt.description, diets.description) as description'),
+                'diets.variety',
+                'diets.gender',
+                'diets.diet_image',
+                'diets.is_featured',
+                'diets.status',
+                'diets.is_premium',
+                'diets.categorydiet_id',
+                'cd.title as categorydiet_title',
+                'diets.created_at',
+                'diets.updated_at'
+            );
+
+        $gender = $request->input('gender', $user->gender);
+        if (!empty($gender)) {
+            $diet->whereIn('diets.gender', [$gender, 'unisex']);
+        }
+
+        $diet->when($request->title, function ($q, $title) {
+            $q->where('dt.title', 'LIKE', "%{$title}%");
+        });
+
+        $diet->when($request->variety, function ($q, $variety) {
+            $q->where('diets.variety', $variety);
+        });
+
+        $diet->when($request->category, function ($q, $category) {
+            if (is_numeric($category)) {
+                $q->where('cd.id', (int) $category);
+            } else {
+                $q->where('cd.title', 'LIKE', "%{$category}%");
+            }
+        });
+
+        $diet->when($request->categorydiet_id, function ($q, $id) {
+            $q->where('diets.categorydiet_id', $id);
+        });
+
+        $diet->when($request->has('is_featured'), function ($q) use ($request) {
+            $q->where('diets.is_featured', $request->is_featured);
+        });
+
+        $diet->when($request->has('is_premium'), function ($q) use ($request) {
+            $q->where('diets.is_premium', $request->is_premium);
+        });
+
+        $per_page = config('constant.PER_PAGE_LIMIT');
+        if ($request->filled('per_page')) {
+            $per_page = $request->per_page == -1
+                ? $diet->count()
+                : (int) $request->per_page;
+        }
+
+        $diet = $diet->orderBy('title', 'asc')->paginate($per_page);
+
+        $items = $diet->getCollection()->map(function ($row) {
+            return [
+                'id' => $row->id,
+                'title' => $row->title,
+                'variety' => $row->variety,
+                'diet_image' => $row->diet_image,
+                'diet_image_url' => $row->diet_image ? asset('https://fitness.completepersonaltraining.com/storage/' . $row->diet_image) : null,
+                'is_featured' => $row->is_featured,
+                'status' => $row->status,
+                'ingredients' => $row->ingredients,
+                'description' => $row->description,
+                'is_premium' => $row->is_premium,
+                'categorydiet_id' => $row->categorydiet_id,
+                'categorydiet_title' => $row->categorydiet_title,
+                'created_at' => $row->created_at,
+                'updated_at' => $row->updated_at,
+            ];
+        });
+
+        $pagination = [
+            'total_items' => $diet->total(),
+            'per_page' => $diet->perPage(),
+            'currentPage' => $diet->currentPage(),
+            'totalPages' => $diet->lastPage(),
+        ];
+
+        return json_custom_response([
+            'pagination' => $pagination,
+            'data'       => $items,
+        ]);
+    }
+
 
     public function getDetail(Request $request)
     {

@@ -88,6 +88,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
    
 
     Route::get('diet-list', [ API\DietController::class, 'getList' ]);
+    Route::get('diet-list-v2', [ API\DietController::class, 'getListV2' ]);
     Route::post('diet-detail', [ API\DietController::class, 'getDetail' ]);
 
     Route::get('category-list', [ API\CategoryController::class, 'getList' ]);
