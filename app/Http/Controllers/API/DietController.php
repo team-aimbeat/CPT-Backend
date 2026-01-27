@@ -130,6 +130,9 @@ class DietController extends Controller
         })
         ->select(
             'diets.id',
+            'diets.title',
+            'diets.ingredients',
+            'diets.description',
             'diets.variety',
             'diets.diet_image',
             'diets.is_featured',
@@ -138,9 +141,9 @@ class DietController extends Controller
             'diets.categorydiet_id',
             'diets.created_at',
             'diets.updated_at',
-            DB::raw('COALESCE(diet_translations.title, diets.title) as title'),
-            DB::raw('COALESCE(diet_translations.ingredients, diets.ingredients) as ingredients'),
-            DB::raw('COALESCE(diet_translations.description, diets.description) as description')
+            'diet_translations.title as translation_title',
+            'diet_translations.ingredients as translation_ingredients',
+            'diet_translations.description as translation_description'
         );
 
     /* ---------------- USER GENDER FILTER ---------------- */
