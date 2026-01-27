@@ -9,6 +9,7 @@ use App\Http\Resources\DietResource;
 use App\Http\Resources\DietDetailResource;
 use App\Models\UserFavouriteDiet;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\DB;
 
 class DietController extends Controller
 {
