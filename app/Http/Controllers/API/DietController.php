@@ -249,7 +249,10 @@ class DietController extends Controller
             ], 403);
         }
 
-        $languageId = (int) $request->input('lang_id', 2);
+        $languageId = (int) ($request->input('lang_id')
+            ?? $request->input('language_id')
+            ?? $request->input('lang')
+            ?? 2);
 
         $diet = Diet::query()
             ->leftJoin('diet_translations as dt', function ($join) use ($languageId) {
