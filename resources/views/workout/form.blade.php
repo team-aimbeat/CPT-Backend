@@ -238,7 +238,8 @@
 <tr id="row_{{ $i }}" row="{{ $i }}">
 <td></td>
 
-<td>{{ Form::select("week[$i]",range(1,12),$day->week,['class'=>'form-control']) }}</td>
+<td>{{ Form::select("week[$i]",array_combine(range(1,12), range(1,12))
+,$day->week,['class'=>'form-control']) }}</td>
 
 <td>{{ Form::select("day[$i]",
     ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
@@ -272,14 +273,8 @@
 @else
 <tr id="row_0" row="0">
 <td></td>
-<td>
-    {{ Form::select(
-    "week[$i]",
-    array_combine(range(1,12), range(1,12)),
-    $day->week,
-    ['class' => 'form-control']
-) }}
-</td>
+<td>{{ Form::select('week[0]',array_combine(range(1,12), range(1,12))
+,1,['class'=>'form-control']) }}</td>
 <td>{{ Form::select('day[0]',['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],null,['class'=>'form-control']) }}</td>
 <td>
 {{ Form::select('exercise_ids[0][]',[],null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}
