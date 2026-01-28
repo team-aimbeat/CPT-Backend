@@ -423,11 +423,6 @@ public function getAbsenteeCircularWorkouts(Request $request)
   
 
 
-
-
-
-
-
 public function getUserAssignedWorkouts(Request $request)
 {
     /* -------------------------------------------------
@@ -446,22 +441,16 @@ public function getUserAssignedWorkouts(Request $request)
      | 2. LANGUAGE SETUP
      |--------------------------------------------------*/
     $preferredLanguageId = (int) $request->input('lang');
-    $fallbackLanguageId  = 2; // English
+    $fallbackLanguageId  = 2;
 
     if (!$preferredLanguageId || $preferredLanguageId <= 0) {
         $preferredLanguageId = $fallbackLanguageId;
     }
 
-    $preferredVideoKey = ($preferredLanguageId === 1)
-        ? 'video_url_full'
-        : 'english_video_url';
-
-    $fallbackVideoKey = 'english_video_url';
-
     /* -------------------------------------------------
-     | 3. DAY & WEEK CALCULATION
+     | 3. DAY & WEEK
      |--------------------------------------------------*/
-    $currentDayNumber  = date('N'); // 1–7
+    $currentDayNumber  = date('N');
     $currentWeekNumber = (int) ceil(date('j') / 7);
 
     $dayNames = [
@@ -475,15 +464,13 @@ public function getUserAssignedWorkouts(Request $request)
     /* -------------------------------------------------
      | 4. CURRENT ACTIVE CYCLE
      |--------------------------------------------------*/
-    
-    
     $currentCycle = DB::table('assign_workouts')
-    ->where('user_id', $user->id)
-    ->where(function ($q) {
-        $q->where('status', '!=', 1)
-          ->orWhere('disable', '!=', 1);
-    })
-    ->max('cycle_no');
+        ->where('user_id', $user->id)
+        ->where(function ($q) {
+            $q->where('status', '!=', 1)
+              ->orWhere('disable', '!=', 1);
+        })
+        ->max('cycle_no');
 
     if (!$currentCycle) {
         return response()->json([
@@ -494,7 +481,7 @@ public function getUserAssignedWorkouts(Request $request)
     }
 
     /* -------------------------------------------------
-     | 5. LOAD ACTIVE WORKOUTS (PIVOT SAFE)
+     | 5. LOAD ASSIGNED WORKOUTS
      |--------------------------------------------------*/
     $user->load([
         'assignedWorkouts' => function ($query) use (
@@ -502,29 +489,26 @@ public function getUserAssignedWorkouts(Request $request)
             $currentDayNumber,
             $currentCycle
         ) {
-           
-            
             $query->where('assign_workouts.cycle_no', $currentCycle)
-              ->where(function ($q) {
-                  $q->where('assign_workouts.status', '!=', 1)
-                    ->orWhere('assign_workouts.disable', '!=', 1);
-              })
-            
-                  ->with([
-                      'workoutDays' => function ($query) use (
-                          $currentWeekNumber,
-                          $currentDayNumber
-                      ) {
-                          $query->where('week', $currentWeekNumber)
-                                ->where('day', $currentDayNumber)
-                                ->with('workoutDayExercises.exercise.exerciseVideos');
-                      }
-                  ]);
+                ->where(function ($q) {
+                    $q->where('assign_workouts.status', '!=', 1)
+                      ->orWhere('assign_workouts.disable', '!=', 1);
+                })
+                ->with([
+                    'workoutDays' => function ($q) use (
+                        $currentWeekNumber,
+                        $currentDayNumber
+                    ) {
+                        $q->where('week', $currentWeekNumber)
+                          ->where('day', $currentDayNumber)
+                          ->with('workoutDayExercises.exercise.exerciseVideos');
+                    }
+                ]);
         }
     ]);
 
     /* -------------------------------------------------
-     | 6. BUILD RESPONSE
+     | 6. RESPONSE BUILD
      |--------------------------------------------------*/
     $excludedKeys = [
         'bodypart_ids', 'duration', 'based',
@@ -537,8 +521,6 @@ public function getUserAssignedWorkouts(Request $request)
             $dayNames,
             $preferredLanguageId,
             $fallbackLanguageId,
-            $preferredVideoKey,
-            $fallbackVideoKey,
             $excludedKeys
         ) {
 
@@ -551,23 +533,23 @@ public function getUserAssignedWorkouts(Request $request)
                 ->map(function ($exercise) use (
                     $preferredLanguageId,
                     $fallbackLanguageId,
-                    $preferredVideoKey,
-                    $fallbackVideoKey,
                     $excludedKeys
                 ) {
 
                     /* ---------------------------
-                     | MAIN EXERCISE VIDEO
+                     | MAIN VIDEO (HLS priority)
                      |---------------------------*/
-                    $selectedVideoUrl =
-                        optional($exercise->exerciseVideos
+                    $videoRow =
+                        $exercise->exerciseVideos
                             ->firstWhere('languagelist_id', $preferredLanguageId)
-                        )->video_url
-                        ?? optional($exercise->exerciseVideos
-                            ->firstWhere('languagelist_id', $fallbackLanguageId)
-                        )->video_url
-                        ?? $exercise->{$preferredVideoKey}
-                        ?? $exercise->{$fallbackVideoKey};
+                        ?? $exercise->exerciseVideos
+                            ->firstWhere('languagelist_id', $fallbackLanguageId);
+
+                    $selectedVideoPath =
+                        $videoRow->hls_master_url
+                        ?? $videoRow->hls_720p_url
+                        ?? $videoRow->video_url
+                        ?? null;
 
                     /* ---------------------------
                      | ALTERNATE EXERCISE
@@ -576,53 +558,42 @@ public function getUserAssignedWorkouts(Request $request)
 
                     if (!empty($exercise->exercise_id)) {
 
-                        $alternateExercise = Exercise::with('exerciseVideos')
+                        $alt = Exercise::with('exerciseVideos')
                             ->find($exercise->exercise_id);
 
-                        if ($alternateExercise) {
+                        if ($alt) {
 
-                            $alternateSelectedVideo =
-                                optional($alternateExercise->exerciseVideos
+                            $altRow =
+                                $alt->exerciseVideos
                                     ->firstWhere('languagelist_id', $preferredLanguageId)
-                                )->video_url
-                                ?? optional($alternateExercise->exerciseVideos
-                                    ->firstWhere('languagelist_id', $fallbackLanguageId)
-                                )->video_url
-                                ?? $alternateExercise->{$preferredVideoKey}
-                                ?? $alternateExercise->{$fallbackVideoKey};
+                                ?? $alt->exerciseVideos
+                                    ->firstWhere('languagelist_id', $fallbackLanguageId);
 
-                            $alternate = collect($alternateExercise->toArray())
+                            $altVideoPath =
+                                $altRow->hls_master_url
+                                ?? $altRow->hls_720p_url
+                                ?? $altRow->video_url
+                                ?? null;
+
+                            $alternate = collect($alt->toArray())
                                 ->except($excludedKeys)
                                 ->toArray();
 
-                            $alternate['exercise_videos'] =
-                                $alternateExercise->exerciseVideos->map(fn ($video) => [
-                                    'id' => $video->id,
-                                    'languagelist_id' => $video->languagelist_id,
-                                    'exercise_id' => $video->exercise_id,
-                                    'video_url' => $video->video_url,
-                                ])->toArray();
-
-                            $alternate['selected_video_url'] = $alternateSelectedVideo;
+                            $alternate['selected_video_url'] =
+                                $altVideoPath ? cloudfrontUrl($altVideoPath) : null;
                         }
                     }
 
                     /* ---------------------------
-                     | MAIN EXERCISE RESPONSE
+                     | MAIN RESPONSE
                      |---------------------------*/
                     $exerciseArray = collect($exercise->toArray())
                         ->except($excludedKeys)
                         ->toArray();
 
-                    $exerciseArray['exercise_videos'] =
-                        $exercise->exerciseVideos->map(fn ($video) => [
-                            'id' => $video->id,
-                            'languagelist_id' => $video->languagelist_id,
-                            'exercise_id' => $video->exercise_id,
-                            'video_url' => $video->video_url,
-                        ])->toArray();
+                    $exerciseArray['selected_video_url'] =
+                        $selectedVideoPath ? cloudfrontUrl($selectedVideoPath) : null;
 
-                    $exerciseArray['selected_video_url'] = $selectedVideoUrl;
                     $exerciseArray['alternate_exercise'] = $alternate;
 
                     return $exerciseArray;
@@ -634,9 +605,20 @@ public function getUserAssignedWorkouts(Request $request)
                 'day_name' => $today->day_name,
                 'workout_week' => (string) $today->week,
                 'workout_day_number' => (string) $today->day,
-                'warmup_video' => $workout->video_url,
-                'stetch_video' => $workout->stetch_video,
-                'warmup_video_url' => $workout->video_url_warmup,
+
+                // 🔥 ALL via CloudFront
+                'warmup_video' => $workout->video_url
+                    ? cloudfrontUrl($workout->video_url)
+                    : null,
+
+                'stretch_video' => $workout->stetch_video
+                    ? cloudfrontUrl($workout->stetch_video)
+                    : null,
+
+                'warmup_video_url' => $workout->video_url_warmup
+                    ? cloudfrontUrl($workout->video_url_warmup)
+                    : null,
+
                 'exercises' => $exercises,
             ];
         })
@@ -656,6 +638,239 @@ public function getUserAssignedWorkouts(Request $request)
         'workouts_for_today' => $workoutsForToday,
     ]);
 }
+
+
+
+
+
+// public function getUserAssignedWorkouts(Request $request)
+// {
+//     /* -------------------------------------------------
+//      | 1. AUTH USER
+//      |--------------------------------------------------*/
+//     $user = auth('sanctum')->user();
+
+//     if (!$user) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Unauthorized'
+//         ], 401);
+//     }
+
+//     /* -------------------------------------------------
+//      | 2. LANGUAGE SETUP
+//      |--------------------------------------------------*/
+//     $preferredLanguageId = (int) $request->input('lang');
+//     $fallbackLanguageId  = 2; // English
+
+//     if (!$preferredLanguageId || $preferredLanguageId <= 0) {
+//         $preferredLanguageId = $fallbackLanguageId;
+//     }
+
+//     $preferredVideoKey = ($preferredLanguageId === 1)
+//         ? 'video_url_full'
+//         : 'english_video_url';
+
+//     $fallbackVideoKey = 'english_video_url';
+
+//     /* -------------------------------------------------
+//      | 3. DAY & WEEK CALCULATION
+//      |--------------------------------------------------*/
+//     $currentDayNumber  = date('N'); // 1–7
+//     $currentWeekNumber = (int) ceil(date('j') / 7);
+
+//     $dayNames = [
+//         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
+//         4 => 'Thursday', 5 => 'Friday',
+//         6 => 'Saturday', 7 => 'Sunday'
+//     ];
+
+//     $currentDayName = $dayNames[$currentDayNumber] ?? null;
+
+//     /* -------------------------------------------------
+//      | 4. CURRENT ACTIVE CYCLE
+//      |--------------------------------------------------*/
+    
+    
+//     $currentCycle = DB::table('assign_workouts')
+//     ->where('user_id', $user->id)
+//     ->where(function ($q) {
+//         $q->where('status', '!=', 1)
+//           ->orWhere('disable', '!=', 1);
+//     })
+//     ->max('cycle_no');
+
+//     if (!$currentCycle) {
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'No active workout plan',
+//             'workouts_for_today' => []
+//         ]);
+//     }
+
+//     /* -------------------------------------------------
+//      | 5. LOAD ACTIVE WORKOUTS (PIVOT SAFE)
+//      |--------------------------------------------------*/
+//     $user->load([
+//         'assignedWorkouts' => function ($query) use (
+//             $currentWeekNumber,
+//             $currentDayNumber,
+//             $currentCycle
+//         ) {
+           
+            
+//             $query->where('assign_workouts.cycle_no', $currentCycle)
+//               ->where(function ($q) {
+//                   $q->where('assign_workouts.status', '!=', 1)
+//                     ->orWhere('assign_workouts.disable', '!=', 1);
+//               })
+            
+//                   ->with([
+//                       'workoutDays' => function ($query) use (
+//                           $currentWeekNumber,
+//                           $currentDayNumber
+//                       ) {
+//                           $query->where('week', $currentWeekNumber)
+//                                 ->where('day', $currentDayNumber)
+//                                 ->with('workoutDayExercises.exercise.exerciseVideos');
+//                       }
+//                   ]);
+//         }
+//     ]);
+
+//     /* -------------------------------------------------
+//      | 6. BUILD RESPONSE
+//      |--------------------------------------------------*/
+//     $excludedKeys = [
+//         'bodypart_ids', 'duration', 'based',
+//         'type', 'equipment_id', 'level_id', 'sets'
+//     ];
+
+//     $workoutsForToday = $user->assignedWorkouts
+//         ->filter(fn ($workout) => $workout->workoutDays->isNotEmpty())
+//         ->map(function ($workout) use (
+//             $dayNames,
+//             $preferredLanguageId,
+//             $fallbackLanguageId,
+//             $preferredVideoKey,
+//             $fallbackVideoKey,
+//             $excludedKeys
+//         ) {
+
+//             $today = $workout->workoutDays->first();
+//             $today->day_name = $dayNames[$today->day] ?? null;
+
+//             $exercises = $today->workoutDayExercises
+//                 ->map(fn ($wde) => $wde->exercise)
+//                 ->filter()
+//                 ->map(function ($exercise) use (
+//                     $preferredLanguageId,
+//                     $fallbackLanguageId,
+//                     $preferredVideoKey,
+//                     $fallbackVideoKey,
+//                     $excludedKeys
+//                 ) {
+
+//                     /* ---------------------------
+//                      | MAIN EXERCISE VIDEO
+//                      |---------------------------*/
+//                     $selectedVideoUrl =
+//                         optional($exercise->exerciseVideos
+//                             ->firstWhere('languagelist_id', $preferredLanguageId)
+//                         )->video_url
+//                         ?? optional($exercise->exerciseVideos
+//                             ->firstWhere('languagelist_id', $fallbackLanguageId)
+//                         )->video_url
+//                         ?? $exercise->{$preferredVideoKey}
+//                         ?? $exercise->{$fallbackVideoKey};
+
+//                     /* ---------------------------
+//                      | ALTERNATE EXERCISE
+//                      |---------------------------*/
+//                     $alternate = null;
+
+//                     if (!empty($exercise->exercise_id)) {
+
+//                         $alternateExercise = Exercise::with('exerciseVideos')
+//                             ->find($exercise->exercise_id);
+
+//                         if ($alternateExercise) {
+
+//                             $alternateSelectedVideo =
+//                                 optional($alternateExercise->exerciseVideos
+//                                     ->firstWhere('languagelist_id', $preferredLanguageId)
+//                                 )->video_url
+//                                 ?? optional($alternateExercise->exerciseVideos
+//                                     ->firstWhere('languagelist_id', $fallbackLanguageId)
+//                                 )->video_url
+//                                 ?? $alternateExercise->{$preferredVideoKey}
+//                                 ?? $alternateExercise->{$fallbackVideoKey};
+
+//                             $alternate = collect($alternateExercise->toArray())
+//                                 ->except($excludedKeys)
+//                                 ->toArray();
+
+//                             $alternate['exercise_videos'] =
+//                                 $alternateExercise->exerciseVideos->map(fn ($video) => [
+//                                     'id' => $video->id,
+//                                     'languagelist_id' => $video->languagelist_id,
+//                                     'exercise_id' => $video->exercise_id,
+//                                     'video_url' => $video->video_url,
+//                                 ])->toArray();
+
+//                             $alternate['selected_video_url'] = $alternateSelectedVideo;
+//                         }
+//                     }
+
+//                     /* ---------------------------
+//                      | MAIN EXERCISE RESPONSE
+//                      |---------------------------*/
+//                     $exerciseArray = collect($exercise->toArray())
+//                         ->except($excludedKeys)
+//                         ->toArray();
+
+//                     $exerciseArray['exercise_videos'] =
+//                         $exercise->exerciseVideos->map(fn ($video) => [
+//                             'id' => $video->id,
+//                             'languagelist_id' => $video->languagelist_id,
+//                             'exercise_id' => $video->exercise_id,
+//                             'video_url' => $video->video_url,
+//                         ])->toArray();
+
+//                     $exerciseArray['selected_video_url'] = $selectedVideoUrl;
+//                     $exerciseArray['alternate_exercise'] = $alternate;
+
+//                     return $exerciseArray;
+//                 });
+
+//             return [
+//                 'workout_id' => $workout->id,
+//                 'workout_name' => $workout->title,
+//                 'day_name' => $today->day_name,
+//                 'workout_week' => (string) $today->week,
+//                 'workout_day_number' => (string) $today->day,
+//                 'warmup_video' => $workout->video_url,
+//                 'stetch_video' => $workout->stetch_video,
+//                 'warmup_video_url' => $workout->video_url_warmup,
+//                 'exercises' => $exercises,
+//             ];
+//         })
+//         ->values();
+
+//     /* -------------------------------------------------
+//      | 7. FINAL RESPONSE
+//      |--------------------------------------------------*/
+//     return response()->json([
+//         'success' => true,
+//         'user_id' => $user->id,
+//         'user_name' => $user->first_name,
+//         'today_is' => $currentDayName,
+//         'current_week' => $currentWeekNumber,
+//         'current_cycle' => $currentCycle,
+//         'selected_language_id' => $preferredLanguageId,
+//         'workouts_for_today' => $workoutsForToday,
+//     ]);
+// }
 
 
 
