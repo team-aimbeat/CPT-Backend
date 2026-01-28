@@ -797,6 +797,7 @@ public function getUserAssignedWorkouts(Request $request)
                             $alternate = [
                                 'id' => $alt->id,
                                 'title' => $alt->title,
+                                'description' => $alt->instruction,
                                 'exercise_image' => $alt->exercise_image
                                     ? cloudfrontUrl($alt->exercise_image)
                                     : null,
