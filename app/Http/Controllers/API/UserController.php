@@ -243,7 +243,170 @@ class UserController extends Controller
         
         
         
-        public function updateWorkoutMode(Request $request)
+//         public function updateWorkoutMode(Request $request)
+// {
+//     DB::beginTransaction();
+
+//     try {
+
+//         /* ---------------------------------
+//          | 1. AUTH USER
+//          |----------------------------------*/
+//         $user = auth('sanctum')->user();
+
+//         if (!$user) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Unauthorized'
+//             ], 401);
+//         }
+
+//         /* ---------------------------------
+//          | 2. VALIDATION
+//          |----------------------------------*/
+//         $request->validate([
+//             'workout_mode' => 'required|exists:workout_types,id'
+//         ]);
+
+//         $profile = $user->userProfile;
+
+//         if (!$profile) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'User profile not found'
+//             ], 404);
+//         }
+
+//         $oldMode = $profile->workout_mode;
+//         $newMode = $request->workout_mode;
+
+//         // Same mode → no action
+//         if ($oldMode == $newMode) {
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Workout mode already active'
+//             ]);
+//         }
+
+//         /* ---------------------------------
+//          | 3. UPDATE PROFILE
+//          |----------------------------------*/
+//         $profile->update([
+//             'workout_mode' => $newMode
+//         ]);
+
+//         /* ---------------------------------
+//          | 4. CHECK IF SAME PLAN EXISTS (RESUME LOGIC)
+//          |----------------------------------*/
+//         $existingCycle = DB::table('assign_workouts')
+//             ->join('workouts', 'workouts.id', '=', 'assign_workouts.workout_id')
+//             ->where('assign_workouts.user_id', $user->id)
+//             ->where('workouts.workout_type_id', $newMode)
+//             ->where('workouts.level_id', $profile->workout_level)
+//             ->where('workouts.goal_id', $profile->goal)
+//             ->orderByDesc('assign_workouts.cycle_no')
+//             ->select('assign_workouts.cycle_no')
+//             ->first();
+
+//         /* ---------------------------------
+//          | 5. INACTIVATE CURRENT PENDING WORKOUTS
+//          |----------------------------------*/
+//         DB::table('assign_workouts')
+//             ->where('user_id', $user->id)
+//             ->where('status', 0) // pending only
+//             ->update([
+//                 'status' => 2, // inactive
+//                 'updated_at' => now()
+//             ]);
+
+//         /* ---------------------------------
+//          | 6A. RESUME OLD CYCLE (IF EXISTS)
+//          |----------------------------------*/
+//         if ($existingCycle) {
+
+//             DB::table('assign_workouts')
+//                 ->where('user_id', $user->id)
+//                 ->where('cycle_no', $existingCycle->cycle_no)
+//                 ->where('status', '!=', 1) // completed untouched
+//                 ->update([
+//                     'status' => 0,
+//                     'updated_at' => now()
+//                 ]);
+
+//             DB::commit();
+
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Workout plan resumed successfully',
+//                 'workout_mode' => $newMode,
+//                 'active_cycle' => $existingCycle->cycle_no,
+//                 'action' => 'resumed'
+//             ]);
+//         }
+
+//         /* ---------------------------------
+//          | 6B. CREATE NEW CYCLE (FIRST TIME PLAN)
+//          |----------------------------------*/
+//         $lastCycle = DB::table('assign_workouts')
+//             ->where('user_id', $user->id)
+//             ->max('cycle_no');
+
+//         $newCycle = ($lastCycle ?? 1) + 1;
+
+//         $workoutIds = Workout::where('workout_type_id', $newMode)
+//             ->where('level_id', $profile->workout_level)
+//             ->where('goal_id', $profile->goal)
+//             ->where('status', 'active')
+//             ->pluck('id');
+
+//         if ($workoutIds->isNotEmpty()) {
+
+//             $now = now();
+//             $insertData = [];
+
+//             foreach ($workoutIds as $workoutId) {
+//                 $insertData[] = [
+//                     'user_id'       => $user->id,
+//                     'workout_id'    => $workoutId,
+//                     'cycle_no'      => $newCycle,
+//                     'status'        => 0, // pending
+//                     'assigned_from' => 'workout_mode_update',
+//                     'created_at'    => $now,
+//                     'updated_at'    => $now,
+//                 ];
+//             }
+
+//             DB::table('assign_workouts')->insert($insertData);
+//         }
+
+//         DB::commit();
+
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Workout mode updated successfully',
+//             'workout_mode' => $newMode,
+//             'active_cycle' => $newCycle,
+//             'action' => 'new_cycle'
+//         ]);
+
+//     } catch (\Throwable $e) {
+
+//         DB::rollBack();
+
+//         \Log::error('Update Workout Mode Error', [
+//             'error' => $e->getMessage()
+//         ]);
+
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Failed to update workout mode'
+//         ], 500);
+//     }
+// }
+        
+        
+        
+public function updateWorkoutMode(Request $request)
 {
     DB::beginTransaction();
 
@@ -280,7 +443,6 @@ class UserController extends Controller
         $oldMode = $profile->workout_mode;
         $newMode = $request->workout_mode;
 
-        // Same mode → no action
         if ($oldMode == $newMode) {
             return response()->json([
                 'success' => true,
@@ -296,7 +458,7 @@ class UserController extends Controller
         ]);
 
         /* ---------------------------------
-         | 4. CHECK IF SAME PLAN EXISTS (RESUME LOGIC)
+         | 4. FIND EXISTING CYCLE (RESUME)
          |----------------------------------*/
         $existingCycle = DB::table('assign_workouts')
             ->join('workouts', 'workouts.id', '=', 'assign_workouts.workout_id')
@@ -309,27 +471,29 @@ class UserController extends Controller
             ->first();
 
         /* ---------------------------------
-         | 5. INACTIVATE CURRENT PENDING WORKOUTS
+         | 5. INACTIVATE ALL CYCLES (CRITICAL)
          |----------------------------------*/
         DB::table('assign_workouts')
             ->where('user_id', $user->id)
-            ->where('status', 0) // pending only
             ->update([
-                'status' => 2, // inactive
+                'is_active' => 0,
+                'status' => 2,
                 'updated_at' => now()
             ]);
 
         /* ---------------------------------
-         | 6A. RESUME OLD CYCLE (IF EXISTS)
+         | 6A. RESUME OLD CYCLE
          |----------------------------------*/
         if ($existingCycle) {
 
             DB::table('assign_workouts')
                 ->where('user_id', $user->id)
                 ->where('cycle_no', $existingCycle->cycle_no)
-                ->where('status', '!=', 1) // completed untouched
+                ->where('status', '!=', 1)
                 ->update([
                     'status' => 0,
+                    'disable' => 0,
+                    'is_active' => 1, // ✅ IMPORTANT
                     'updated_at' => now()
                 ]);
 
@@ -345,13 +509,13 @@ class UserController extends Controller
         }
 
         /* ---------------------------------
-         | 6B. CREATE NEW CYCLE (FIRST TIME PLAN)
+         | 6B. CREATE NEW CYCLE
          |----------------------------------*/
         $lastCycle = DB::table('assign_workouts')
             ->where('user_id', $user->id)
             ->max('cycle_no');
 
-        $newCycle = ($lastCycle ?? 1) + 1;
+        $newCycle = ($lastCycle ?? 0) + 1;
 
         $workoutIds = Workout::where('workout_type_id', $newMode)
             ->where('level_id', $profile->workout_level)
@@ -369,7 +533,9 @@ class UserController extends Controller
                     'user_id'       => $user->id,
                     'workout_id'    => $workoutId,
                     'cycle_no'      => $newCycle,
-                    'status'        => 0, // pending
+                    'status'        => 0,
+                    'disable'       => 0,
+                    'is_active'     => 1, // ✅ IMPORTANT
                     'assigned_from' => 'workout_mode_update',
                     'created_at'    => $now,
                     'updated_at'    => $now,
@@ -403,133 +569,7 @@ class UserController extends Controller
         ], 500);
     }
 }
-        
-        
-        
-//         public function updateWorkoutMode(Request $request)
-// {
-//     DB::beginTransaction();
 
-//     try {
-
-//         $user = Auth::user();
-        
-
-//         if (!$user) {
-//             return json_message_response('User not found', 404);
-//         }
-
-//         $request->validate([
-//             'workout_mode' => 'required|exists:workout_types,id',
-//         ]);
-
-//         $profile = $user->userProfile;
-
-//         if (!$profile) {
-//             return json_message_response('User profile not found', 404);
-//         }
-
-//         $oldMode = $profile->workout_mode;
-//         $newMode = $request->workout_mode;
-
-//         // ❌ Same mode → no action
-//         if ($oldMode == $newMode) {
-//             return json_custom_response([
-//                 'message' => 'Workout mode already selected',
-//                 'status'  => true
-//             ]);
-//         }
-
-//         /* -------------------------
-//          | 1. Update workout mode
-//          |--------------------------*/
-//         $profile->update([
-//             'workout_mode' => $newMode
-//         ]);
-
-//         /* -------------------------
-//          | 2. Inactivate old pending workouts
-//          |--------------------------*/
-//         DB::table('assign_workouts')
-//             ->where('user_id', $user->id)
-//             ->where('status', '!=', 1) // completed safe
-//             ->update([
-//                 'status' => 2, // inactive
-//                 'updated_at' => now()
-//             ]);
-
-//         /* -------------------------
-//          | 3. New cycle number
-//          |--------------------------*/
-//         $lastCycle = DB::table('assign_workouts')
-//             ->where('user_id', $user->id)
-//             ->max('cycle_no');
-
-//         $newCycle = ($lastCycle ?? 1) + 1;
-
-//         /* -------------------------
-//          | 4. Assign new workouts
-//          |--------------------------*/
-//         $workoutIds = Workout::where('workout_type_id', $newMode)
-//             ->where('level_id', $profile->workout_level)
-//             ->where('goal_id', $profile->goal)
-//             ->where('status', 'active')
-//             ->pluck('id');
-
-//         if ($workoutIds->isNotEmpty()) {
-
-//             $existingWorkoutIds = DB::table('assign_workouts')
-//                 ->where('user_id', $user->id)
-//                 ->pluck('workout_id')
-//                 ->toArray();
-
-//             $now = now();
-//             $insertData = [];
-
-//             foreach ($workoutIds as $workoutId) {
-
-//                 if (in_array($workoutId, $existingWorkoutIds)) {
-//                     continue;
-//                 }
-
-//                 $insertData[] = [
-//                     'user_id'       => $user->id,
-//                     'workout_id'    => $workoutId,
-//                     'cycle_no'      => $newCycle,
-//                     'status'        => 0, // pending
-//                     'assigned_from' => 'workout_mode_update',
-//                     'created_at'    => $now,
-//                     'updated_at'    => $now,
-//                 ];
-//             }
-
-//             if (!empty($insertData)) {
-//                 DB::table('assign_workouts')->insert($insertData);
-//             }
-//         }
-
-//         DB::commit();
-
-//         return json_custom_response([
-//             'message' => 'Workout mode updated successfully',
-//             'new_workout_mode' => $newMode,
-//             'new_cycle' => $newCycle
-//         ]);
-
-//     } catch (\Throwable $e) {
-
-//         DB::rollBack();
-
-//         Log::error('Workout Mode Update Error', [
-//             'error' => $e->getMessage()
-//         ]);
-
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Failed to update workout mode'
-//         ], 500);
-//     }
-// }
 
 
 

@@ -681,12 +681,17 @@ public function getUserAssignedWorkouts(Request $request)
     /* -------------------------------------------------
      | 4. ✅ CURRENT ACTIVE CYCLE (FIXED LOGIC)
      |--------------------------------------------------*/
+    // $currentCycle = DB::table('assign_workouts')
+    //     ->where('user_id', $user->id)
+    //     ->where('assigned_from', 'workout_mode_update')
+    //     ->where('disable', 0)
+    //     ->orderByDesc('id')
+    //     ->value('cycle_no');
+
     $currentCycle = DB::table('assign_workouts')
-        ->where('user_id', $user->id)
-        ->where('assigned_from', 'workout_mode_update')
-        ->where('disable', 0)
-        ->orderByDesc('id')
-        ->value('cycle_no');
+    ->where('user_id', $user->id)
+    ->where('is_active', 1)
+    ->value('cycle_no');
 
     // 🛟 fallback: first-time users / old users
     if (!$currentCycle) {
