@@ -679,15 +679,23 @@ public function getUserAssignedWorkouts(Request $request)
     $currentDayName = $dayNames[$currentDayNumber] ?? null;
 
     /* -------------------------------------------------
-     | 4. CURRENT ACTIVE CYCLE
+     | 4. ✅ CURRENT ACTIVE CYCLE (FIXED LOGIC)
      |--------------------------------------------------*/
     $currentCycle = DB::table('assign_workouts')
         ->where('user_id', $user->id)
-        ->where(function ($q) {
-            $q->where('status', '!=', 1)
-              ->orWhere('disable', '!=', 1);
-        })
-        ->max('cycle_no');
+        ->where('assigned_from', 'workout_mode_update')
+        ->where('disable', 0)
+        ->orderByDesc('id')
+        ->value('cycle_no');
+
+    // 🛟 fallback: first-time users / old users
+    if (!$currentCycle) {
+        $currentCycle = DB::table('assign_workouts')
+            ->where('user_id', $user->id)
+            ->where('disable', 0)
+            ->orderByDesc('id')
+            ->value('cycle_no');
+    }
 
     if (!$currentCycle) {
         return response()->json([
@@ -707,10 +715,7 @@ public function getUserAssignedWorkouts(Request $request)
             $currentCycle
         ) {
             $query->where('assign_workouts.cycle_no', $currentCycle)
-                ->where(function ($q) {
-                    $q->where('assign_workouts.status', '!=', 1)
-                      ->orWhere('assign_workouts.disable', '!=', 1);
-                })
+                ->where('assign_workouts.disable', 0)
                 ->with([
                     'workoutDays' => function ($q) use (
                         $currentWeekNumber,
@@ -754,7 +759,7 @@ public function getUserAssignedWorkouts(Request $request)
                 ) {
 
                     /* ---------------------------
-                     | MAIN VIDEO (HLS PRIORITY)
+                     | MAIN VIDEO (HLS priority)
                      |---------------------------*/
                     $videoRow =
                         $exercise->exerciseVideos
@@ -774,10 +779,12 @@ public function getUserAssignedWorkouts(Request $request)
                     $alternate = null;
 
                     if (!empty($exercise->exercise_id)) {
+
                         $alt = Exercise::with('exerciseVideos')
                             ->find($exercise->exercise_id);
 
                         if ($alt) {
+
                             $altRow =
                                 $alt->exerciseVideos
                                     ->firstWhere('languagelist_id', $preferredLanguageId)
@@ -821,7 +828,10 @@ public function getUserAssignedWorkouts(Request $request)
                     $exerciseArray['exercise_gif'] =
                         $exercise->exercise_gif ? cloudfrontUrl($exercise->exercise_gif) : null;
 
-                    unset($exerciseArray['exercise_image_url'], $exerciseArray['exercise_gif_url']);
+                    unset(
+                        $exerciseArray['exercise_image_url'],
+                        $exerciseArray['exercise_gif_url']
+                    );
 
                     $exerciseArray['alternate_exercise'] = $alternate;
 
@@ -858,11 +868,12 @@ public function getUserAssignedWorkouts(Request $request)
         'user_name' => $user->first_name,
         'today_is' => $currentDayName,
         'current_week' => $currentWeekNumber,
-        'current_cycle' => $currentCycle,
+        'current_cycle' => $currentCycle, // ✅ FIXED
         'selected_language_id' => $preferredLanguageId,
         'workouts_for_today' => $workoutsForToday,
     ]);
 }
+
 
 
 
