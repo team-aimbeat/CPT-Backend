@@ -26,220 +26,267 @@ class UserController extends Controller
 {
     use SubscriptionTrait;
     
+   
+    
+    
+    
     // public function register(UserRequest $request)
-    // {
-    //     $input = $request->all();
-    //     info('register: ' . json_encode($input));
-    //     $password = $input['password'];
-    //     $input['user_type'] = isset($input['user_type']) ? $input['user_type'] : 'user';
-    //     $input['password'] = Hash::make($password);
-
-    //     $input['status'] = isset($input['status']) ? $input['status'] : 'pending';
-    //     if (request('player_id') == "nil") {
-    //         $input['player_id'] = NULL;
-    //     }
-    //     $input['display_name'] = $input['first_name'] . " " . $input['last_name'];
-    //     $user = User::create($input);
-    //     $user->assignRole($input['user_type']);
-
-    //     $userProfile = null;
-    //     if ($request->has('user_profile') && $request->user_profile != null) {
-
-    //         $userProfile = $user->userProfile()->create($request->user_profile);
-    //     }
-
+    //     {
+    //         DB::beginTransaction();
         
-    //     $userProfileData = $request->input('user_profile', []); 
-    //     $userLevelId = $userProfileData['workout_level'] ?? null; 
-    //     $userGoalId = $userProfileData['goal'] ?? null;           
-    //     $userWorkoutTypeId = $userProfileData['workout_mode'] ?? null;
+    //         try {
         
-    //     $assignedWorkouts = collect(); 
-
-    //     if ($userLevelId && $userGoalId && $userWorkoutTypeId) {
-    //         $matchingWorkouts = Workout::where('level_id', $userLevelId)
-    //             ->where('goal_id', $userGoalId)
-    //             ->where('workout_type_id', $userWorkoutTypeId)
-    //             ->pluck('id');
-
-    //         if ($matchingWorkouts->isNotEmpty()) {
-    //             $dataToInsert = [];
-    //             $currentTimestamp = now();
-
-    //             foreach ($matchingWorkouts as $workoutId) {
-    //                 $dataToInsert[] = [
-    //                     'user_id' => $user->id,
-    //                     'workout_id' => $workoutId,
-    //                     'status' => 0, 
-    //                     'created_at' => $currentTimestamp,
-    //                     'updated_at' => $currentTimestamp,
-    //                 ];
+    //             /* -------------------------
+    //              | 1. USER CREATE
+    //              |--------------------------*/
+    //             $input = $request->all();
+    //             info('register_request: ' . json_encode($input));
+        
+    //             $password = $input['password'];
+    //             $input['user_type'] = $input['user_type'] ?? 'user';
+    //             $input['status'] = $input['status'] ?? 'pending';
+    //             $input['password'] = Hash::make($password);
+        
+    //             if (request('player_id') === 'nil') {
+    //                 $input['player_id'] = null;
     //             }
-
-    //             DB::table('assign_workouts')->insert($dataToInsert);
-    //             info('Assigned ' . $matchingWorkouts->count() . ' workouts to new user ' . $user->id);
-
-    //             $assignedWorkouts = DB::table('assign_workouts')
-    //                                     ->where('user_id', $user->id)
-    //                                     ->get();
+        
+    //             $input['display_name'] = trim($input['first_name'] . ' ' . $input['last_name']);
+        
+    //             $user = User::create($input);
+    //             $user->assignRole($input['user_type']);
+        
+    //             /* -------------------------
+    //              | 2. USER PROFILE CREATE
+    //              |--------------------------*/
+    //             $userProfile = null;
+    //             if ($request->filled('user_profile')) {
+    //                 $userProfile = $user->userProfile()->create($request->user_profile);
+    //             }
+        
+    //             /* -------------------------
+    //              | 3. ASSIGN FIRST WORKOUT CYCLE
+    //              |--------------------------*/
+    //             $assignedWorkouts = collect();
+        
+    //             if ($userProfile) {
+        
+    //                 $levelId       = $userProfile->workout_level ?? null;
+    //                 $goalId        = $userProfile->goal ?? null;
+    //                 $workoutTypeId = $userProfile->workout_mode ?? null;
+        
+    //                 if ($levelId && $goalId && $workoutTypeId) {
+        
+    //                     $cycleNo = 1; // FIRST CYCLE (REGISTER)
+        
+    //                     $workoutIds = Workout::where('level_id', $levelId)
+    //                         ->where('goal_id', $goalId)
+    //                         ->where('workout_type_id', $workoutTypeId)
+    //                         ->where('status', 'active')
+    //                         ->pluck('id');
+        
+    //                     if ($workoutIds->isNotEmpty()) {
+        
+    //                         $now = now();
+    //                         $insertData = [];
+        
+    //                         foreach ($workoutIds as $workoutId) {
+    //                             $insertData[] = [
+    //                                 'user_id'       => $user->id,
+    //                                 'workout_id'    => $workoutId,
+    //                                 'cycle_no'      => $cycleNo,
+    //                                 'status'        => 0, // pending
+    //                                 'assigned_from' => 'register',
+    //                                 'created_at'    => $now,
+    //                                 'updated_at'    => $now,
+    //                             ];
+    //                         }
+        
+    //                         DB::table('assign_workouts')->insert($insertData);
+        
+    //                         $assignedWorkouts = DB::table('assign_workouts')
+    //                             ->where('user_id', $user->id)
+    //                             ->where('cycle_no', $cycleNo)
+    //                             ->get();
+    //                     }
+    //                 }
+    //             }
+        
+    //             /* -------------------------
+    //              | 4. TOKEN + MEDIA
+    //              |--------------------------*/
+    //             $user->api_token = $user->createToken('auth_token')->plainTextToken;
+    //             $user->profile_image = getSingleMedia($user, 'profile_image', null);
+        
+    //             unset($user->roles);
+        
+    //             /* -------------------------
+    //              | 5. RESPONSE BUILD
+    //              |--------------------------*/
+    //             $user->setHidden(['userProfile']);
+        
+    //             $userData = $user->toArray();
+    //             $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
+    //             $userData['assigned_workouts'] = $assignedWorkouts->toArray();
+        
+    //             $message = __('message.save_form', [
+    //                 'form' => __('message.' . $input['user_type'])
+    //             ]);
+        
+    //             DB::commit();
+        
+    //             return json_custom_response([
+    //                 'success' => true,
+    //                 'message' => $message,
+    //                 'data' => $userData
+    //             ]);
+        
+    //         } catch (\Throwable $e) {
+        
+    //             DB::rollBack();
+        
+    //             Log::error('Register Error', [
+    //                 'error' => $e->getMessage(),
+    //                 'trace' => $e->getTraceAsString()
+    //             ]);
+        
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Registration failed. Please try again.'
+    //             ], 500);
     //         }
     //     }
 
-    //     $user->api_token = $user->createToken('auth_token')->plainTextToken;
-    //     $user->profile_image = getSingleMedia($user, 'profile_image', null);
-    //     unset($user->roles);
 
 
-    //     $message = __('message.save_form', ['form' => __('message.' . $input['user_type'])]);
 
-    //     $user->setHidden(['userProfile']); 
-        
-    //     $userData = $user->toArray();
-        
-    //     $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
-    //     $userData['assigned_workouts'] = $assignedWorkouts->toArray();
-
-      
-    //     if (isset($userData['user_profile'])) {
-    //         unset($userData['user_profile']);
-    //     }
-
-    //     $response = [
-    //         'message' => $message,
-    //         'data' => $userData
-    //     ];
-
-    //     return json_custom_response($response);
-    // }
-    
-    
-    
     public function register(UserRequest $request)
-        {
-            DB::beginTransaction();
-        
-            try {
-        
-                /* -------------------------
-                 | 1. USER CREATE
-                 |--------------------------*/
-                $input = $request->all();
-                info('register_request: ' . json_encode($input));
-        
-                $password = $input['password'];
-                $input['user_type'] = $input['user_type'] ?? 'user';
-                $input['status'] = $input['status'] ?? 'pending';
-                $input['password'] = Hash::make($password);
-        
-                if (request('player_id') === 'nil') {
-                    $input['player_id'] = null;
-                }
-        
-                $input['display_name'] = trim($input['first_name'] . ' ' . $input['last_name']);
-        
-                $user = User::create($input);
-                $user->assignRole($input['user_type']);
-        
-                /* -------------------------
-                 | 2. USER PROFILE CREATE
-                 |--------------------------*/
-                $userProfile = null;
-                if ($request->filled('user_profile')) {
-                    $userProfile = $user->userProfile()->create($request->user_profile);
-                }
-        
-                /* -------------------------
-                 | 3. ASSIGN FIRST WORKOUT CYCLE
-                 |--------------------------*/
-                $assignedWorkouts = collect();
-        
-                if ($userProfile) {
-        
-                    $levelId       = $userProfile->workout_level ?? null;
-                    $goalId        = $userProfile->goal ?? null;
-                    $workoutTypeId = $userProfile->workout_mode ?? null;
-        
-                    if ($levelId && $goalId && $workoutTypeId) {
-        
-                        $cycleNo = 1; // FIRST CYCLE (REGISTER)
-        
-                        $workoutIds = Workout::where('level_id', $levelId)
-                            ->where('goal_id', $goalId)
-                            ->where('workout_type_id', $workoutTypeId)
-                            ->where('status', 'active')
-                            ->pluck('id');
-        
-                        if ($workoutIds->isNotEmpty()) {
-        
-                            $now = now();
-                            $insertData = [];
-        
-                            foreach ($workoutIds as $workoutId) {
-                                $insertData[] = [
-                                    'user_id'       => $user->id,
-                                    'workout_id'    => $workoutId,
-                                    'cycle_no'      => $cycleNo,
-                                    'status'        => 0, // pending
-                                    'assigned_from' => 'register',
-                                    'created_at'    => $now,
-                                    'updated_at'    => $now,
-                                ];
-                            }
-        
-                            DB::table('assign_workouts')->insert($insertData);
-        
-                            $assignedWorkouts = DB::table('assign_workouts')
-                                ->where('user_id', $user->id)
-                                ->where('cycle_no', $cycleNo)
-                                ->get();
-                        }
+{
+    DB::beginTransaction();
+
+    try {
+
+        /* -------------------------
+         | 1. USER CREATE
+         |--------------------------*/
+        $input = $request->all();
+
+        $password = $input['password'];
+        $input['user_type'] = $input['user_type'] ?? 'user';
+        $input['status'] = $input['status'] ?? 'pending';
+        $input['password'] = Hash::make($password);
+
+        if (request('player_id') === 'nil') {
+            $input['player_id'] = null;
+        }
+
+        $input['display_name'] = trim($input['first_name'] . ' ' . $input['last_name']);
+
+        $user = User::create($input);
+        $user->assignRole($input['user_type']);
+
+        /* -------------------------
+         | 2. USER PROFILE
+         |--------------------------*/
+        $userProfile = null;
+        if ($request->filled('user_profile')) {
+            $userProfile = $user->userProfile()->create($request->user_profile);
+        }
+
+        /* -------------------------
+         | 3. ASSIGN FIRST WORKOUT CYCLE (FIXED)
+         |--------------------------*/
+        $assignedWorkouts = collect();
+
+        if ($userProfile) {
+
+            $levelId       = $userProfile->workout_level;
+            $goalId        = $userProfile->goal;
+            $workoutTypeId = $userProfile->workout_mode;
+
+            if ($levelId && $goalId && $workoutTypeId) {
+
+                $cycleNo = 1; // FIRST CYCLE
+
+                // 🔒 SAFETY: make sure no active cycle exists
+                DB::table('assign_workouts')
+                    ->where('user_id', $user->id)
+                    ->update(['is_active' => 0]);
+
+                $workoutIds = Workout::where('level_id', $levelId)
+                    ->where('goal_id', $goalId)
+                    ->where('workout_type_id', $workoutTypeId)
+                    ->where('status', 'active')
+                    ->pluck('id');
+
+                if ($workoutIds->isNotEmpty()) {
+
+                    $now = now();
+                    $insertData = [];
+
+                    foreach ($workoutIds as $workoutId) {
+                        $insertData[] = [
+                            'user_id'       => $user->id,
+                            'workout_id'    => $workoutId,
+                            'cycle_no'      => $cycleNo,
+                            'status'        => 0, // pending
+                            'is_active'     => 1, // ✅ VERY IMPORTANT
+                            'assigned_from' => 'register',
+                            'created_at'    => $now,
+                            'updated_at'    => $now,
+                        ];
                     }
+
+                    DB::table('assign_workouts')->insert($insertData);
+
+                    $assignedWorkouts = DB::table('assign_workouts')
+                        ->where('user_id', $user->id)
+                        ->where('cycle_no', $cycleNo)
+                        ->get();
                 }
-        
-                /* -------------------------
-                 | 4. TOKEN + MEDIA
-                 |--------------------------*/
-                $user->api_token = $user->createToken('auth_token')->plainTextToken;
-                $user->profile_image = getSingleMedia($user, 'profile_image', null);
-        
-                unset($user->roles);
-        
-                /* -------------------------
-                 | 5. RESPONSE BUILD
-                 |--------------------------*/
-                $user->setHidden(['userProfile']);
-        
-                $userData = $user->toArray();
-                $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
-                $userData['assigned_workouts'] = $assignedWorkouts->toArray();
-        
-                $message = __('message.save_form', [
-                    'form' => __('message.' . $input['user_type'])
-                ]);
-        
-                DB::commit();
-        
-                return json_custom_response([
-                    'success' => true,
-                    'message' => $message,
-                    'data' => $userData
-                ]);
-        
-            } catch (\Throwable $e) {
-        
-                DB::rollBack();
-        
-                Log::error('Register Error', [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-        
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Registration failed. Please try again.'
-                ], 500);
             }
         }
+
+        /* -------------------------
+         | 4. TOKEN
+         |--------------------------*/
+        $user->api_token = $user->createToken('auth_token')->plainTextToken;
+        $user->profile_image = getSingleMedia($user, 'profile_image', null);
+
+        unset($user->roles);
+
+        /* -------------------------
+         | 5. RESPONSE
+         |--------------------------*/
+        $user->setHidden(['userProfile']);
+
+        $userData = $user->toArray();
+        $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
+        $userData['assigned_workouts'] = $assignedWorkouts->toArray();
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User registered successfully',
+            'data' => $userData
+        ]);
+
+    } catch (\Throwable $e) {
+
+        DB::rollBack();
+
+        Log::error('Register Error', [
+            'error' => $e->getMessage()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Registration failed'
+        ], 500);
+    }
+}
+
         
         
         
@@ -575,7 +622,173 @@ public function updateWorkoutMode(Request $request)
 
 
 
-public function googleLoginOrRegister(Request $request)
+// public function googleLoginOrRegister(Request $request)
+// {
+//     DB::beginTransaction();
+
+//     try {
+
+//         /* -------------------------------
+//          | 1. VALIDATION
+//          |--------------------------------*/
+//         $request->validate([
+//             'email' => 'required|email|max:255',
+//             'provider_id' => 'required|string',
+//             'login_type' => 'required|in:google',
+//             'first_name' => 'nullable|string|max:255',
+//             'last_name' => 'nullable|string|max:255',
+//             'user_profile' => 'nullable|array',
+//         ]);
+
+//         $email = $request->email;
+//         $providerId = $request->provider_id;
+
+//         /* -------------------------------
+//          | 2. FIND USER
+//          |--------------------------------*/
+//         $user = User::where('provider_id', $providerId)
+//             ->orWhere('email', $email)
+//             ->first();
+
+//         $action = 'login';
+//         $message = __('message.login_success');
+
+//         /* -------------------------------
+//          | 3. REGISTER (FIRST TIME)
+//          |--------------------------------*/
+//         if (!$user) {
+
+//             $action = 'register';
+//             $message = __('message.save_form', ['form' => __('message.user')]);
+
+//             $username = explode('@', $email)[0];
+
+//             $user = User::create([
+//                 'email' => $email,
+//                 'provider' => 'google',
+//                 'provider_id' => $providerId,
+//                 'first_name' => $request->first_name ?? $username,
+//                 'last_name' => $request->last_name,
+//                 'username' => $username,
+//                 'display_name' => trim(($request->first_name ?? '') . ' ' . ($request->last_name ?? '')),
+//                 'user_type' => 'user',
+//                 'status' => 'active',
+//                 'login_type' => 'google',
+//                 'password' => null,
+//                 'email_verified_at' => now(),
+//             ]);
+
+//             $user->assignRole('user');
+//         }
+//         /* -------------------------------
+//          | 4. LINK PROVIDER (OLD USER)
+//          |--------------------------------*/
+//         else if (empty($user->provider_id)) {
+//             $user->update([
+//                 'provider' => 'google',
+//                 'provider_id' => $providerId,
+//                 'login_type' => 'google',
+//             ]);
+//         }
+
+//         /* -------------------------------
+//          | 5. USER PROFILE (OPTIONAL)
+//          |--------------------------------*/
+//         $userProfile = null;
+
+//         if ($request->filled('user_profile')) {
+//             $userProfile = $user->userProfile()->updateOrCreate(
+//                 ['user_id' => $user->id],
+//                 $request->user_profile
+//             );
+//         }
+
+//         /* -------------------------------
+//          | 6. ASSIGN WORKOUTS (ONLY ON REGISTER)
+//          |--------------------------------*/
+//         $assignedWorkouts = collect();
+
+//         if ($action === 'register' && $userProfile) {
+
+//             $levelId = $userProfile->workout_level;
+//             $goalId  = $userProfile->goal;
+//             $modeId  = $userProfile->workout_mode;
+
+//             if ($levelId && $goalId && $modeId) {
+
+//                 $cycleNo = 1;
+
+//                 $workoutIds = Workout::where('level_id', $levelId)
+//                     ->where('goal_id', $goalId)
+//                     ->where('workout_type_id', $modeId)
+//                     ->where('status', 'active')
+//                     ->pluck('id');
+
+//                 if ($workoutIds->isNotEmpty()) {
+
+//                     $now = now();
+//                     $insertData = [];
+
+//                     foreach ($workoutIds as $workoutId) {
+//                         $insertData[] = [
+//                             'user_id'       => $user->id,
+//                             'workout_id'    => $workoutId,
+//                             'cycle_no'      => $cycleNo,
+//                             'status'        => 0,
+//                             'assigned_from' => 'google_register',
+//                             'created_at'    => $now,
+//                             'updated_at'    => $now,
+//                         ];
+//                     }
+
+//                     DB::table('assign_workouts')->insert($insertData);
+
+//                     $assignedWorkouts = DB::table('assign_workouts')
+//                         ->where('user_id', $user->id)
+//                         ->where('cycle_no', $cycleNo)
+//                         ->get();
+//                 }
+//             }
+//         }
+
+//         /* -------------------------------
+//          | 7. TOKEN & RESPONSE
+//          |--------------------------------*/
+//         $user->api_token = $user->createToken('auth_token')->plainTextToken;
+//         $user->profile_image = getSingleMedia($user, 'profile_image', null);
+
+//         unset($user->roles);
+
+//         $userData = $user->toArray();
+//         $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
+//         $userData['assigned_workouts'] = $assignedWorkouts->toArray();
+
+//         DB::commit();
+
+//         return json_custom_response([
+//             'message' => $message,
+//             'action'  => $action,
+//             'data'    => $userData
+//         ]);
+
+//     } catch (\Throwable $e) {
+
+//         DB::rollBack();
+
+//         \Log::error('Google Login/Register Error', [
+//             'error' => $e->getMessage()
+//         ]);
+
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Google login failed'
+//         ], 500);
+//     }
+// }
+
+
+    
+  public function googleLoginOrRegister(Request $request)
 {
     DB::beginTransaction();
 
@@ -645,7 +858,7 @@ public function googleLoginOrRegister(Request $request)
         }
 
         /* -------------------------------
-         | 5. USER PROFILE (OPTIONAL)
+         | 5. USER PROFILE
          |--------------------------------*/
         $userProfile = null;
 
@@ -657,7 +870,7 @@ public function googleLoginOrRegister(Request $request)
         }
 
         /* -------------------------------
-         | 6. ASSIGN WORKOUTS (ONLY ON REGISTER)
+         | 6. ASSIGN FIRST WORKOUT CYCLE (✅ FIXED)
          |--------------------------------*/
         $assignedWorkouts = collect();
 
@@ -670,6 +883,11 @@ public function googleLoginOrRegister(Request $request)
             if ($levelId && $goalId && $modeId) {
 
                 $cycleNo = 1;
+
+                // 🔒 deactivate any previous cycles (safety)
+                DB::table('assign_workouts')
+                    ->where('user_id', $user->id)
+                    ->update(['is_active' => 0]);
 
                 $workoutIds = Workout::where('level_id', $levelId)
                     ->where('goal_id', $goalId)
@@ -688,6 +906,7 @@ public function googleLoginOrRegister(Request $request)
                             'workout_id'    => $workoutId,
                             'cycle_no'      => $cycleNo,
                             'status'        => 0,
+                            'is_active'     => 1, // ✅ VERY IMPORTANT
                             'assigned_from' => 'google_register',
                             'created_at'    => $now,
                             'updated_at'    => $now,
@@ -738,126 +957,9 @@ public function googleLoginOrRegister(Request $request)
         ], 500);
     }
 }
-
-
+  
     
-    
-    
-    // public function googleLoginOrRegister(Request $request)
-    // {
-       
-    //     $request->validate([
-    //         'email' => 'required|email|max:255',
-    //         'provider_id' => 'required|string', 
-    //         'first_name' => 'nullable|string|max:255',
-    //         'last_name' => 'nullable|string|max:255',
-    //         'login_type' => 'required|in:google',
-    //         'user_profile' => 'nullable|array', 
-    //     ]);
-
-    //     $input = $request->all();
-    //     $email = $input['email'];
-    //     $providerId = $input['provider_id'];
-
-    //     $user = User::where('provider_id', $providerId)
-    //                   ->orWhere('email', $email)
-    //                   ->first();
-
-    //     $action = 'login';
-    //     $message = __('message.login_success');
-
-    //     if (!$user) {
-    //         $action = 'register';
-    //         $message = __('message.save_form', ['form' => __('message.user')]);
-    //         $defaultUsername = explode('@', $email)[0];
-
-    //         $userData = [
-    //             'email' => $email,
-    //             'provider' => 'google',
-    //             'provider_id' => $providerId,
-    //             'first_name' => $input['first_name'] ?? explode('@', $email)[0],
-    //             'last_name' => $input['last_name'] ?? null,
-    //             'username' => $defaultUsername,
-    //             'display_name' => ($input['first_name'] ?? '') . ' ' . ($input['last_name'] ?? ''),
-    //             'user_type' => $input['user_type'] ?? 'user',
-    //             'status' => 'active', 
-    //             'login_type' => 'google',
-    //             'password' => null, 
-    //             'email_verified_at' => now(), 
-    //         ];
-            
-    //         $user = User::create($userData);
-    //         $user->assignRole($userData['user_type']);
-    //     } else {
-    //         if (empty($user->provider_id)) {
-    //             $user->update([
-    //                 'provider' => 'google',
-    //                 'provider_id' => $providerId,
-    //                 'login_type' => 'google',
-    //             ]);
-    //         }
-    //     }
-        
-    //     $userProfile = $user->userProfile;
-    //     $assignedWorkouts = collect();
-    //     $userProfileData = $request->input('user_profile', []);
-
-    //     if ($userProfileData) {
-    //         $userProfile = $user->userProfile()->updateOrCreate(
-    //             ['user_id' => $user->id],
-    //             $userProfileData
-    //         );
-
-    //         $userLevelId = $userProfileData['workout_level'] ?? null;
-    //         $userGoalId = $userProfileData['goal'] ?? null;
-    //         $userWorkoutTypeId = $userProfileData['workout_mode'] ?? null;
-
-    //         if ($userLevelId && $userGoalId && $userWorkoutTypeId && $action == 'register') {
-    //              $matchingWorkouts = Workout::where('level_id', $userLevelId)
-    //                  ->where('goal_id', $userGoalId)
-    //                  ->where('workout_type_id', $userWorkoutTypeId)
-    //                  ->pluck('id');
-
-    //              if ($matchingWorkouts->isNotEmpty()) {
-    //                  $dataToInsert = [];
-    //                  $currentTimestamp = now();
-    //                  foreach ($matchingWorkouts as $workoutId) {
-    //                      $dataToInsert[] = [
-    //                          'user_id' => $user->id,
-    //                          'workout_id' => $workoutId,
-    //                          'status' => 0,
-    //                          'created_at' => $currentTimestamp,
-    //                          'updated_at' => $currentTimestamp,
-    //                      ];
-    //                  }
-    //                  DB::table('assign_workouts')->insert($dataToInsert);
-    //              }
-    //         }
-    //     }
-
-        
-    //     $user->api_token = $user->createToken('auth_token')->plainTextToken;
-    //     $user->profile_image = getSingleMedia($user, 'profile_image', null);
-    //     unset($user->roles);
-        
-        
-    //     $assignedWorkouts = DB::table('assign_workouts')->where('user_id', $user->id)->get();
-
-    //     $userData = $user->toArray();
-    //     $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
-    //     $userData['assigned_workouts'] = $assignedWorkouts->toArray();
-    //     if (isset($userData['user_profile'])) {
-    //         unset($userData['user_profile']);
-    //     }
-        
-    //     $response = [
-    //         'message' => $message,
-    //         'data' => $userData,
-    //         'action' => $action, 
-    //     ];
-
-    //     return json_custom_response($response);
-    // }
+   
     
     
     
