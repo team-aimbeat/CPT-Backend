@@ -24,91 +24,13 @@ use Carbon\Carbon;
 class WorkoutController extends Controller
 {
     
-    // public function getAbsenteeCircularWorkouts(Request $request, $userId)
-    //     {
-    //         $user = User::find($userId);
-        
-    //         if (!$user) {
-    //             return response()->json(['success' => false, 'message' => 'User not found.'], 404);
-    //         }
-        
-    //         // --- 15 Days condition removed ---
-    //         // Ab ye har baar data return karega agar circular workouts assigned hain.
-        
-    //         // 1. Fetch "Circular" Workouts and their exercises
-    //         $preferredLanguageId = (int) $request->input('lang', 2);
-    //         $preferredVideoKey = ($preferredLanguageId === 1) ? 'video_url_full' : 'english_video_url';
-    //         $fallbackVideoKey = 'english_video_url';
-    //         $excludedKeys = ['bodypart_ids', 'duration', 'based', 'type', 'equipment_id', 'level_id', 'sets'];
-        
-    //         $circularWorkouts = $user->assignedWorkouts()
-    //             ->whereHas('workoutType', function($q) {
-    //                 $q->where('title', 'Circular'); 
-    //             })
-    //             ->where('disable', 0)
-    //             ->with(['workoutDays.workoutDayExercises.exercise.exerciseVideos'])
-    //             ->get();
-        
-    //         // Agar koi circular workout nahi mila
-    //         if ($circularWorkouts->isEmpty()) {
-    //             return response()->json([
-    //                 'success' => true,
-    //                 'message' => 'No circular workouts found for this user.',
-    //                 'workouts' => []
-    //             ]);
-    //         }
-        
-    //         $formattedWorkouts = $circularWorkouts->map(function ($workout) use ($preferredLanguageId, $preferredVideoKey, $fallbackVideoKey, $excludedKeys) {
-                
-    //             // Saari exercises nikalna (No week/day filter)
-    //             $allExercises = $workout->workoutDays->flatMap(function ($day) use ($preferredLanguageId, $preferredVideoKey, $fallbackVideoKey, $excludedKeys) {
-    //                 return $day->workoutDayExercises->map(function ($wde) use ($preferredLanguageId, $preferredVideoKey, $fallbackVideoKey, $excludedKeys) {
-    //                     $exercise = $wde->exercise;
-    //                     if (!$exercise) return null;
-        
-    //                     // Video selection logic
-    //                     $selectedVideoUrl = $exercise->exerciseVideos->firstWhere('languagelist_id', $preferredLanguageId)->video_url 
-    //                                         ?? $exercise->exerciseVideos->firstWhere('languagelist_id', 2)->video_url 
-    //                                         ?? $exercise->{$preferredVideoKey} 
-    //                                         ?? $exercise->{$fallbackVideoKey};
-        
-    //                     $exerciseArray = collect($exercise->toArray())->except($excludedKeys)->toArray();
-    //                     $exerciseArray['selected_video_url'] = $selectedVideoUrl;
-                        
-    //                     return $exerciseArray;
-    //                 });
-    //             })->filter()->unique('id')->values();
-        
-    //             return [
-    //                 'workout_id' => $workout->id,
-    //                 'workout_name' => $workout->title,
-    //                 'workout_type' => 'Circular',
-    //                 'warmup_video' => $workout->video_url,
-    //                 'exercises' => $allExercises,
-    //             ];
-    //         });
-        
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Returning all circular workouts.',
-    //             'workouts' => $formattedWorkouts
-    //         ]);
-    //     }
-    
-    
-    public function getAbsenteeCircularWorkouts(Request $request)
+
+public function getAbsenteeCircularWorkouts(Request $request)
 {
     /* -------------------------------
      | 1. LANGUAGE SETUP
      |--------------------------------*/
     $preferredLanguageId = (int) $request->input('lang', 2);
-    $preferredVideoKey = ($preferredLanguageId === 1) ? 'video_url_full' : 'english_video_url';
-    $fallbackVideoKey = 'english_video_url';
-
-    $excludedKeys = [
-        'bodypart_ids', 'duration', 'based',
-        'type', 'equipment_id', 'level_id', 'sets'
-    ];
 
     /* -------------------------------
      | 2. FETCH ALL CIRCULAR WORKOUTS
@@ -117,7 +39,9 @@ class WorkoutController extends Controller
             $q->where('title', 'Circular');
         })
         ->where('status', 'active')
-        ->with(['workoutDays.workoutDayExercises.exercise.exerciseVideos'])
+        ->with([
+            'workoutDays.workoutDayExercises.exercise.exerciseVideos'
+        ])
         ->get();
 
     if ($circularWorkouts->isEmpty()) {
@@ -131,47 +55,41 @@ class WorkoutController extends Controller
     /* -------------------------------
      | 3. FORMAT RESPONSE
      |--------------------------------*/
-    $formattedWorkouts = $circularWorkouts->map(function ($workout) use (
-        $preferredLanguageId,
-        $preferredVideoKey,
-        $fallbackVideoKey,
-        $excludedKeys
-    ) {
+    $formattedWorkouts = $circularWorkouts->map(function ($workout) use ($preferredLanguageId) {
 
-        // 🔁 All exercises from all days (no week/day filter)
         $allExercises = $workout->workoutDays
-            ->flatMap(function ($day) use (
-                $preferredLanguageId,
-                $preferredVideoKey,
-                $fallbackVideoKey,
-                $excludedKeys
-            ) {
-                return $day->workoutDayExercises->map(function ($wde) use (
-                    $preferredLanguageId,
-                    $preferredVideoKey,
-                    $fallbackVideoKey,
-                    $excludedKeys
-                ) {
+            ->flatMap(function ($day) use ($preferredLanguageId) {
+
+                return $day->workoutDayExercises->map(function ($wde) use ($preferredLanguageId) {
+
                     $exercise = $wde->exercise;
                     if (!$exercise) return null;
 
-                    $selectedVideoUrl =
-                        optional($exercise->exerciseVideos
+                    // 🎯 Preferred language → fallback English
+                    $videoRow =
+                        $exercise->exerciseVideos
                             ->firstWhere('languagelist_id', $preferredLanguageId)
-                        )->video_url
-                        ?? optional($exercise->exerciseVideos
-                            ->firstWhere('languagelist_id', 2)
-                        )->video_url
-                        ?? $exercise->{$preferredVideoKey}
-                        ?? $exercise->{$fallbackVideoKey};
+                        ?? $exercise->exerciseVideos
+                            ->firstWhere('languagelist_id', 2);
 
-                    $exerciseArray = collect($exercise->toArray())
-                        ->except($excludedKeys)
-                        ->toArray();
+                    // 🎯 Resolution priority (HLS > MP4)
+                    $videoPath =
+                        $videoRow->hls_master_url
+                        ?? $videoRow->hls_720p_url
+                        ?? $videoRow->video_url
+                        ?? null;
 
-                    $exerciseArray['selected_video_url'] = $selectedVideoUrl;
-
-                    return $exerciseArray;
+                    return [
+                        'id' => $exercise->id,
+                        'title' => $exercise->title,
+                        'description' => $exercise->description,
+                        'selected_video_url' => $videoPath
+                            ? cloudfrontUrl($videoPath)
+                            : null,
+                        'thumbnail_url' => $exercise->thumbnail_url
+                            ? cloudfrontUrl($exercise->thumbnail_url)
+                            : null,
+                    ];
                 });
             })
             ->filter()
@@ -182,7 +100,12 @@ class WorkoutController extends Controller
             'workout_id'   => $workout->id,
             'workout_name' => $workout->title,
             'workout_type' => 'Circular',
-            'warmup_video' => $workout->video_url,
+
+            // 🔥 Warmup video via CloudFront
+            'warmup_video' => $workout->video_url
+                ? cloudfrontUrl($workout->video_url)
+                : null,
+
             'exercises'    => $allExercises,
         ];
     });
@@ -199,92 +122,111 @@ class WorkoutController extends Controller
 
     
     
-    // public function getAbsenteeCircularWorkouts(Request $request, $userId)
-    // {
-    //     $user = User::find($userId);
     
-    //     if (!$user) {
-    //         return response()->json(['success' => false, 'message' => 'User not found.'], 404);
-    //     }
+//     public function getAbsenteeCircularWorkouts(Request $request)
+// {
+//     /* -------------------------------
+//      | 1. LANGUAGE SETUP
+//      |--------------------------------*/
+//     $preferredLanguageId = (int) $request->input('lang', 2);
+//     $preferredVideoKey = ($preferredLanguageId === 1) ? 'video_url_full' : 'english_video_url';
+//     $fallbackVideoKey = 'english_video_url';
+
+//     $excludedKeys = [
+//         'bodypart_ids', 'duration', 'based',
+//         'type', 'equipment_id', 'level_id', 'sets'
+//     ];
+
+//     /* -------------------------------
+//      | 2. FETCH ALL CIRCULAR WORKOUTS
+//      |--------------------------------*/
+//     $circularWorkouts = Workout::whereHas('workoutType', function ($q) {
+//             $q->where('title', 'Circular');
+//         })
+//         ->where('status', 'active')
+//         ->with(['workoutDays.workoutDayExercises.exercise.exerciseVideos'])
+//         ->get();
+
+//     if ($circularWorkouts->isEmpty()) {
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'No circular workouts available.',
+//             'workouts' => []
+//         ]);
+//     }
+
+//     /* -------------------------------
+//      | 3. FORMAT RESPONSE
+//      |--------------------------------*/
+//     $formattedWorkouts = $circularWorkouts->map(function ($workout) use (
+//         $preferredLanguageId,
+//         $preferredVideoKey,
+//         $fallbackVideoKey,
+//         $excludedKeys
+//     ) {
+
+//         // 🔁 All exercises from all days (no week/day filter)
+//         $allExercises = $workout->workoutDays
+//             ->flatMap(function ($day) use (
+//                 $preferredLanguageId,
+//                 $preferredVideoKey,
+//                 $fallbackVideoKey,
+//                 $excludedKeys
+//             ) {
+//                 return $day->workoutDayExercises->map(function ($wde) use (
+//                     $preferredLanguageId,
+//                     $preferredVideoKey,
+//                     $fallbackVideoKey,
+//                     $excludedKeys
+//                 ) {
+//                     $exercise = $wde->exercise;
+//                     if (!$exercise) return null;
+
+//                     $selectedVideoUrl =
+//                         optional($exercise->exerciseVideos
+//                             ->firstWhere('languagelist_id', $preferredLanguageId)
+//                         )->video_url
+//                         ?? optional($exercise->exerciseVideos
+//                             ->firstWhere('languagelist_id', 2)
+//                         )->video_url
+//                         ?? $exercise->{$preferredVideoKey}
+//                         ?? $exercise->{$fallbackVideoKey};
+
+//                     $exerciseArray = collect($exercise->toArray())
+//                         ->except($excludedKeys)
+//                         ->toArray();
+
+//                     $exerciseArray['selected_video_url'] = $selectedVideoUrl;
+
+//                     return $exerciseArray;
+//                 });
+//             })
+//             ->filter()
+//             ->unique('id')
+//             ->values();
+
+//         return [
+//             'workout_id'   => $workout->id,
+//             'workout_name' => $workout->title,
+//             'workout_type' => 'Circular',
+//             'warmup_video' => $workout->video_url,
+//             'exercises'    => $allExercises,
+//         ];
+//     });
+
+//     /* -------------------------------
+//      | 4. FINAL RESPONSE
+//      |--------------------------------*/
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'Circular workouts available for all users.',
+//         'workouts' => $formattedWorkouts
+//     ]);
+// }
+
     
-    //     // 1. Check if user is absent for last 15 days
-    //     // Hum 'updated_at' check kar rahe hain AssignWorkout table mein jahan status 1 (completed) ho
-    //     $lastActivity = AssignWorkout::where('user_id', $userId)
-    //         ->where('status', 1)
-    //         ->orderBy('updated_at', 'desc')
-    //         ->first();
     
-    //     $isAbsent = false;
-    //     if (!$lastActivity) {
-    //         // Agar kabhi workout kiya hi nahi, to bhi hum use absent treat kar sakte hain
-    //         $isAbsent = true; 
-    //     } else {
-    //         $daysSinceLastWorkout = Carbon::parse($lastActivity->updated_at)->diffInDays(Carbon::now());
-    //         if ($daysSinceLastWorkout >= 15) {
-    //             $isAbsent = true;
-    //         }
-    //     }
-    
-    //     if (!$isAbsent) {
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'User is active. No circular workouts needed.',
-    //             'data' => []
-    //         ]);
-    //     }
-    
-    //     // 2. Fetch "Circular" Workouts and their exercises
-    //     // Hum week aur day filter ko hata rahe hain jaisa aapne pucha tha
-    //     $preferredLanguageId = (int) $request->input('lang', 2);
-    //     $preferredVideoKey = ($preferredLanguageId === 1) ? 'video_url_full' : 'english_video_url';
-    //     $fallbackVideoKey = 'english_video_url';
-    //     $excludedKeys = ['bodypart_ids', 'duration', 'based', 'type', 'equipment_id', 'level_id', 'sets'];
-    
-    //     $circularWorkouts = $user->assignedWorkouts()
-    //         ->whereHas('workoutType', function($q) {
-    //             $q->where('title', 'Circular'); // Yahan workout_types table check ho raha hai
-    //         })
-    //         ->where('disable', 0)
-    //         ->with(['workoutDays.workoutDayExercises.exercise.exerciseVideos'])
-    //         ->get();
-    
-    //     $formattedWorkouts = $circularWorkouts->map(function ($workout) use ($preferredLanguageId, $preferredVideoKey, $fallbackVideoKey, $excludedKeys) {
-            
-    //         // Saari exercises nikalna bina week/day filter ke
-    //         $allExercises = $workout->workoutDays->flatMap(function ($day) use ($preferredLanguageId, $preferredVideoKey, $fallbackVideoKey, $excludedKeys) {
-    //             return $day->workoutDayExercises->map(function ($wde) use ($preferredLanguageId, $preferredVideoKey, $fallbackVideoKey, $excludedKeys) {
-    //                 $exercise = $wde->exercise;
-    //                 if (!$exercise) return null;
-    
-    //                 // Video selection logic (Same as your reference)
-    //                 $selectedVideoUrl = $exercise->exerciseVideos->firstWhere('languagelist_id', $preferredLanguageId)->video_url 
-    //                                     ?? $exercise->exerciseVideos->firstWhere('languagelist_id', 2)->video_url 
-    //                                     ?? $exercise->{$preferredVideoKey} 
-    //                                     ?? $exercise->{$fallbackVideoKey};
-    
-    //                 $exerciseArray = collect($exercise->toArray())->except($excludedKeys)->toArray();
-    //                 $exerciseArray['selected_video_url'] = $selectedVideoUrl;
-                    
-    //                 return $exerciseArray;
-    //             });
-    //         })->filter()->unique('id')->values();
-    
-    //         return [
-    //             'workout_id' => $workout->id,
-    //             'workout_name' => $workout->title,
-    //             'workout_type' => 'Circular',
-    //             'warmup_video' => $workout->video_url,
-    //             'exercises' => $allExercises,
-    //         ];
-    //     });
-    
-    //     return response()->json([
-    //         'success' => true,
-    //         'is_absent' => true,
-    //         'message' => 'Returning circular workouts due to 15+ days absence.',
-    //         'workouts' => $formattedWorkouts
-    //     ]);
-    // }
+   
     
     
     public function getList(Request $request)
