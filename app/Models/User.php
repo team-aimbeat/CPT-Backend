@@ -21,7 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
      *
      * @var array
      */
-    protected $fillable = [ 'username', 'first_name', 'last_name', 'phone_number', 'status', 'email', 'password', 'gender', 'display_name', 'login_type', 'user_type', 'player_id', 'is_subscribe', 'timezone','last_notification_seen'];
+    protected $fillable = [ 'username', 'first_name', 'last_name', 'phone_number', 'status', 'email', 'password', 'gender', 'display_name', 'login_type', 'user_type', 'player_id', 'is_subscribe', 'has_coupon_access', 'timezone','last_notification_seen'];
 
     /**
      * The attributes that should be hidden for arrays.
@@ -41,6 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_subscribe'  => 'integer',
+        'has_coupon_access' => 'boolean',
     ];
 
     public function userProfile() {

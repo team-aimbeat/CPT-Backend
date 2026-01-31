@@ -26,6 +26,7 @@ use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\CouponController;
 
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
@@ -241,6 +242,7 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
     Route::resource('productcategory',ProductCategoryController::class);
 
     Route::resource('packages',PackageController::class);
+    Route::resource('coupons', CouponController::class);
     
 
     Route::post('remove-file',[ HomeController::class, 'removeFile' ])->name('remove.file');

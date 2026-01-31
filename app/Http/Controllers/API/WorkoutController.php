@@ -17,6 +17,8 @@ use App\Http\Resources\WorkoutDayResource;
 use App\Models\WorkoutDayExercise;
 use App\Models\LanguageList;
 use App\Models\UserCompletedExercise;
+use App\Models\Subscription;
+use App\Models\CouponRedemption;
 use App\Http\Resources\WorkoutDayExerciseResource;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -682,11 +684,40 @@ public function getUserAssignedWorkouts(Request $request)
         ], 401);
     }
 
+    $hasAccess = Subscription::where('user_id', $user->id)
+        ->where('status', 'active')
+        ->where('payment_status', 'paid')
+        ->whereHas('package', function ($q) {
+            $q->whereIn('package_type', ['workout', 'both']);
+        })
+        ->exists();
+
+    $hasCouponAccess = $user->has_coupon_access
+        && CouponRedemption::where('user_id', $user->id)
+            ->whereHas('coupon', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->exists();
+
+    $hasAccess = $hasAccess || $hasCouponAccess;
+
+    if (!$hasAccess) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Please subscribe or apply an active coupon to unlock and watch all workout videos.',
+        ], 403);
+    }
+
     /* -------------------------------------------------
      | 2. LANGUAGE SETUP
      |--------------------------------------------------*/
     $preferredLanguageId = (int) $request->input('lang', 2);
     $fallbackLanguageId  = 2;
+
+    $workoutDays = (int) optional($user->userProfile)->workout_days;
+    if (!in_array($workoutDays, [3, 6], true)) {
+        $workoutDays = 6;
+    }
 
     /* -------------------------------------------------
      | 3. DAY & WEEK
@@ -699,6 +730,69 @@ public function getUserAssignedWorkouts(Request $request)
         4 => 'Thursday', 5 => 'Friday',
         6 => 'Saturday', 7 => 'Sunday'
     ];
+
+    if ($currentDayNumber === 7) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Today is a rest day.',
+            'user_id' => $user->id,
+            'user_name' => $user->first_name,
+            'today_is' => $dayNames[$currentDayNumber] ?? null,
+            'current_week' => $currentWeekNumber,
+            'current_cycle' => null,
+            'workout_days_plan' => $workoutDays,
+            'completed_days_this_week' => 0,
+            'selected_language_id' => $preferredLanguageId,
+            'workouts_for_today' => []
+        ]);
+    }
+
+    $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+    $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+    $completedDates = AssignWorkout::where('user_id', $user->id)
+        ->where('status', 1)
+        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->get()
+        ->map(function ($item) {
+            return $item->updated_at->format('Y-m-d');
+        })
+        ->unique()
+        ->values();
+
+    if ($workoutDays === 3) {
+        $todayKey = Carbon::now()->format('Y-m-d');
+        if ($completedDates->contains($todayKey)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Workout already completed for today.',
+                'user_id' => $user->id,
+                'user_name' => $user->first_name,
+                'today_is' => $dayNames[$currentDayNumber] ?? null,
+                'current_week' => $currentWeekNumber,
+                'current_cycle' => null,
+                'workout_days_plan' => $workoutDays,
+                'completed_days_this_week' => $completedDates->count(),
+                'selected_language_id' => $preferredLanguageId,
+                'workouts_for_today' => []
+            ]);
+        }
+
+        if ($completedDates->count() >= 3) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Weekly workout limit completed.',
+                'user_id' => $user->id,
+                'user_name' => $user->first_name,
+                'today_is' => $dayNames[$currentDayNumber] ?? null,
+                'current_week' => $currentWeekNumber,
+                'current_cycle' => null,
+                'workout_days_plan' => $workoutDays,
+                'completed_days_this_week' => $completedDates->count(),
+                'selected_language_id' => $preferredLanguageId,
+                'workouts_for_today' => []
+            ]);
+        }
+    }
 
     /* -------------------------------------------------
      | 4. CURRENT ACTIVE CYCLE
@@ -873,6 +967,8 @@ public function getUserAssignedWorkouts(Request $request)
         'today_is' => $dayNames[$currentDayNumber] ?? null,
         'current_week' => $currentWeekNumber,
         'current_cycle' => $currentCycle,
+        'workout_days_plan' => $workoutDays,
+        'completed_days_this_week' => $completedDates->count(),
         'selected_language_id' => $preferredLanguageId,
         'workouts_for_today' => $workoutsForToday,
     ]);
@@ -1309,4 +1405,3 @@ public function getMonthlyAttendance(Request $request)
 
 
 }
-

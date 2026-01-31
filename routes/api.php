@@ -142,6 +142,7 @@ Route::get('/exercise/{exerciseId}', [API\WorkoutController::class, 'getExercise
     Route::get('subscriptionplan-list',[ API\SubscriptionController::class, 'getList']);
     Route::post('subscribe-package',[ API\SubscriptionController::class, 'subscriptionSave']);
     Route::post('cancel-subscription',[ API\SubscriptionController::class, 'cancelSubscription']);
+    Route::post('apply-coupon', [ API\CouponController::class, 'apply' ]);
 
 
     Route::get('get-setting',[ API\DashboardController::class, 'getSetting']);

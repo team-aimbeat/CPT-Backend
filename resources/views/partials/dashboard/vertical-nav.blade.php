@@ -327,6 +327,16 @@
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('packages.create')) || request()->is('package/*/edit') ? 'nav-link active' : 'nav-link']);
 
+            $menu->package->add('<span class="item-name">Coupons</span>', ['route' => 'coupons.index'])
+                ->data('permission', 'package-list')
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('coupons.index')) ? 'nav-link active' : 'nav-link']);
+
+            $menu->package->add('<span class="item-name">Add Coupon</span>', ['route' => 'coupons.create'])
+                ->data('permission', 'package-add')
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('coupons.create')) ? 'nav-link active' : 'nav-link']);
+
                 
         $menu->add('<span class="item-name">'.__('message.class_schedule').'</span>', ['class' => ''])
                 ->prepend('<i class="icon">

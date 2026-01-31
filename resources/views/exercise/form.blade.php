@@ -211,7 +211,7 @@
                             
                             @if($is_update && getMediaFileExit($data, 'exercise_image'))
                             <div class="col-md-2 mb-2 position-relative">
-                                <img id="exercise_image_preview" src="{{ getSingleMedia($data,'exercise_image') }}" alt="exercise-image" class="avatar-100 mt-1">
+                                <img id="exercise_image_preview" src="{{ cloudfrontUrl($data->exercise_image) }}" alt="exercise-image" class="avatar-100 mt-1">
                                 {!! $file_remove_macro($data->id, 'exercise_image', __('message.image')) !!}
                             </div>
                             @endif

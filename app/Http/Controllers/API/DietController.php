@@ -9,6 +9,7 @@ use App\Http\Resources\DietResource;
 use App\Http\Resources\DietDetailResource;
 use App\Models\UserFavouriteDiet;
 use App\Models\Subscription;
+use App\Models\CouponRedemption;
 use Illuminate\Support\Facades\DB;
 
 class DietController extends Controller
@@ -111,10 +112,19 @@ class DietController extends Controller
         })
         ->exists();
 
+    $hasCouponAccess = $user->has_coupon_access
+        && CouponRedemption::where('user_id', $user->id)
+            ->whereHas('coupon', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->exists();
+
+    $hasAccess = $hasAccess || $hasCouponAccess;
+
     if (!$hasAccess) {
         return response()->json([
             'status' => false,
-            'message' => 'Please Subscribe Diet Plan.'
+            'message' => 'Please subscribe or apply an active coupon to access diet plans.'
         ], 403);
     }
 
@@ -242,10 +252,19 @@ class DietController extends Controller
             })
             ->exists();
 
+        $hasCouponAccess = $user->has_coupon_access
+            && CouponRedemption::where('user_id', $user->id)
+                ->whereHas('coupon', function ($q) {
+                    $q->where('status', 'active');
+                })
+                ->exists();
+
+        $hasAccess = $hasAccess || $hasCouponAccess;
+
         if (!$hasAccess) {
             return response()->json([
                 'status' => false,
-                'message' => 'Please Subscribe Diet Plan.'
+                'message' => 'Please subscribe or apply an active coupon to access diet plans.'
             ], 403);
         }
 

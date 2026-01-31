@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\EquipmentVideo;
+use App\Models\CouponRedemption;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,6 +28,15 @@ class EquipmentVideoController extends Controller
                 $q->whereIn('package_type', ['workout', 'both']);
             })
             ->exists();
+
+        $hasCouponAccess = $user->has_coupon_access
+            && CouponRedemption::where('user_id', $user->id)
+                ->whereHas('coupon', function ($q) {
+                    $q->where('status', 'active');
+                })
+                ->exists();
+
+        $hasAccess = $hasAccess || $hasCouponAccess;
 
         $equipmentIds = $request->filled('equipment_ids')
             ? array_filter(explode(',', $request->equipment_ids))
@@ -140,7 +150,7 @@ class EquipmentVideoController extends Controller
             'has_access' => $hasAccess,
             'message' => $hasAccess
                 ? null
-                : 'Please subscribe to a 12-month or 24-month plan to unlock and watch all workout videos.',
+                : 'Please subscribe or apply an active coupon to unlock and watch all workout videos.',
             'data' => $videos,
         ];
 
