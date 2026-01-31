@@ -850,10 +850,16 @@ public function getUserAssignedWorkouts(Request $request)
             $fallbackLanguageId
         ) {
 
-            $day = $workout->workoutDays->first();
+            $days = $workout->workoutDays;
+            $day = $days->first();
 
-            $exercises = $day->workoutDayExercises
+            $exercises = $days
+                ->flatMap(function ($day) {
+                    return $day->workoutDayExercises;
+                })
                 ->filter(fn ($wde) => $wde->exercise)
+                ->sortBy('sequence')
+                ->values()
                 ->map(function ($wde) use (
                     $preferredLanguageId,
                     $fallbackLanguageId
