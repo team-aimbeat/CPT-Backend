@@ -174,34 +174,6 @@
 
 <hr>
 
-{{-- VIDEOS --}}
-<div class="row">
-    <div class="col-md-6">
-        {{ Form::label('video_url','Warmup Video (MP4)') }}
-        {{ Form::file('video_url',['class'=>'form-control','accept'=>'video/*']) }}
-        @if(!empty($data->video_url))
-            <div class="mt-1">
-                <a href="{{ cloudfrontUrl($data->video_url) }}" target="_blank" rel="noopener">
-                    View current warmup video
-                </a>
-            </div>
-        @endif
-    </div>
-    <div class="col-md-6">
-        {{ Form::label('stetch_video','Stretching Video (MP4)') }}
-        {{ Form::file('stetch_video',['class'=>'form-control','accept'=>'video/*']) }}
-        @if(!empty($data->stetch_video))
-            <div class="mt-1">
-                <a href="{{ cloudfrontUrl($data->stetch_video) }}" target="_blank" rel="noopener">
-                    View current stretching video
-                </a>
-            </div>
-        @endif
-    </div>
-</div>
-
-<hr>
-
 {{-- WORKOUT DESCRIPTION --}}
 {{ Form::label('description','Workout Description') }}
 {{ Form::textarea('description',null,['class'=>'form-control tinymce-description']) }}

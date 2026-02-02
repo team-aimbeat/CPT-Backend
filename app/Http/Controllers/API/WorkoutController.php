@@ -11,6 +11,8 @@ use App\Models\UserFavouriteWorkout;
 use App\Models\WorkoutDay;
 use App\Models\User;
 use App\Models\Exercise;
+use App\Models\StretchingVideo;
+use App\Models\WarmupVideo;
 use App\Models\WorkoutType;
 use App\Models\AssignWorkout;
 use App\Http\Resources\WorkoutDayResource;
@@ -870,12 +872,47 @@ public function getUserAssignedWorkouts(Request $request)
     /* -------------------------------------------------
      | 6. BUILD RESPONSE
      |--------------------------------------------------*/
+    $warmupVideo = WarmupVideo::where('languagelist_id', $preferredLanguageId)
+        ->where('transcoding_status', 'done')
+        ->orderByDesc('id')
+        ->first();
+    if (!$warmupVideo && $fallbackLanguageId) {
+        $warmupVideo = WarmupVideo::where('languagelist_id', $fallbackLanguageId)
+            ->where('transcoding_status', 'done')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    $stretchingVideo = StretchingVideo::where('languagelist_id', $preferredLanguageId)
+        ->where('transcoding_status', 'done')
+        ->orderByDesc('id')
+        ->first();
+    if (!$stretchingVideo && $fallbackLanguageId) {
+        $stretchingVideo = StretchingVideo::where('languagelist_id', $fallbackLanguageId)
+            ->where('transcoding_status', 'done')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    $warmupUrl = null;
+    if ($warmupVideo) {
+        $warmupUrl = $warmupVideo->hls_master_url ?: $warmupVideo->video_url;
+        $warmupUrl = $warmupUrl ? cloudfrontUrl($warmupUrl) : null;
+    }
+    $stretchingUrl = null;
+    if ($stretchingVideo) {
+        $stretchingUrl = $stretchingVideo->hls_master_url ?: $stretchingVideo->video_url;
+        $stretchingUrl = $stretchingUrl ? cloudfrontUrl($stretchingUrl) : null;
+    }
+
     $workoutsForToday = $user->assignedWorkouts
         ->filter(fn ($w) => $w->workoutDays->isNotEmpty())
         ->map(function ($workout) use (
             $dayNames,
             $preferredLanguageId,
-            $fallbackLanguageId
+            $fallbackLanguageId,
+            $warmupUrl,
+            $stretchingUrl
         ) {
 
             $days = $workout->workoutDays;
@@ -986,12 +1023,8 @@ public function getUserAssignedWorkouts(Request $request)
                 'day_name' => $dayNames[$day->day] ?? null,
                 'workout_week' => (string) $day->week,
                 'workout_day_number' => (string) $day->day,
-                'warmup_video' => $workout->video_url
-                    ? cloudfrontUrl($workout->video_url)
-                    : null,
-                'stretch_video' => $workout->stetch_video
-                    ? cloudfrontUrl($workout->stetch_video)
-                    : null,
+                'warmup_video' => $warmupUrl,
+                'stretch_video' => $stretchingUrl,
                 'exercises' => $exercises,
             ];
         })

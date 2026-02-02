@@ -162,6 +162,26 @@
                 ->data('permission', [ 'workout-add', 'workout-edit'])
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('workout.create')) || request()->is('workout/*/edit') ? 'nav-link active' : 'nav-link']);
+
+            $menu->workout->add('<span class="item-name">Warmup Videos</span>', ['route' => 'warmup.video.list'])
+                ->data('permission', 'workout-list')
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('warmup.video.list')) ? 'nav-link active' : 'nav-link']);
+
+            $menu->workout->add('<span class="item-name">Add Warmup Video</span>', ['route' => 'warmup.video.create'])
+                ->data('permission', [ 'workout-add', 'workout-edit'])
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('warmup.video.create')) ? 'nav-link active' : 'nav-link']);
+
+            $menu->workout->add('<span class="item-name">Stretching Videos</span>', ['route' => 'stretching.video.list'])
+                ->data('permission', 'workout-list')
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('stretching.video.list')) ? 'nav-link active' : 'nav-link']);
+
+            $menu->workout->add('<span class="item-name">Add Stretching Video</span>', ['route' => 'stretching.video.create'])
+                ->data('permission', [ 'workout-add', 'workout-edit'])
+                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
+                ->link->attr(['class' => activeRoute(route('stretching.video.create')) ? 'nav-link active' : 'nav-link']);
             
             $menu->workout->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.workouttype')]).'</span>', ['route' => 'workouttype.index'])
                 ->data('permission', 'workouttype-list')

@@ -27,6 +27,8 @@ use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\WarmupVideoController;
+use App\Http\Controllers\StretchingVideoController;
 
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
@@ -234,6 +236,16 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
     Route::resource('workout', WorkoutController::class);
 
     Route::post('workoutdays-exercise-delete', [ WorkoutController::class , 'workoutDaysExerciseDelete'])->name('workoutdays.exercise.delete');
+
+    Route::get('warmup-videos', [WarmupVideoController::class, 'index'])->name('warmup.video.list');
+    Route::get('warmup-videos/create', [WarmupVideoController::class, 'create'])->name('warmup.video.create');
+    Route::post('warmup-videos', [WarmupVideoController::class, 'store'])->name('warmup.video.store');
+    Route::delete('warmup-videos/{warmupVideo}', [WarmupVideoController::class, 'destroy'])->name('warmup.video.destroy');
+
+    Route::get('stretching-videos', [StretchingVideoController::class, 'index'])->name('stretching.video.list');
+    Route::get('stretching-videos/create', [StretchingVideoController::class, 'create'])->name('stretching.video.create');
+    Route::post('stretching-videos', [StretchingVideoController::class, 'store'])->name('stretching.video.store');
+    Route::delete('stretching-videos/{stretchingVideo}', [StretchingVideoController::class, 'destroy'])->name('stretching.video.destroy');
 
     Route::resource('post', PostController::class);
     
