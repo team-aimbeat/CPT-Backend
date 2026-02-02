@@ -67,6 +67,9 @@
                 .attr('name', 'exercise_description[' + row + '][]');
             clone.find('.tinymce-description').removeAttr('id');
 
+            clone.find('[name^="exercise_titles"]')
+                .attr('name', 'exercise_titles[' + row + '][]');
+
             clone.find('[name^="is_rest"]')
                 .attr('name', 'is_rest[' + row + ']')
                 .prop('checked', false);
@@ -218,6 +221,7 @@
     <th>Week</th>
     <th>Day</th>
     <th>Exercise</th>
+    <th>Exercise Title</th>
     <th>Instruction</th>
     <th>Rest</th>
     <th></th>
@@ -233,6 +237,7 @@
     $exerciseData = $day->exercise_data ?? [];
     $exerciseIds  = $day->exercise_ids ?? [];
     $instructions = $day->exercise_description ?? [];
+    $exerciseTitles = $day->exercise_titles ?? [];
 @endphp
 
 <tr id="row_{{ $i }}" row="{{ $i }}">
@@ -242,7 +247,7 @@
 ,$day->week,['class'=>'form-control']) }}</td>
 
 <td>{{ Form::select("day[$i]",
-    ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    array_combine(range(1,7), range(1,7)),
     $day->day,['class'=>'form-control']) }}</td>
 
 <td>
@@ -251,6 +256,11 @@
     'multiple',
     'data-ajax--url'=>route('ajax-list',['type'=>'exercise'])
 ]) }}
+</td>
+
+<td>
+<input type="text" name="exercise_titles[{{ $i }}][]" class="form-control"
+       value="{{ $exerciseTitles[0] ?? '' }}" placeholder="Exercise Title">
 </td>
 
 <td>
@@ -275,10 +285,14 @@
 <td></td>
 <td>{{ Form::select('week[0]',array_combine(range(1,12), range(1,12))
 ,1,['class'=>'form-control']) }}</td>
-<td>{{ Form::select('day[0]',['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],null,['class'=>'form-control']) }}</td>
+<td>{{ Form::select('day[0]',array_combine(range(1,7), range(1,7)),null,['class'=>'form-control']) }}</td>
 <td>
 {{ Form::select('exercise_ids[0][]',[],null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}
 </td>
+<td>
+<input type="text" name="exercise_titles[0][]" class="form-control" placeholder="Exercise Title">
+</td>
+
 <td>
 <textarea name="exercise_description[0][]" class="form-control tinymce-description"></textarea>
 </td>

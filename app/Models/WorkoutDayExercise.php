@@ -9,7 +9,7 @@ class WorkoutDayExercise extends Model
 {
     use HasFactory;
 
-    protected $fillable = [ 'workout_id', 'workout_day_id','exercise_id','instruction', 'sets', 'sequence', 'duration'];
+    protected $fillable = [ 'workout_id', 'workout_day_id','exercise_id','exercise_title','instruction', 'sets', 'sequence', 'duration'];
 
     protected $casts = [
         'workout_id'        => 'integer',

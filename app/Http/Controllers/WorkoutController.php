@@ -111,6 +111,7 @@ class WorkoutController extends Controller
                             'workout_id' => $workout->id,
                             'workout_day_id' => $workoutday->id,
                             'exercise_id' => (int)$exerciseId,
+                            'exercise_title' => $request->exercise_titles[$i][$key] ?? null,
                             'instruction' => $request->exercise_description[$i][$key] ?? null,
                             'sequence' => $key,
                         ]);
@@ -177,10 +178,15 @@ class WorkoutController extends Controller
                     ->pluck('instruction')
                     ->toArray();
 
+                $day->exercise_titles = $day->workoutDayExercise
+                    ->pluck('exercise_title')
+                    ->toArray();
+
             } else {
                 $day->exercise_data = [];
                 $day->exercise_ids = [];
                 $day->exercise_description = [];
+                $day->exercise_titles = [];
             }
         }
 
@@ -280,6 +286,7 @@ class WorkoutController extends Controller
                             'workout_id'      => $workout->id,
                             'workout_day_id'  => $workoutDay->id,
                             'exercise_id'     => (int) $exerciseId,
+                            'exercise_title'  => $request->exercise_titles[$i][$key] ?? null,
                             'instruction'     => $request->exercise_description[$i][$key] ?? null,
                             'sequence'        => $key,
                         ]);
