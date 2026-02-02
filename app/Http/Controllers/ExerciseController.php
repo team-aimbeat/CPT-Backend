@@ -228,9 +228,11 @@ class ExerciseController extends Controller
         
         
         if ($request->hasFile('primary_video')) {
-            $path = $this->storeExerciseAsset($request->file('primary_video'), 'gifs');
+            $path = $this->storeExerciseGifVideoFile($request->file('primary_video'));
             $exercise->exercise_gif = $path;
+            $exercise->exercise_gif_transcoding_status = 'pending';
             $exercise->save();
+            TranscodeExerciseVideo::dispatch($exercise->id, $path, 'exercise_gif');
         }
     
     
@@ -324,9 +326,11 @@ class ExerciseController extends Controller
                 Storage::disk('s3')->delete($exercise->exercise_gif);
             }
 
-            $path = $this->storeExerciseAsset($request->file('primary_video'), 'gifs');
+            $path = $this->storeExerciseGifVideoFile($request->file('primary_video'));
             $exercise->exercise_gif = $path;
+            $exercise->exercise_gif_transcoding_status = 'pending';
             $exercise->save();
+            TranscodeExerciseVideo::dispatch($exercise->id, $path, 'exercise_gif');
         }
     
     
@@ -375,6 +379,16 @@ class ExerciseController extends Controller
         $uuid = (string) Str::uuid();
         $dir = 'images/exercise/' . $type . '/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
         $filename = 'file.' . $file->getClientOriginalExtension();
+
+        return Storage::disk('s3')->putFileAs($dir, $file, $filename);
+    }
+
+    protected function storeExerciseGifVideoFile($file)
+    {
+        $now = now();
+        $uuid = (string) Str::uuid();
+        $dir = 'videos/originals/exercise_gif/' . $now->format('Y') . '/' . $now->format('m') . '/' . $uuid;
+        $filename = 'original.' . $file->getClientOriginalExtension();
 
         return Storage::disk('s3')->putFileAs($dir, $file, $filename);
     }

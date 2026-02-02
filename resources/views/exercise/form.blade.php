@@ -192,14 +192,25 @@
                             </div>
                             
                              <div class="form-group col-md-4">
-                                <label class="form-control-label" for="primary_video">Gif Image</label>
-                                <div><input class="form-control" type="file" name="primary_video" accept="image/*" id="primary_video" /></div>
+                                <label class="form-control-label" for="primary_video">Gif Video</label>
+                                <div><input class="form-control" type="file" name="primary_video" accept="video/*" id="primary_video" /></div>
                             </div>
                             
-                                   @if(!empty($data->exercise_gif))
+                                @php
+                                    $gifMaster = $data->exercise_gif_hls_master_url ?? null;
+                                    $gifPoster = $data->exercise_gif_poster_url ?? null;
+                                @endphp
+                                @if(!empty($gifMaster) || !empty($data->exercise_gif))
                                     <div class="mt-2">
-                                        <label class="text-muted small d-block mb-1">Current Gif Image:</label>
-                                        <img width="320" height="240" src="{{ cloudfrontUrl($data->exercise_gif) }}">
+                                        <label class="text-muted small d-block mb-1">Current Gif Video:</label>
+                                        <a href="{{ cloudfrontUrl($gifMaster ?: $data->exercise_gif) }}" target="_blank" rel="noopener">
+                                            View current gif video
+                                        </a>
+                                        @if(!empty($gifPoster))
+                                            <div class="mt-2">
+                                                <img width="320" height="240" src="{{ cloudfrontUrl($gifPoster) }}">
+                                            </div>
+                                        @endif
                                     </div>
                                 @endif
                                 

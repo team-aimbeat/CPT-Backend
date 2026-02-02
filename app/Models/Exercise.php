@@ -11,7 +11,33 @@ class Exercise extends Model implements HasMedia
 {
     use HasFactory ,InteractsWithMedia;
 
-    protected $fillable = [ 'title', 'instruction', 'tips', 'video_type', 'video_url','hls_video', 'bodypart_ids', 'duration', 'sets', 'equipment_id','exercise_id', 'level_id', 'status','is_premium', 'based', 'type','exercise_gif','exercise_image','english_video' ];
+    protected $fillable = [
+        'title',
+        'instruction',
+        'tips',
+        'video_type',
+        'video_url',
+        'hls_video',
+        'bodypart_ids',
+        'duration',
+        'sets',
+        'equipment_id',
+        'exercise_id',
+        'level_id',
+        'status',
+        'is_premium',
+        'based',
+        'type',
+        'exercise_gif',
+        'exercise_gif_hls_master_url',
+        'exercise_gif_hls_1080p_url',
+        'exercise_gif_hls_720p_url',
+        'exercise_gif_hls_480p_url',
+        'exercise_gif_poster_url',
+        'exercise_gif_transcoding_status',
+        'exercise_image',
+        'english_video',
+    ];
 
     protected $casts = [
         'equipment_id'      => 'integer',
@@ -82,8 +108,11 @@ class Exercise extends Model implements HasMedia
     
     public function getExerciseGifUrlAttribute()
     {
+        if ($this->exercise_gif_hls_master_url) {
+            return cloudfrontUrl($this->exercise_gif_hls_master_url);
+        }
         if ($this->exercise_gif) {
-            return asset('https://fitness.completepersonaltraining.com/storage/' . $this->exercise_gif);
+            return cloudfrontUrl($this->exercise_gif);
         }
         return null;
     }
@@ -113,10 +142,10 @@ class Exercise extends Model implements HasMedia
     //     return null;
     // }
     
-     public function getExerciseImageUrlAttribute()
+    public function getExerciseImageUrlAttribute()
     {
         if ($this->exercise_image) {
-            return asset('https://fitness.completepersonaltraining.com/storage/' . $this->exercise_image);
+            return cloudfrontUrl($this->exercise_image);
         }
         return null;
     }

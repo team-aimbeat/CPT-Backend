@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\File;
+use App\Models\Exercise;
 use App\Models\ExerciseVideo;
 
 class TranscodeExerciseVideo implements ShouldQueue
@@ -17,11 +18,13 @@ class TranscodeExerciseVideo implements ShouldQueue
 
     public $exerciseVideoId;
     public $sourcePath;
+    public $targetType;
 
-    public function __construct($exerciseVideoId, $sourcePath)
+    public function __construct($exerciseVideoId, $sourcePath, $targetType = 'exercise_video')
     {
         $this->exerciseVideoId = $exerciseVideoId;
         $this->sourcePath = $sourcePath;
+        $this->targetType = $targetType;
     }
 
     public function handle()
@@ -30,9 +33,15 @@ class TranscodeExerciseVideo implements ShouldQueue
             return;
         }
 
-        ExerciseVideo::where('id', $this->exerciseVideoId)->update([
-            'transcoding_status' => 'processing',
-        ]);
+        if ($this->targetType === 'exercise_gif') {
+            Exercise::where('id', $this->exerciseVideoId)->update([
+                'exercise_gif_transcoding_status' => 'processing',
+            ]);
+        } else {
+            ExerciseVideo::where('id', $this->exerciseVideoId)->update([
+                'transcoding_status' => 'processing',
+            ]);
+        }
 
         try {
             $disk = Storage::disk('s3');
@@ -131,9 +140,18 @@ class TranscodeExerciseVideo implements ShouldQueue
             file_put_contents($masterPath, implode("\n", $masterLines) . "\n");
             $disk->putFileAs($hlsDir, new File($masterPath), 'master.m3u8');
             $hlsMasterKey = $hlsDir . '/master.m3u8';
-            ExerciseVideo::where('id', $this->exerciseVideoId)->update([
-                'hls_master_url' => $hlsMasterKey,
-            ]);
+            if ($this->targetType === 'exercise_gif') {
+                Exercise::where('id', $this->exerciseVideoId)->update([
+                    'exercise_gif_hls_master_url' => $hlsMasterKey,
+                    'exercise_gif_hls_1080p_url' => $hlsDir . '/1080p.m3u8',
+                    'exercise_gif_hls_720p_url' => $hlsDir . '/720p.m3u8',
+                    'exercise_gif_hls_480p_url' => $hlsDir . '/480p.m3u8',
+                ]);
+            } else {
+                ExerciseVideo::where('id', $this->exerciseVideoId)->update([
+                    'hls_master_url' => $hlsMasterKey,
+                ]);
+            }
             unlink($masterPath);
 
             $thumbs = [
@@ -162,17 +180,35 @@ class TranscodeExerciseVideo implements ShouldQueue
                 }
             }
 
+            if ($this->targetType === 'exercise_gif') {
+                Exercise::where('id', $this->exerciseVideoId)->update([
+                    'exercise_gif_poster_url' => $thumbDir . '/poster.jpg',
+                ]);
+            }
+
             if (file_exists($inputFile)) {
                 unlink($inputFile);
             }
 
-            ExerciseVideo::where('id', $this->exerciseVideoId)->update([
-                'transcoding_status' => 'done',
-            ]);
+            if ($this->targetType === 'exercise_gif') {
+                Exercise::where('id', $this->exerciseVideoId)->update([
+                    'exercise_gif_transcoding_status' => 'done',
+                ]);
+            } else {
+                ExerciseVideo::where('id', $this->exerciseVideoId)->update([
+                    'transcoding_status' => 'done',
+                ]);
+            }
         } catch (\Throwable $e) {
-            ExerciseVideo::where('id', $this->exerciseVideoId)->update([
-                'transcoding_status' => 'failed',
-            ]);
+            if ($this->targetType === 'exercise_gif') {
+                Exercise::where('id', $this->exerciseVideoId)->update([
+                    'exercise_gif_transcoding_status' => 'failed',
+                ]);
+            } else {
+                ExerciseVideo::where('id', $this->exerciseVideoId)->update([
+                    'transcoding_status' => 'failed',
+                ]);
+            }
             throw $e;
         }
     }

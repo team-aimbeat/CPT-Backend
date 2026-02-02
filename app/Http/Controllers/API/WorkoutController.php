@@ -455,8 +455,6 @@ public function getAbsenteeCircularWorkouts(Request $request)
 //     /* -------------------------------------------------
 //      | 3. DAY & WEEK
 //      |--------------------------------------------------*/
-//     $currentDayNumber  = date('N');
-//     $currentWeekNumber = (int) ceil(date('j') / 7);
 
 //     $dayNames = [
 //         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
@@ -684,13 +682,17 @@ public function getUserAssignedWorkouts(Request $request)
         ], 401);
     }
 
-    $hasAccess = Subscription::where('user_id', $user->id)
+    $subscription = Subscription::where('user_id', $user->id)
         ->where('status', 'active')
         ->where('payment_status', 'paid')
         ->whereHas('package', function ($q) {
             $q->whereIn('package_type', ['workout', 'both']);
         })
-        ->exists();
+        ->orderByDesc('subscription_start_date')
+        ->orderByDesc('created_at')
+        ->first();
+
+    $hasAccess = (bool) $subscription;
 
     $hasCouponAccess = $user->has_coupon_access
         && CouponRedemption::where('user_id', $user->id)
@@ -718,12 +720,38 @@ public function getUserAssignedWorkouts(Request $request)
     if (!in_array($workoutDays, [3, 6], true)) {
         $workoutDays = 6;
     }
+    /* -------------------------------------------------
+     | 2.1 START DATE (SUBSCRIPTION > COUPON)
+     |--------------------------------------------------*/
+    $startDate = null;
+    if ($subscription) {
+        $startDate = $subscription->subscription_start_date ?: $subscription->created_at;
+    }
 
+    if (!$startDate && $hasCouponAccess) {
+        $couponRedemption = CouponRedemption::where('user_id', $user->id)
+            ->whereHas('coupon', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->orderByDesc('redeemed_at')
+            ->orderByDesc('created_at')
+            ->first();
+
+        $startDate = $couponRedemption?->redeemed_at ?: $couponRedemption?->created_at;
+    }
+
+    $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfDay();
+    $today = Carbon::now()->startOfDay();
+
+    if ($today->lt($startDate)) {
+        $startDate = $today;
+    }
     /* -------------------------------------------------
      | 3. DAY & WEEK
      |--------------------------------------------------*/
-    $currentDayNumber  = date('N');              // 1–7
-    $currentWeekNumber = (int) ceil(date('j') / 7);
+    $daysSinceStart = $startDate->diffInDays($today);
+    $currentWeekNumber = (int) floor($daysSinceStart / 7) + 1;
+    $currentDayNumber = (int) ($daysSinceStart % 7) + 1;
 
     $dayNames = [
         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
@@ -737,7 +765,7 @@ public function getUserAssignedWorkouts(Request $request)
             'message' => 'Today is a rest day.',
             'user_id' => $user->id,
             'user_name' => $user->first_name,
-            'today_is' => $dayNames[$currentDayNumber] ?? null,
+            'today_is' => 'Day ' . $currentDayNumber,
             'current_week' => $currentWeekNumber,
             'current_cycle' => null,
             'workout_days_plan' => $workoutDays,
@@ -747,8 +775,8 @@ public function getUserAssignedWorkouts(Request $request)
         ]);
     }
 
-    $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
-    $weekEnd = Carbon::now()->endOfWeek(Carbon::SATURDAY);
+    $weekStart = (clone $startDate)->addDays(($currentWeekNumber - 1) * 7);
+    $weekEnd = (clone $weekStart)->addDays(5); // Mon-Sat (6 days), day 7 is rest
     $completedDates = AssignWorkout::where('user_id', $user->id)
         ->where('status', 1)
         ->whereBetween('updated_at', [$weekStart, $weekEnd])
@@ -760,14 +788,14 @@ public function getUserAssignedWorkouts(Request $request)
         ->values();
 
     if ($workoutDays === 3) {
-        $todayKey = Carbon::now()->format('Y-m-d');
+        $todayKey = $today->format('Y-m-d');
         if ($completedDates->contains($todayKey)) {
             return response()->json([
                 'success' => true,
                 'message' => 'Workout already completed for today.',
                 'user_id' => $user->id,
                 'user_name' => $user->first_name,
-                'today_is' => $dayNames[$currentDayNumber] ?? null,
+                'today_is' => 'Day ' . $currentDayNumber,
                 'current_week' => $currentWeekNumber,
                 'current_cycle' => null,
                 'workout_days_plan' => $workoutDays,
@@ -783,7 +811,7 @@ public function getUserAssignedWorkouts(Request $request)
                 'message' => 'Weekly workout limit completed.',
                 'user_id' => $user->id,
                 'user_name' => $user->first_name,
-                'today_is' => $dayNames[$currentDayNumber] ?? null,
+                'today_is' => 'Day ' . $currentDayNumber,
                 'current_week' => $currentWeekNumber,
                 'current_cycle' => null,
                 'workout_days_plan' => $workoutDays,
@@ -807,7 +835,7 @@ public function getUserAssignedWorkouts(Request $request)
             'success' => true,
             'user_id' => $user->id,
             'user_name' => $user->first_name,
-            'today_is' => $dayNames[$currentDayNumber] ?? null,
+            'today_is' => 'Day ' . $currentDayNumber,
             'current_week' => $currentWeekNumber,
             'current_cycle' => null,
             'selected_language_id' => $preferredLanguageId,
@@ -901,8 +929,11 @@ public function getUserAssignedWorkouts(Request $request)
                                 'exercise_image' => $alt->exercise_image
                                     ? cloudfrontUrl($alt->exercise_image)
                                     : null,
-                                'exercise_gif' => $alt->exercise_gif
-                                    ? cloudfrontUrl($alt->exercise_gif)
+                                'exercise_gif' => ($alt->exercise_gif_hls_master_url ?? null)
+                                    ? cloudfrontUrl($alt->exercise_gif_hls_master_url)
+                                    : ($alt->exercise_gif ? cloudfrontUrl($alt->exercise_gif) : null),
+                                'exercise_gif_poster_url' => $alt->exercise_gif_poster_url
+                                    ? cloudfrontUrl($alt->exercise_gif_poster_url)
                                     : null,
                                 'selected_video_url' => $altVideo
                                     ? cloudfrontUrl(
@@ -925,8 +956,11 @@ public function getUserAssignedWorkouts(Request $request)
                             ? cloudfrontUrl($exercise->exercise_image)
                             : null,
 
-                        'exercise_gif' => $exercise->exercise_gif
-                            ? cloudfrontUrl($exercise->exercise_gif)
+                        'exercise_gif' => ($exercise->exercise_gif_hls_master_url ?? null)
+                            ? cloudfrontUrl($exercise->exercise_gif_hls_master_url)
+                            : ($exercise->exercise_gif ? cloudfrontUrl($exercise->exercise_gif) : null),
+                        'exercise_gif_poster_url' => $exercise->exercise_gif_poster_url
+                            ? cloudfrontUrl($exercise->exercise_gif_poster_url)
                             : null,
 
                         'exercise_videos' => $exercise->exerciseVideos->map(fn ($v) => [
@@ -970,7 +1004,7 @@ public function getUserAssignedWorkouts(Request $request)
         'success' => true,
         'user_id' => $user->id,
         'user_name' => $user->first_name,
-        'today_is' => $dayNames[$currentDayNumber] ?? null,
+        'today_is' => 'Day ' . $currentDayNumber,
         'current_week' => $currentWeekNumber,
         'current_cycle' => $currentCycle,
         'workout_days_plan' => $workoutDays,
@@ -1411,3 +1445,7 @@ public function getMonthlyAttendance(Request $request)
 
 
 }
+
+
+
+
