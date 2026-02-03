@@ -985,7 +985,7 @@ public function getUserAssignedWorkouts(Request $request)
                     return [
                         'id' => $exercise->id,
                         'title' => $exercise->title,
-
+                        'exercise_title' => $wde->exercise_title,
                         // ✅ IMPORTANT: instruction from workout_day_exercises
                         'instruction' => $wde->instruction,
 
