@@ -10,10 +10,10 @@
                     if (!preset) return;
 
                     const presets = {
-                        '2p_yearly': { enabled: 1, type: 'free_access', days: 180, max: 2 },
-                        '4p_yearly': { enabled: 1, type: 'free_access', days: 365, max: 4 },
-                        '2p_24m': { enabled: 1, type: 'free_access', days: 365, max: 2 },
-                        '4p_24m': { enabled: 1, type: 'free_access', days: 730, max: 4 },
+                        '2p_yearly': { enabled: 1, type: 'free_access', days: 180, same: 1, free: 1 },
+                        '4p_yearly': { enabled: 1, type: 'free_access', days: 365, same: 3, free: 1 },
+                        '2p_24m': { enabled: 1, type: 'free_access', days: 365, same: 1, free: 1 },
+                        '4p_24m': { enabled: 1, type: 'free_access', days: 730, same: 3, free: 1 },
                     };
 
                     const cfg = presets[preset];
@@ -22,7 +22,8 @@
                     $('input[name="offer_enabled"]').prop('checked', cfg.enabled === 1);
                     $('select[name="offer_type"]').val(cfg.type).trigger('change');
                     $('input[name="offer_access_days"]').val(cfg.days);
-                    $('input[name="offer_max_redemptions"]').val(cfg.max);
+                    $('input[name="offer_same_access_count"]').val(cfg.same);
+                    $('input[name="offer_free_access_count"]').val(cfg.free);
                 });
             });
         })(jQuery);
@@ -104,12 +105,16 @@
                                 ], old('offer_type', $data->offer_type ?? null), [ 'class' =>'form-control select2js']) }}
                             </div>
                             <div class="form-group col-md-4">
-                                {{ Form::label('offer_access_days','Offer Access Days',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::label('offer_access_days','Free Access Days',[ 'class' => 'form-control-label' ]) }}
                                 {{ Form::number('offer_access_days', old('offer_access_days', $data->offer_access_days ?? null), [ 'class' => 'form-control', 'min' => 1 ]) }}
                             </div>
                             <div class="form-group col-md-4">
-                                {{ Form::label('offer_max_redemptions','Offer Max Redemptions',[ 'class' => 'form-control-label' ]) }}
-                                {{ Form::number('offer_max_redemptions', old('offer_max_redemptions', $data->offer_max_redemptions ?? null), [ 'class' => 'form-control', 'min' => 1 ]) }}
+                                {{ Form::label('offer_same_access_count','Same Access Codes',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::number('offer_same_access_count', old('offer_same_access_count', $data->offer_same_access_count ?? null), [ 'class' => 'form-control', 'min' => 0 ]) }}
+                            </div>
+                            <div class="form-group col-md-4">
+                                {{ Form::label('offer_free_access_count','Free Access Codes',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::number('offer_free_access_count', old('offer_free_access_count', $data->offer_free_access_count ?? null), [ 'class' => 'form-control', 'min' => 0 ]) }}
                             </div>
                             <div class="form-group col-md-4">
                                 <label class="form-control-label" for="image">{{ __('message.image') }} </label>

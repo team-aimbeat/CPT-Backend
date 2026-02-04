@@ -96,7 +96,7 @@ class CouponController extends Controller
         $accessEndsAt = null;
         $hasCouponAccess = false;
 
-        if (in_array($coupon->type, ['free_access', 'free_months'], true)) {
+        if (in_array($coupon->type, ['free_access', 'free_months', 'same_access'], true)) {
             $hasCouponAccess = true;
             if (!empty($coupon->access_days)) {
                 $accessEndsAt = now()->addDays((int) $coupon->access_days);

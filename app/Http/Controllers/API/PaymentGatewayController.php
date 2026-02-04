@@ -68,36 +68,64 @@ class PaymentGatewayController extends Controller
             $package = $subscription->package;
             if ($package && $package->offer_enabled) {
                 $offerType = $package->offer_type ?: 'free_access';
-                $accessDays = $package->offer_access_days;
-                $maxRedemptions = $package->offer_max_redemptions;
+                $freeAccessDays = $package->offer_access_days;
+                $sameCount = (int) ($package->offer_same_access_count ?? 0);
+                $freeCount = (int) ($package->offer_free_access_count ?? 0);
 
-                $code = 'OFFER-' . strtoupper(substr(md5($subscription->id . '|' . now()->timestamp), 0, 8));
+                $sameAccessDays = null;
+                if (!empty($subscription->subscription_end_date)) {
+                    $sameAccessDays = max(1, now()->diffInDays($subscription->subscription_end_date, false));
+                } else {
+                    $months = (int) $package->duration;
+                    if ($package->duration_unit === 'yearly') {
+                        $months = $months * 12;
+                    }
+                    $sameAccessDays = max(1, $months * 30);
+                }
 
-                $offerCoupon = Coupon::create([
-                    'code' => $code,
-                    'type' => $offerType,
-                    'access_days' => $accessDays,
-                    'max_redemptions' => $maxRedemptions,
-                    'per_user_limit' => 1,
-                    'status' => 'active',
-                    'is_auto_generated' => true,
-                    'source_subscription_id' => $subscription->id,
-                    'description' => 'Auto-generated offer coupon for subscription #' . $subscription->id,
-                ]);
+                $generated = [];
+                for ($i = 0; $i < $sameCount; $i++) {
+                    $code = 'SAME-' . strtoupper(substr(md5($subscription->id . '|same|' . $i . '|' . now()->timestamp), 0, 8));
+                    $generated[] = Coupon::create([
+                        'code' => $code,
+                        'type' => 'same_access',
+                        'access_days' => $sameAccessDays,
+                        'max_redemptions' => 1,
+                        'per_user_limit' => 1,
+                        'status' => 'active',
+                        'is_auto_generated' => true,
+                        'source_subscription_id' => $subscription->id,
+                        'description' => 'Auto-generated SAME access coupon for subscription #' . $subscription->id,
+                    ]);
+                }
+
+                for ($i = 0; $i < $freeCount; $i++) {
+                    $code = 'FREE-' . strtoupper(substr(md5($subscription->id . '|free|' . $i . '|' . now()->timestamp), 0, 8));
+                    $generated[] = Coupon::create([
+                        'code' => $code,
+                        'type' => $offerType,
+                        'access_days' => $freeAccessDays,
+                        'max_redemptions' => 1,
+                        'per_user_limit' => 1,
+                        'status' => 'active',
+                        'is_auto_generated' => true,
+                        'source_subscription_id' => $subscription->id,
+                        'description' => 'Auto-generated FREE access coupon for subscription #' . $subscription->id,
+                    ]);
+                }
+
+                $offerCoupon = $generated;
 
                 if (!empty($user->email)) {
                     try {
-                        $lines = [
-                            'Your offer coupon has been generated.',
-                            'Coupon Code: ' . $offerCoupon->code,
-                            'Type: ' . $offerCoupon->type,
-                            'Access Days: ' . ($offerCoupon->access_days ?? 'N/A'),
-                            'Max Redemptions: ' . ($offerCoupon->max_redemptions ?? 'N/A'),
-                            'Use this coupon to give free access to your extra member.',
-                        ];
+                        $lines = ['Your offer coupons have been generated:'];
+                        foreach ($generated as $c) {
+                            $lines[] = 'Code: ' . $c->code . ' | Type: ' . $c->type . ' | Days: ' . ($c->access_days ?? 'N/A');
+                        }
+                        $lines[] = 'Share these coupons with your extra members.';
                         Mail::raw(implode("\n", $lines), function ($message) use ($user) {
                             $message->to($user->email)
-                                ->subject('Your Offer Coupon Code');
+                                ->subject('Your Offer Coupon Codes');
                         });
                     } catch (\Exception $e) {
                         // Ignore mail failure; payment should still succeed.
@@ -125,12 +153,14 @@ class PaymentGatewayController extends Controller
                 'status' => true,
                 'message' => 'Payment successful and invoice generated',
                 'data' => $payment,
-                'offer_coupon' => $offerCoupon ? [
-                    'code' => $offerCoupon->code,
-                    'type' => $offerCoupon->type,
-                    'access_days' => $offerCoupon->access_days,
-                    'max_redemptions' => $offerCoupon->max_redemptions,
-                ] : null,
+                'offer_coupon' => is_array($offerCoupon)
+                    ? collect($offerCoupon)->map(fn ($c) => [
+                        'code' => $c->code,
+                        'type' => $c->type,
+                        'access_days' => $c->access_days,
+                        'max_redemptions' => $c->max_redemptions,
+                    ])->values()
+                    : null,
                 // 'invoice_url' => asset('storage/' . $fileName)
             ]);
     

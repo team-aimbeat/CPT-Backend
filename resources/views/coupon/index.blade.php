@@ -87,6 +87,8 @@
                                                     <span class="badge bg-primary">Discount</span>
                                                 @elseif($coupon->type === 'free_months')
                                                     <span class="badge bg-warning text-dark">Free Months</span>
+                                                @elseif($coupon->type === 'same_access')
+                                                    <span class="badge bg-info text-dark">Same Access</span>
                                                 @else
                                                     <span class="badge bg-secondary">{{ $coupon->type }}</span>
                                                 @endif

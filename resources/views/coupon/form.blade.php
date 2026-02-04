@@ -34,7 +34,8 @@
                                 {{ Form::select('type', [
                                     'free_access' => 'Free Access',
                                     'discount' => 'Discount',
-                                    'free_months' => 'Free Months'
+                                    'free_months' => 'Free Months',
+                                    'same_access' => 'Same Access'
                                 ], old('type', request('type', $coupon->type ?? null)), [ 'class' => 'form-control', 'required' ]) }}
                             </div>
 

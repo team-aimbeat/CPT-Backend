@@ -44,7 +44,7 @@ class CouponController extends Controller
 
         $data = $request->validate([
             'code' => 'required|string|max:255|unique:coupons,code',
-            'type' => 'required|in:free_access,discount,free_months',
+            'type' => 'required|in:free_access,discount,free_months,same_access',
             'value' => 'nullable|numeric|min:0',
             'access_days' => 'nullable|integer|min:1',
             'max_redemptions' => 'nullable|integer|min:1',
@@ -88,7 +88,7 @@ class CouponController extends Controller
 
         $data = $request->validate([
             'code' => 'required|string|max:255|unique:coupons,code,' . $coupon->id,
-            'type' => 'required|in:free_access,discount,free_months',
+            'type' => 'required|in:free_access,discount,free_months,same_access',
             'value' => 'nullable|numeric|min:0',
             'access_days' => 'nullable|integer|min:1',
             'max_redemptions' => 'nullable|integer|min:1',
