@@ -17,7 +17,7 @@ class CouponController extends Controller
         }
 
         $pageTitle = 'Coupons';
-        $coupons = Coupon::orderByDesc('id')->paginate(20);
+        $coupons = Coupon::withCount('redemptions')->orderByDesc('id')->paginate(20);
 
         return view('coupon.index', compact('pageTitle', 'coupons'));
     }
@@ -44,10 +44,19 @@ class CouponController extends Controller
 
         $data = $request->validate([
             'code' => 'required|string|max:255|unique:coupons,code',
+            'type' => 'required|in:free_access,discount,free_months',
+            'value' => 'nullable|numeric|min:0',
+            'access_days' => 'nullable|integer|min:1',
+            'max_redemptions' => 'nullable|integer|min:1',
+            'per_user_limit' => 'nullable|integer|min:1',
+            'valid_from' => 'nullable|date',
+            'valid_to' => 'nullable|date|after_or_equal:valid_from',
+            'first_purchase_only' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
         ]);
 
+        $data['first_purchase_only'] = $request->boolean('first_purchase_only');
         Coupon::create($data);
 
         return redirect()->route('coupons.index')->withSuccess('Coupon saved successfully.');
@@ -79,10 +88,19 @@ class CouponController extends Controller
 
         $data = $request->validate([
             'code' => 'required|string|max:255|unique:coupons,code,' . $coupon->id,
+            'type' => 'required|in:free_access,discount,free_months',
+            'value' => 'nullable|numeric|min:0',
+            'access_days' => 'nullable|integer|min:1',
+            'max_redemptions' => 'nullable|integer|min:1',
+            'per_user_limit' => 'nullable|integer|min:1',
+            'valid_from' => 'nullable|date',
+            'valid_to' => 'nullable|date|after_or_equal:valid_from',
+            'first_purchase_only' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
         ]);
 
+        $data['first_purchase_only'] = $request->boolean('first_purchase_only');
         $coupon->update($data);
 
         return redirect()->route('coupons.index')->withSuccess('Coupon updated successfully.');

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\EquipmentVideo;
-use App\Models\CouponRedemption;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -29,12 +28,7 @@ class EquipmentVideoController extends Controller
             })
             ->exists();
 
-        $hasCouponAccess = $user->has_coupon_access
-            && CouponRedemption::where('user_id', $user->id)
-                ->whereHas('coupon', function ($q) {
-                    $q->where('status', 'active');
-                })
-                ->exists();
+        $hasCouponAccess = $user->hasActiveCouponAccess();
 
         $hasAccess = $hasAccess || $hasCouponAccess;
 

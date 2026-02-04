@@ -5,6 +5,25 @@
                 tinymceEditor('.tinymce-description',' ',function (ed) {
                 }, 450)
 
+                $('#offer_preset').on('change', function () {
+                    const preset = $(this).val();
+                    if (!preset) return;
+
+                    const presets = {
+                        '2p_yearly': { enabled: 1, type: 'free_access', days: 180, max: 2 },
+                        '4p_yearly': { enabled: 1, type: 'free_access', days: 365, max: 4 },
+                        '2p_24m': { enabled: 1, type: 'free_access', days: 365, max: 2 },
+                        '4p_24m': { enabled: 1, type: 'free_access', days: 730, max: 4 },
+                    };
+
+                    const cfg = presets[preset];
+                    if (!cfg) return;
+
+                    $('input[name="offer_enabled"]').prop('checked', cfg.enabled === 1);
+                    $('select[name="offer_type"]').val(cfg.type).trigger('change');
+                    $('input[name="offer_access_days"]').val(cfg.days);
+                    $('input[name="offer_max_redemptions"]').val(cfg.max);
+                });
             });
         })(jQuery);
     </script>
@@ -58,6 +77,39 @@
                             <div class="form-group col-md-4">
                                 {{ Form::label('status',__('message.status').' <span class="text-danger">*</span>',['class'=>'form-control-label'],false) }}
                                 {{ Form::select('status',[ 'active' => __('message.active'), 'inactive' => __('message.inactive') ], old('status'), [ 'class' =>'form-control select2js','required']) }}
+                            </div>
+                            <div class="form-group col-md-4">
+                                {{ Form::label('offer_enabled','Offer Enabled',[ 'class' => 'form-control-label' ]) }}
+                                <div class="mt-2">
+                                    {!! Form::hidden('offer_enabled',0) !!}
+                                    {!! Form::checkbox('offer_enabled',1, old('offer_enabled', $data->offer_enabled ?? false), ['class' => 'form-check-input']) !!}
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="form-control-label" for="offer_preset">Offer Preset</label>
+                                <select id="offer_preset" class="form-control">
+                                    <option value="">-- Select Preset --</option>
+                                    <option value="2p_yearly">2 Person Yearly (6 months free)</option>
+                                    <option value="4p_yearly">4 Person Yearly (1 year free)</option>
+                                    <option value="2p_24m">2 Person 24 Month (1 year free)</option>
+                                    <option value="4p_24m">4 Person 24 Month (2 years free)</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-4">
+                                {{ Form::label('offer_type','Offer Type',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::select('offer_type', [
+                                    '' => '-- None --',
+                                    'free_access' => 'Free Access',
+                                    'free_months' => 'Free Months'
+                                ], old('offer_type', $data->offer_type ?? null), [ 'class' =>'form-control select2js']) }}
+                            </div>
+                            <div class="form-group col-md-4">
+                                {{ Form::label('offer_access_days','Offer Access Days',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::number('offer_access_days', old('offer_access_days', $data->offer_access_days ?? null), [ 'class' => 'form-control', 'min' => 1 ]) }}
+                            </div>
+                            <div class="form-group col-md-4">
+                                {{ Form::label('offer_max_redemptions','Offer Max Redemptions',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::number('offer_max_redemptions', old('offer_max_redemptions', $data->offer_max_redemptions ?? null), [ 'class' => 'form-control', 'min' => 1 ]) }}
                             </div>
                             <div class="form-group col-md-4">
                                 <label class="form-control-label" for="image">{{ __('message.image') }} </label>

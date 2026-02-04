@@ -20,7 +20,6 @@ use App\Models\WorkoutDayExercise;
 use App\Models\LanguageList;
 use App\Models\UserCompletedExercise;
 use App\Models\Subscription;
-use App\Models\CouponRedemption;
 use App\Http\Resources\WorkoutDayExerciseResource;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -696,12 +695,7 @@ public function getUserAssignedWorkouts(Request $request)
 
     $hasAccess = (bool) $subscription;
 
-    $hasCouponAccess = $user->has_coupon_access
-        && CouponRedemption::where('user_id', $user->id)
-            ->whereHas('coupon', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->exists();
+    $hasCouponAccess = $user->hasActiveCouponAccess();
 
     $hasAccess = $hasAccess || $hasCouponAccess;
 

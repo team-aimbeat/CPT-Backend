@@ -10,7 +10,6 @@ use App\Http\Resources\ExerciseDetailResource;
 use App\Http\Resources\UserExerciseResource;
 use App\Models\UserExercise;
 use App\Models\Subscription;
-use App\Models\CouponRedemption;
 
 class ExerciseController extends Controller
 {
@@ -167,12 +166,7 @@ class ExerciseController extends Controller
         })
         ->exists();
 
-    $hasCouponAccess = $user->has_coupon_access
-        && CouponRedemption::where('user_id', $user->id)
-            ->whereHas('coupon', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->exists();
+    $hasCouponAccess = $user->hasActiveCouponAccess();
 
     $hasAccess = $hasAccess || $hasCouponAccess;
 
