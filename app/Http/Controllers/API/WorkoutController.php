@@ -20,6 +20,7 @@ use App\Models\WorkoutDayExercise;
 use App\Models\LanguageList;
 use App\Models\UserCompletedExercise;
 use App\Models\Subscription;
+use App\Models\CouponRedemption;
 use App\Http\Resources\WorkoutDayExerciseResource;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
