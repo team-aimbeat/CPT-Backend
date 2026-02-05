@@ -10,6 +10,71 @@ use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
+    public function getOfferCoupons(Request $request)
+    {
+        $user = auth('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access',
+            ], 401);
+        }
+
+        $subscriptionId = $request->input('subscription_id');
+
+        $subscriptionQuery = Subscription::where('user_id', $user->id)
+            ->where('payment_status', 'paid')
+            ->orderByDesc('subscription_start_date')
+            ->orderByDesc('created_at');
+
+        if (!empty($subscriptionId)) {
+            $subscriptionQuery->where('id', $subscriptionId);
+        }
+
+        $subscription = $subscriptionQuery->first();
+
+        if (!$subscription) {
+            return response()->json([
+                'status' => true,
+                'message' => 'No paid subscription found for offer coupons.',
+                'data' => [],
+            ]);
+        }
+
+        $coupons = Coupon::where('is_auto_generated', 1)
+            ->where('source_subscription_id', $subscription->id)
+            ->withCount('redemptions')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($coupon) {
+                $remaining = null;
+                if (!empty($coupon->max_redemptions)) {
+                    $remaining = max(0, (int) $coupon->max_redemptions - (int) $coupon->redemptions_count);
+                }
+
+                return [
+                    'id' => $coupon->id,
+                    'code' => $coupon->code,
+                    'type' => $coupon->type,
+                    'value' => $coupon->value,
+                    'access_days' => $coupon->access_days,
+                    'max_redemptions' => $coupon->max_redemptions,
+                    'redemptions_count' => $coupon->redemptions_count,
+                    'remaining_redemptions' => $remaining,
+                    'valid_from' => $coupon->valid_from?->toDateString(),
+                    'valid_to' => $coupon->valid_to?->toDateString(),
+                    'status' => $coupon->status,
+                    'description' => $coupon->description,
+                ];
+            });
+
+        return response()->json([
+            'status' => true,
+            'subscription_id' => $subscription->id,
+            'data' => $coupons,
+        ]);
+    }
+
     public function apply(Request $request)
     {
         $user = auth('sanctum')->user();

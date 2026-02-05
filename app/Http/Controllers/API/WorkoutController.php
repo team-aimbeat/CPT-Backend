@@ -695,17 +695,8 @@ public function getUserAssignedWorkouts(Request $request)
         ->first();
 
     $hasAccess = (bool) $subscription;
-
     $hasCouponAccess = $user->hasActiveCouponAccess();
-
     $hasAccess = $hasAccess || $hasCouponAccess;
-
-    if (!$hasAccess) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Please subscribe or apply an active coupon to unlock and watch all workout videos.',
-        ], 403);
-    }
 
     /* -------------------------------------------------
      | 2. LANGUAGE SETUP
@@ -718,14 +709,18 @@ public function getUserAssignedWorkouts(Request $request)
         $workoutDays = 6;
     }
     /* -------------------------------------------------
-     | 2.1 START DATE (SUBSCRIPTION > COUPON)
+     | 2.1 TRIAL + START DATE (SUBSCRIPTION > COUPON)
      |--------------------------------------------------*/
-    $startDate = null;
+    $today = Carbon::now()->startOfDay();
+    $trialStart = $user->created_at ? Carbon::parse($user->created_at)->startOfDay() : $today;
+    $trialEnd = (clone $trialStart)->addDays(2); // Day 1-3 free
+
+    $paidStart = null;
     if ($subscription) {
-        $startDate = $subscription->subscription_start_date ?: $subscription->created_at;
+        $paidStart = $subscription->subscription_start_date ?: $subscription->created_at;
     }
 
-    if (!$startDate && $hasCouponAccess) {
+    if (!$paidStart && $hasCouponAccess) {
         $couponRedemption = CouponRedemption::where('user_id', $user->id)
             ->whereHas('coupon', function ($q) {
                 $q->where('status', 'active');
@@ -734,11 +729,28 @@ public function getUserAssignedWorkouts(Request $request)
             ->orderByDesc('created_at')
             ->first();
 
-        $startDate = $couponRedemption?->redeemed_at ?: $couponRedemption?->created_at;
+        $paidStart = $couponRedemption?->redeemed_at ?: $couponRedemption?->created_at;
     }
 
-    $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfDay();
-    $today = Carbon::now()->startOfDay();
+    $trialRemainingDays = $today->lte($trialEnd)
+        ? $today->diffInDays($trialEnd) + 1
+        : 0;
+
+    if (!$hasAccess && $today->gt($trialEnd)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Free trial ended. Please subscribe or apply an active coupon.',
+            'trial_remaining_days' => 0,
+        ], 403);
+    }
+
+    if ($hasAccess) {
+        $paidStart = $paidStart ? Carbon::parse($paidStart)->startOfDay() : $today;
+        $trialResume = (clone $trialEnd)->addDay(); // Day 4 onward
+        $startDate = $paidStart->greaterThan($trialResume) ? $paidStart : $trialResume;
+    } else {
+        $startDate = $trialStart;
+    }
 
     if ($today->lt($startDate)) {
         $startDate = $today;
@@ -768,6 +780,7 @@ public function getUserAssignedWorkouts(Request $request)
             'workout_days_plan' => $workoutDays,
             'completed_days_this_week' => 0,
             'selected_language_id' => $preferredLanguageId,
+            'trial_remaining_days' => $trialRemainingDays,
             'workouts_for_today' => []
         ]);
     }
@@ -798,6 +811,7 @@ public function getUserAssignedWorkouts(Request $request)
                 'workout_days_plan' => $workoutDays,
                 'completed_days_this_week' => $completedDates->count(),
                 'selected_language_id' => $preferredLanguageId,
+                'trial_remaining_days' => $trialRemainingDays,
                 'workouts_for_today' => []
             ]);
         }
@@ -814,6 +828,7 @@ public function getUserAssignedWorkouts(Request $request)
                 'workout_days_plan' => $workoutDays,
                 'completed_days_this_week' => $completedDates->count(),
                 'selected_language_id' => $preferredLanguageId,
+                'trial_remaining_days' => $trialRemainingDays,
                 'workouts_for_today' => []
             ]);
         }
@@ -836,6 +851,7 @@ public function getUserAssignedWorkouts(Request $request)
             'current_week' => $currentWeekNumber,
             'current_cycle' => null,
             'selected_language_id' => $preferredLanguageId,
+            'trial_remaining_days' => $trialRemainingDays,
             'workouts_for_today' => []
         ]);
     }
