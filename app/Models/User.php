@@ -21,7 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
      *
      * @var array
      */
-    protected $fillable = [ 'username', 'first_name', 'last_name', 'phone_number', 'status', 'email', 'password', 'gender', 'display_name', 'login_type', 'user_type', 'player_id', 'is_subscribe', 'has_coupon_access', 'coupon_access_ends_at', 'timezone','last_notification_seen'];
+    protected $fillable = [ 'username', 'first_name', 'last_name', 'phone_number', 'status', 'email', 'password', 'gender', 'display_name', 'login_type', 'user_type', 'player_id', 'is_subscribe', 'has_coupon_access', 'coupon_access_ends_at', 'referral_credit_balance', 'timezone','last_notification_seen'];
 
     /**
      * The attributes that should be hidden for arrays.
@@ -43,6 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'is_subscribe'  => 'integer',
         'has_coupon_access' => 'boolean',
         'coupon_access_ends_at' => 'datetime',
+        'referral_credit_balance' => 'decimal:2',
     ];
 
     public function hasActiveCouponAccess(): bool

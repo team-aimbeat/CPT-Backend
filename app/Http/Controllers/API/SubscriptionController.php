@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Subscription;
 use App\Models\Package;
 use App\Models\User;
+use App\Models\ReferralCode;
+use App\Models\ReferralRedemption;
 use App\Http\Resources\SubscriptionResource;
 use App\Traits\SubscriptionTrait;
 
@@ -51,6 +53,7 @@ class SubscriptionController extends Controller
         $user_id = auth()->id();
         $user = User::where('id', $user_id)->first();
         $package_data = Package::where('id',$data['package_id'])->first();
+        $referralCodeInput = $request->input('referral_code');
         
         $get_existing_plan = $this->get_user_active_subscription_plan($user_id);
         
@@ -60,6 +63,57 @@ class SubscriptionController extends Controller
         $data['status'] = config('constant.SUBSCRIPTION_STATUS.PENDING');
         $data['subscription_start_date'] = date('Y-m-d H:i:s');
         $data['total_amount'] = $package_data->price;
+
+        if (!empty($referralCodeInput)) {
+            $referral = ReferralCode::where('code', $referralCodeInput)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$referral) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid referral code.',
+                ], 422);
+            }
+
+            if ($referral->user_id == $user_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You cannot use your own referral code.',
+                ], 422);
+            }
+
+            $hasPaidSubscription = Subscription::where('user_id', $user_id)
+                ->where('payment_status', 'paid')
+                ->exists();
+
+            if ($hasPaidSubscription) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Referral code valid only for first purchase.',
+                ], 422);
+            }
+
+            if (!empty($referral->max_redemptions)) {
+                $redemptionCount = ReferralRedemption::where('referral_code_id', $referral->id)->count();
+                if ($redemptionCount >= $referral->max_redemptions) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Referral code redemption limit reached.',
+                    ], 422);
+                }
+            }
+
+            $data['referral_code_id'] = $referral->id;
+            $data['referral_referrer_id'] = $referral->user_id;
+        }
+
+        $creditToUse = 0;
+        if (!empty($user->referral_credit_balance)) {
+            $creditToUse = min((float) $user->referral_credit_balance, (float) $package_data->price);
+        }
+        $data['referral_credit_used'] = $creditToUse;
+        $data['total_amount'] = max(0, (float) $package_data->price - $creditToUse);
 
         if($get_existing_plan)
         {
@@ -86,7 +140,13 @@ class SubscriptionController extends Controller
 
         $message = __('message.save_form', ['form' => __('message.subscription')]);
         
-        return response()->json(['status' => true, 'message' => $message ,'data' => $subscription ]);
+        return response()->json([
+            'status' => true,
+            'message' => $message,
+            'data' => $subscription,
+            'referral_credit_balance' => (float) $user->referral_credit_balance,
+            'referral_credit_used' => (float) $subscription->referral_credit_used,
+        ]);
     }
 
     public function cancelSubscription(Request $request)

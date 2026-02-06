@@ -10,6 +10,8 @@ use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Coupon;
+use App\Models\ReferralCode;
+use App\Models\ReferralRedemption;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
@@ -63,6 +65,45 @@ class PaymentGatewayController extends Controller
     
             // 4. User table update
             $user->update(['is_subscribe' => 1]);
+
+            if (!empty($subscription->referral_credit_used)) {
+                $newBalance = max(0, (float) $user->referral_credit_balance - (float) $subscription->referral_credit_used);
+                $user->update(['referral_credit_balance' => $newBalance]);
+            }
+
+            if (!empty($subscription->referral_code_id) && !empty($subscription->referral_referrer_id)) {
+                $alreadyRedeemed = ReferralRedemption::where('subscription_id', $subscription->id)->exists();
+                if (!$alreadyRedeemed) {
+                    ReferralRedemption::create([
+                        'referral_code_id' => $subscription->referral_code_id,
+                        'referrer_id' => $subscription->referral_referrer_id,
+                        'referred_user_id' => $user->id,
+                        'subscription_id' => $subscription->id,
+                        'reward_amount' => 200,
+                        'redeemed_at' => now(),
+                    ]);
+
+                    $referrer = User::find($subscription->referral_referrer_id);
+                    if ($referrer) {
+                        $referrer->update([
+                            'referral_credit_balance' => (float) $referrer->referral_credit_balance + 200,
+                        ]);
+                    }
+                }
+            }
+
+            $existingReferral = ReferralCode::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$existingReferral) {
+                $code = 'REF-' . strtoupper(substr(md5($user->id . now()->timestamp), 0, 8));
+                ReferralCode::create([
+                    'user_id' => $user->id,
+                    'code' => $code,
+                    'status' => 'active',
+                ]);
+            }
 
             $offerCoupon = null;
             $package = $subscription->package;
@@ -153,6 +194,8 @@ class PaymentGatewayController extends Controller
                 'status' => true,
                 'message' => 'Payment successful and invoice generated',
                 'data' => $payment,
+                'referral_credit_balance' => (float) $user->fresh()->referral_credit_balance,
+                'referral_credit_used' => (float) $subscription->referral_credit_used,
                 'offer_coupon' => is_array($offerCoupon)
                     ? collect($offerCoupon)->map(fn ($c) => [
                         'code' => $c->code,
