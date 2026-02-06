@@ -17,6 +17,7 @@ use App\Models\WorkoutType;
 use App\Models\AssignWorkout;
 use App\Http\Resources\WorkoutDayResource;
 use App\Models\WorkoutDayExercise;
+use App\Models\WorkoutCompletion;
 use App\Models\LanguageList;
 use App\Models\UserCompletedExercise;
 use App\Models\Subscription;
@@ -758,18 +759,27 @@ public function getUserAssignedWorkouts(Request $request)
     /* -------------------------------------------------
      | 3. DAY & WEEK (PROGRESS-BASED)
      |--------------------------------------------------*/
-    $completedDates = AssignWorkout::where('user_id', $user->id)
-        ->where('status', 1)
-        ->where('updated_at', '>=', $startDate)
+    $completedDates = WorkoutCompletion::where('user_id', $user->id)
+        ->where('completed_date', '>=', $startDate->toDateString())
         ->get()
         ->map(function ($item) {
-            return $item->updated_at->format('Y-m-d');
+            return $item->completed_date->format('Y-m-d');
         })
         ->unique()
         ->values();
 
     $todayKey = $today->format('Y-m-d');
-    if ($completedDates->contains($todayKey)) {
+    $recentCompletion = WorkoutCompletion::where('user_id', $user->id)
+        ->whereDate('completed_date', $todayKey)
+        ->orderByDesc('created_at')
+        ->first();
+
+    $withinTwoHours = false;
+    if ($recentCompletion) {
+        $withinTwoHours = now()->lt($recentCompletion->created_at->addHours(2));
+    }
+
+    if ($completedDates->contains($todayKey) && !$withinTwoHours) {
         return response()->json([
             'success' => true,
             'message' => 'Workout already completed for today.',
@@ -787,17 +797,38 @@ public function getUserAssignedWorkouts(Request $request)
     }
 
     $completedTotal = $completedDates->count();
+    $effectiveCompletedTotal = $completedTotal;
+    if ($withinTwoHours && $completedDates->contains($todayKey)) {
+        $effectiveCompletedTotal = max(0, $completedTotal - 1);
+    }
     $cycleLength = $workoutDays;
 
-    $currentWeekNumber = (int) floor($completedTotal / $cycleLength) + 1;
-    $currentDayNumber = (int) ($completedTotal % $cycleLength) + 1;
-    $completedThisWeek = $completedTotal % $cycleLength;
+    $currentWeekNumber = (int) floor($effectiveCompletedTotal / $cycleLength) + 1;
+    $currentDayNumber = (int) ($effectiveCompletedTotal % $cycleLength) + 1;
+    $completedThisWeek = $effectiveCompletedTotal % $cycleLength;
 
     $dayNames = [
         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
         4 => 'Thursday', 5 => 'Friday',
         6 => 'Saturday', 7 => 'Sunday'
     ];
+
+    if ($request->boolean('skip_today')) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Workout skipped for today.',
+            'user_id' => $user->id,
+            'user_name' => $user->first_name,
+            'today_is' => 'Day ' . $currentDayNumber,
+            'current_week' => $currentWeekNumber,
+            'current_cycle' => null,
+            'workout_days_plan' => $workoutDays,
+            'completed_days_this_week' => $completedThisWeek,
+            'selected_language_id' => $preferredLanguageId,
+            'trial_remaining_days' => $trialRemainingDays,
+            'workouts_for_today' => []
+        ]);
+    }
 
     /* -------------------------------------------------
      | 4. CURRENT ACTIVE CYCLE
@@ -1343,6 +1374,50 @@ public function getUserAssignedWorkouts(Request $request)
         'data' => $completed,
     ]);
 }
+
+    public function completeWorkoutDay(Request $request)
+    {
+        $user = auth('sanctum')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $validated = $request->validate([
+            'workout_id' => 'required|exists:workouts,id',
+            'completed_date' => 'nullable|date',
+        ]);
+
+        $completedDate = !empty($validated['completed_date'])
+            ? Carbon::parse($validated['completed_date'])->toDateString()
+            : now()->toDateString();
+
+        $existing = WorkoutCompletion::where('user_id', $user->id)
+            ->where('completed_date', $completedDate)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Workout already marked as completed for this day.',
+                'data' => $existing,
+            ]);
+        }
+
+        $completion = WorkoutCompletion::create([
+            'user_id' => $user->id,
+            'workout_id' => $validated['workout_id'],
+            'completed_date' => $completedDate,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Workout day marked as completed.',
+            'data' => $completion,
+        ]);
+    }
 
 
 

@@ -336,6 +336,71 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card card-block">
+                <div class="card-header d-flex justify-content-between">
+                    <div class="header-title">
+                        <h4 class="card-title mb-0">Workout Completions</h4>
+                    </div>
+                    <div class="text-muted small">
+                        Total: {{ $workoutCompletions->count() }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-2 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">From</label>
+                            <input type="date" name="from" class="form-control" value="{{ request('from') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">To</label>
+                            <input type="date" name="to" class="form-control" value="{{ request('to') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-muted">Workout</label>
+                            <select name="workout_id" class="form-control">
+                                <option value="">All</option>
+                                @foreach($workoutFilterOptions as $wid => $wtitle)
+                                    <option value="{{ $wid }}" {{ (string)request('workout_id') === (string)$wid ? 'selected' : '' }}>
+                                        {{ $wtitle }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        </div>
+                    </form>
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0" role="grid">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Workout</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($workoutCompletions as $completion)
+                                    <tr>
+                                        <td>{{ optional($completion->completed_date)->format('Y-m-d') ?? $completion->created_at->format('Y-m-d') }}</td>
+                                        <td>{{ $completion->created_at->format('H:i') }}</td>
+                                        <td>{{ optional($completion->workout)->title ?? '-' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No workout completions found.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="col-md-12">
          <div class="card">
             <div class="card-header d-flex justify-content-between flex-wrap">

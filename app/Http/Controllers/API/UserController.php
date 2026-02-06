@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Workout;
 use App\Models\AssignWorkout;
+use App\Models\WorkoutCompletion;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 
@@ -1038,14 +1039,13 @@ public function updateWorkoutMode(Request $request)
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
     
-        $assignments = AssignWorkout::where('user_id', $user_id)
-            ->whereBetween('updated_at', [$startOfMonth, $endOfMonth]) 
-            ->where('status', 1)
-            ->orderBy('updated_at', 'asc') 
+        $assignments = WorkoutCompletion::where('user_id', $user_id)
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->orderBy('created_at', 'asc')
             ->get();
     
         $completedDates = $assignments->map(function($item) {
-            return $item->updated_at->format('Y-m-d');
+            return $item->created_at->format('Y-m-d');
         })->unique()->values();
     
         return response()->json([

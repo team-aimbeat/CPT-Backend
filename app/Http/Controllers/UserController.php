@@ -10,6 +10,7 @@ use App\Models\AssignDiet;
 use App\Models\AssignWorkout;
 use App\Models\Diet;
 use App\Models\Workout;
+use App\Models\WorkoutCompletion;
 use App\Helpers\AuthHelper;
 use App\Models\Role;
 use App\Http\Requests\UserRequest;
@@ -131,8 +132,35 @@ class UserController extends Controller
             $subscriptionPackageStatus = '<span class="text-capitalize badge bg-danger">Expired</span>';
         }
 
+        $fromDate = request('from');
+        $toDate = request('to');
+        $filterWorkoutId = request('workout_id');
+
+        $workoutCompletionsQuery = WorkoutCompletion::with('workout:id,title')
+            ->where('user_id', $id);
+
+        if (!empty($fromDate) && !empty($toDate)) {
+            $workoutCompletionsQuery->whereBetween('created_at', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay(),
+            ]);
+        }
+
+        if (!empty($filterWorkoutId)) {
+            $workoutCompletionsQuery->where('workout_id', $filterWorkoutId);
+        }
+
+        $workoutCompletions = $workoutCompletionsQuery
+            ->orderByDesc('created_at')
+            ->get();
+
+        $workoutFilterOptions = Workout::whereIn(
+            'id',
+            WorkoutCompletion::where('user_id', $id)->pluck('workout_id')->unique()
+        )->orderBy('title', 'asc')->pluck('title', 'id');
+
         $exerciseDataTableHtml = $exerciseDataTable->with('user_id',$id)->html();
-        return $dataTable->with('user_id',$id)->render('users.profile', compact('data', 'profileImage', 'subscriptionPackageStatus','subscriptions', 'exerciseDataTableHtml'));
+        return $dataTable->with('user_id',$id)->render('users.profile', compact('data', 'profileImage', 'subscriptionPackageStatus','subscriptions', 'exerciseDataTableHtml', 'workoutCompletions', 'workoutFilterOptions'));
     }
 
     /**

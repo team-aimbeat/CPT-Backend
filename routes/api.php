@@ -132,6 +132,8 @@ Route::get('/exercise/{exerciseId}', [API\WorkoutController::class, 'getExercise
     
     Route::post('store-user-exercise', [ API\ExerciseController::class, 'storeUserExercise' ]);
     Route::get('get-user-exercise', [ API\ExerciseController::class, 'getUserExercise' ]);
+
+    Route::post('workout/complete-day', [ API\WorkoutController::class, 'completeWorkoutDay' ]);
     
     Route::get('product-list', [ API\ProductController::class, 'getlist']);
     Route::get('productcategory-list', [ API\ProductCategoryController::class, 'getlist']);
