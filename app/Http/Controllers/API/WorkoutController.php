@@ -756,40 +756,11 @@ public function getUserAssignedWorkouts(Request $request)
         $startDate = $today;
     }
     /* -------------------------------------------------
-     | 3. DAY & WEEK
+     | 3. DAY & WEEK (PROGRESS-BASED)
      |--------------------------------------------------*/
-    $daysSinceStart = $startDate->diffInDays($today);
-    $currentWeekNumber = (int) floor($daysSinceStart / 7) + 1;
-    $currentDayNumber = (int) ($daysSinceStart % 7) + 1;
-
-    $dayNames = [
-        1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
-        4 => 'Thursday', 5 => 'Friday',
-        6 => 'Saturday', 7 => 'Sunday'
-    ];
-
-    if ($currentDayNumber === 7) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Today is a rest day.',
-            'user_id' => $user->id,
-            'user_name' => $user->first_name,
-            'today_is' => 'Day ' . $currentDayNumber,
-            'current_week' => $currentWeekNumber,
-            'current_cycle' => null,
-            'workout_days_plan' => $workoutDays,
-            'completed_days_this_week' => 0,
-            'selected_language_id' => $preferredLanguageId,
-            'trial_remaining_days' => $trialRemainingDays,
-            'workouts_for_today' => []
-        ]);
-    }
-
-    $weekStart = (clone $startDate)->addDays(($currentWeekNumber - 1) * 7);
-    $weekEnd = (clone $weekStart)->addDays(5); // Mon-Sat (6 days), day 7 is rest
     $completedDates = AssignWorkout::where('user_id', $user->id)
         ->where('status', 1)
-        ->whereBetween('updated_at', [$weekStart, $weekEnd])
+        ->where('updated_at', '>=', $startDate)
         ->get()
         ->map(function ($item) {
             return $item->updated_at->format('Y-m-d');
@@ -797,42 +768,36 @@ public function getUserAssignedWorkouts(Request $request)
         ->unique()
         ->values();
 
-    if ($workoutDays === 3) {
-        $todayKey = $today->format('Y-m-d');
-        if ($completedDates->contains($todayKey)) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Workout already completed for today.',
-                'user_id' => $user->id,
-                'user_name' => $user->first_name,
-                'today_is' => 'Day ' . $currentDayNumber,
-                'current_week' => $currentWeekNumber,
-                'current_cycle' => null,
-                'workout_days_plan' => $workoutDays,
-                'completed_days_this_week' => $completedDates->count(),
-                'selected_language_id' => $preferredLanguageId,
-                'trial_remaining_days' => $trialRemainingDays,
-                'workouts_for_today' => []
-            ]);
-        }
-
-        if ($completedDates->count() >= 3) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Weekly workout limit completed.',
-                'user_id' => $user->id,
-                'user_name' => $user->first_name,
-                'today_is' => 'Day ' . $currentDayNumber,
-                'current_week' => $currentWeekNumber,
-                'current_cycle' => null,
-                'workout_days_plan' => $workoutDays,
-                'completed_days_this_week' => $completedDates->count(),
-                'selected_language_id' => $preferredLanguageId,
-                'trial_remaining_days' => $trialRemainingDays,
-                'workouts_for_today' => []
-            ]);
-        }
+    $todayKey = $today->format('Y-m-d');
+    if ($completedDates->contains($todayKey)) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Workout already completed for today.',
+            'user_id' => $user->id,
+            'user_name' => $user->first_name,
+            'today_is' => null,
+            'current_week' => null,
+            'current_cycle' => null,
+            'workout_days_plan' => $workoutDays,
+            'completed_days_this_week' => null,
+            'selected_language_id' => $preferredLanguageId,
+            'trial_remaining_days' => $trialRemainingDays,
+            'workouts_for_today' => []
+        ]);
     }
+
+    $completedTotal = $completedDates->count();
+    $cycleLength = $workoutDays;
+
+    $currentWeekNumber = (int) floor($completedTotal / $cycleLength) + 1;
+    $currentDayNumber = (int) ($completedTotal % $cycleLength) + 1;
+    $completedThisWeek = $completedTotal % $cycleLength;
+
+    $dayNames = [
+        1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
+        4 => 'Thursday', 5 => 'Friday',
+        6 => 'Saturday', 7 => 'Sunday'
+    ];
 
     /* -------------------------------------------------
      | 4. CURRENT ACTIVE CYCLE
@@ -850,6 +815,8 @@ public function getUserAssignedWorkouts(Request $request)
             'today_is' => 'Day ' . $currentDayNumber,
             'current_week' => $currentWeekNumber,
             'current_cycle' => null,
+            'workout_days_plan' => $workoutDays,
+            'completed_days_this_week' => $completedThisWeek,
             'selected_language_id' => $preferredLanguageId,
             'trial_remaining_days' => $trialRemainingDays,
             'workouts_for_today' => []
@@ -1052,8 +1019,9 @@ public function getUserAssignedWorkouts(Request $request)
         'current_week' => $currentWeekNumber,
         'current_cycle' => $currentCycle,
         'workout_days_plan' => $workoutDays,
-        'completed_days_this_week' => $completedDates->count(),
+        'completed_days_this_week' => $completedThisWeek,
         'selected_language_id' => $preferredLanguageId,
+        'trial_remaining_days' => $trialRemainingDays,
         'workouts_for_today' => $workoutsForToday,
     ]);
 }
