@@ -13,6 +13,7 @@ class EquipmentVideo extends Model
 
     protected $fillable = [
         'equipment_id',
+        'title',
         'languagelist_id',
         'video_url',
         'thumbnail_url',

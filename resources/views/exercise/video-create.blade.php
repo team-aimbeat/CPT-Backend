@@ -15,6 +15,12 @@
 
                         <div class="row">
                             <div class="form-group col-md-4">
+                                {{ Form::label('title', __('message.title'), [ 'class' => 'form-control-label' ]) }}
+                                {{ Form::text('title', old('title'), [ 'class' => 'form-control', 'placeholder' => __('message.title'), 'required' ]) }}
+                                @error('title')<div class="text-danger">{{ $message }}</div>@enderror
+                            </div>
+
+                            <div class="form-group col-md-4">
                                 {{ Form::label('equipment_id', __('message.equipment'),[ 'class' => 'form-control-label' ]) }}
                                 <a id="equipment_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
                                 {{ Form::select('equipment_id', [], old('equipment_id'), [

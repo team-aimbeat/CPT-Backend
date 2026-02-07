@@ -131,6 +131,7 @@ class ExerciseController extends Controller
     public function storeEquipmentVideo(Request $request)
     {
         $request->validate([
+            'title' => 'required|string|max:255',
             'equipment_id' => 'required|exists:equipment,id',
             'language_id' => 'required|exists:language_lists,id',
             'video_file' => 'required|file|mimetypes:video/*|max:2048000',
@@ -145,6 +146,7 @@ class ExerciseController extends Controller
 
         $equipmentVideo = EquipmentVideo::create([
             'equipment_id' => $request->equipment_id,
+            'title' => $request->title,
             'languagelist_id' => $request->language_id,
             'video_url' => $videoPath,
             'transcoding_status' => 'pending',
