@@ -62,12 +62,7 @@ class EquipmentController extends Controller
             return redirect()->back()->withErrors($message);
         }
 
-        $equipment = Equipment::create($request->all());
-
-        storeMediaFile($equipment,$request->equipment_image, 'equipment_image'); 
-        if( $equipment->video_type == 'upload_video' ) {
-            storeMediaFile($equipment,$request->equipment_video, 'equipment_video');
-        }
+        $equipment = Equipment::create($request->only(['title', 'status']));
 
         return redirect()->route('equipment.index')->withSuccess(__('message.save_form', ['form' => __('message.equipment')]));
     }
@@ -118,21 +113,7 @@ class EquipmentController extends Controller
 
         $equipment = Equipment::findOrFail($id);
 
-        // Equipment data...
-        $equipment->fill($request->all())->update();
-
-        // Save equipment image...
-        if (isset($request->equipment_image) && $request->equipment_image != null) {
-            $equipment->clearMediaCollection('equipment_image');
-            $equipment->addMediaFromRequest('equipment_image')->toMediaCollection('equipment_image');
-        }
-
-        if( $equipment->video_type == 'upload_video' ) {
-            if (isset($request->equipment_video) && $request->equipment_video != null) {
-                $equipment->clearMediaCollection('equipment_video');
-                $equipment->addMediaFromRequest('equipment_video')->toMediaCollection('equipment_video');
-            }
-        }
+        $equipment->fill($request->only(['title', 'status']))->update();
 
         if(auth()->check()){
             return redirect()->route('equipment.index')->withSuccess(__('message.update_form',['form' => __('message.equipment')]));
