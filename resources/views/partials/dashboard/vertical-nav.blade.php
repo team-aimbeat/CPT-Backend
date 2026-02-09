@@ -358,8 +358,8 @@
                 ->link->attr(['class' => activeRoute(route('coupons.create')) ? 'nav-link active' : 'nav-link']);
 
                 
-        {{-- Class Schedule menu hidden --}}
-        {{-- 
+        /* Class Schedule menu hidden */
+        /*
         $menu->add('<span class="item-name">'.__('message.class_schedule').'</span>', ['class' => ''])
                 ->prepend('<i class="icon">
                             <svg class="icon-24" width="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -383,7 +383,7 @@
                 ->data('permission', [ 'class-schedule-add', 'class-schedule-edit'])
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('classschedule.create')) || request()->is('classschedule/*/edit') ? 'nav-link active' : 'nav-link']);
-        --}}
+        */
 
         $menu->add('<span class="item-name">'.__('message.subscription').'</span>', ['class' => ''])
                 ->prepend('<i class="icon">
