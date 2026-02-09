@@ -39,6 +39,7 @@ class HomeController extends Controller
         $assets = ['chart', 'animation'];
         $auth_user = AuthHelper::authSession();
         $data['dashboard'] = [
+            'total_user'        => User::where('user_type', 'user')->count(),
             'total_equipment'   => Equipment::count(),
             'total_level'       => Level::count(),
             'total_bodypart'    => BodyPart::count(),

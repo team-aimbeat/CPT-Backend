@@ -14,6 +14,7 @@
       	<div class="col-md-12 col-lg-12" style="padding-top: 20px;">
          	<div class="row ">
 				<div class="col-lg-3 col-md-6" >
+					<a href="{{ route('equipment.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="700">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -29,8 +30,10 @@
 							</div>
 						</div>
 					</div>
+					</a>
 				</div>
 				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('level.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="800">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -48,8 +51,10 @@
 							</div>
 						</div>
 					</div>
+					</a>
 				</div>
 				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('bodypart.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="900">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -67,8 +72,10 @@
 							</div>
 						</div>
 					</div>
+					</a>
 				</div>
 				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('workouttype.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="1000">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -84,8 +91,10 @@
 							</div>
 						</div>
 					</div>
+					</a>
 				</div>
 				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('exercise.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="1100">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -103,8 +112,10 @@
 							</div>
 						</div>
 					</div>
+					</a>
 				</div>
 				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('workout.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="1200">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -120,8 +131,10 @@
 							</div>
 						</div>
 					</div>
+					</a>
 				</div>
 				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('diet.index') }}" class="text-decoration-none">
 					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="1300">
 						<div class="card-body">
 							<div class="d-flex align-items-center gap-3">
@@ -138,6 +151,29 @@
 							</div>
 						</div>
 					</div>
+					</a>
+				</div>
+				<div class="col-lg-3 col-md-6">
+					<a href="{{ route('users.index') }}" class="text-decoration-none">
+					<div class="swiper-slide card card-slide" data-aos="fade-up" data-aos-delay="1400">
+						<div class="card-body">
+							<div class="d-flex align-items-center gap-3">
+								<div class="rounded p-3" style="background-color: #F5F5FF;">
+									<svg width="30" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<circle cx="9" cy="6" r="4" stroke="#EC7E4A" stroke-width="1.5"/>
+										<path d="M15 9C16.6569 9 18 7.65685 18 6C18 4.34315 16.6569 3 15 3" stroke="#EC7E4A" stroke-width="1.5" stroke-linecap="round"/>
+										<ellipse cx="9" cy="17" rx="7" ry="4" stroke="#EC7E4A" stroke-width="1.5"/>
+										<path d="M18 14C19.7542 14.3847 21 15.3589 21 16.5C21 17.5293 19.9863 18.4229 18.5 18.8704" stroke="#EC7E4A" stroke-width="1.5" stroke-linecap="round"/>
+									</svg>
+								</div>								
+								<div class="text-right dashboard-show-data">
+									<h5 class="counter">{{ __('message.user') }}</h5>
+									<h4 class="counter">{{ $data['dashboard']['total_user'] }}</h4>
+								</div>
+							</div>
+						</div>
+					</div>
+					</a>
 				</div>
 			</div>
 		</div>
