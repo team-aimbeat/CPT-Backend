@@ -40,6 +40,24 @@ class DietDataTable extends DataTable
                 }
                 return '<span class="text-capitalize badge bg-'.$status.'">'.$query->status.'</span>';
             })
+            ->editColumn('calories', function ($query) {
+                return $query->calories ?? '-';
+            })
+            ->editColumn('carbs', function ($query) {
+                return $query->carbs ?? '-';
+            })
+            ->editColumn('protein', function ($query) {
+                return $query->protein ?? '-';
+            })
+            ->editColumn('fat', function ($query) {
+                return $query->fat ?? '-';
+            })
+            ->editColumn('servings', function ($query) {
+                return $query->servings ?? '-';
+            })
+            ->editColumn('total_time', function ($query) {
+                return $query->total_time ?? '-';
+            })
             ->editColumn('created_at', function ($query) {
                 return dateAgoFormate($query->created_at, true);
             })
