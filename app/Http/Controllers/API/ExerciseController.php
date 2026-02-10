@@ -41,7 +41,7 @@ class ExerciseController extends Controller
         });
 
         $exercise->when(request('bodypart_id'), function ($q) {
-            return $q->whereJsonContains('bodypart_ids', request('bodypart_id'));
+            return $q->where('bodypart_id', request('bodypart_id'));
         });
         
         if( $request->has('is_premium') && isset($request->is_premium) ) {

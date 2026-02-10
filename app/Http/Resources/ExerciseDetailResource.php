@@ -20,15 +20,15 @@ class ExerciseDetailResource extends JsonResource
             $video_url = getMediaFileExit($this, 'exercise_video') ? getSingleMedia($this, 'exercise_video', null) : null;
         }
         $selected_bodypart = null;
-        if(isset($this->bodypart_ids)) {
-            $selected_bodypart = BodyPart::whereIn('id', $this->bodypart_ids)->get()->map(function ($item) {
-                // return $item;
-                return [
+        if (!empty($this->bodypart_id)) {
+            $item = BodyPart::find($this->bodypart_id);
+            if ($item) {
+                $selected_bodypart = [
                     'id'    => $item->id,
                     'title' => $item->title,
-                    'bodypart_image'   => getSingleMedia($item, 'bodypart_image',null),
+                    'bodypart_image' => getSingleMedia($item, 'bodypart_image', null),
                 ];
-            });
+            }
         }
         return [
             'id'                => $this->id,

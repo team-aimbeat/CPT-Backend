@@ -18,7 +18,7 @@ class Exercise extends Model implements HasMedia
         'video_type',
         'video_url',
         'hls_video',
-        'bodypart_ids',
+        'bodypart_id',
         'duration',
         'sets',
         'equipment_id',
@@ -43,6 +43,7 @@ class Exercise extends Model implements HasMedia
         'equipment_id'      => 'integer',
         'level_id'          => 'integer',
         'is_premium'        => 'integer',
+        'bodypart_id'       => 'integer',
     ];
 
     public function equipment()
@@ -55,14 +56,9 @@ class Exercise extends Model implements HasMedia
         return $this->belongsTo(Level::class, 'level_id', 'id');
     }
 
-    public function getBodypartIdsAttribute($value)
+    public function bodypart()
     {
-        return isset($value) ? json_decode($value, true) : null; 
-    }
-
-    public function setBodypartIdsAttribute($value)
-    {
-        $this->attributes['bodypart_ids'] = isset($value) ? json_encode($value) : null;
+        return $this->belongsTo(BodyPart::class, 'bodypart_id', 'id');
     }
 
     public function getSetsAttribute($value)

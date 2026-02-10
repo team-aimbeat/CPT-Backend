@@ -59,6 +59,10 @@
                 $('.equipment').val(null).trigger('change');
                 clearDurationSet(); // Clears both duration and sets
             });
+
+            $(document).on('click', '#category_clear', function () {
+                $('.bodypart').val(null).trigger('change');
+            });
             
             $(document).on('click', '#sets_clear', function () {
                 clearDurationSet('set');
@@ -160,20 +164,18 @@
                             </div>
                             
                             <div class="form-group col-md-4">
-                                {{ Form::label('alternate_exercise_id', __('message.alternate_exercise'), [ 'class' => 'form-control-label' ]) }}
-                                <a id="alternate_exercise_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
-                              {{ Form::select(
-                                'exercise_id',
-                                $is_update && $data->alternate_exercise 
-                                    ? [ $data->alternate_exercise->id => $data->alternate_exercise->title ] 
-                                    : [],
-                                old('exercise_id', $is_update ? $data->alternate_exercise_id : null), 
-                                [
-                                    'class' => 'select2js form-group alternate-exercise',
-                                    'data-placeholder' => __('message.select_name',['select' => __('message.alternate_exercise')]),
-                                    'data-ajax--url' => route('ajax-list', ['type' => 'exercise'])
-                                ]
-                            ) }}
+                                {{ Form::label('bodypart_id', __('message.category'), [ 'class' => 'form-control-label' ]) }}
+                                <a id="category_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
+                                {{ Form::select(
+                                    'bodypart_id',
+                                    $selected_bodypart ?? [],
+                                    old('bodypart_id', $data->bodypart_id ?? null),
+                                    [
+                                        'class' => 'select2js form-group bodypart',
+                                        'data-placeholder' => __('message.select_name',['select' => __('message.category')]),
+                                        'data-ajax--url' => route('ajax-list', ['type' => 'bodypart'])
+                                    ]
+                                ) }}
                             </div>
 
 
