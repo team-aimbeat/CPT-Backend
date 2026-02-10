@@ -243,6 +243,7 @@
 
                         <hr>
 
+                        {{--
                         <div class="form-group col-md-12">
                             {{ Form::label('instruction',__('message.instruction'), ['class' => 'form-control-label']) }}
                             {{ Form::textarea('instruction', null, ['class'=> 'form-control tinymce-instruction' , 'placeholder'=> __('message.instruction') ]) }}
@@ -250,7 +251,8 @@
                         <div class="form-group col-md-12">
                             {{ Form::label('tips',__('message.tips'), ['class' => 'form-control-label']) }}
                             {{ Form::textarea('tips', null, ['class'=> 'form-control tinymce-tips' , 'placeholder'=> __('message.tips') ]) }}
-                        </div>                        
+                        </div>
+                        --}}
                         <hr>
                         {{ Form::submit( __('message.save'), ['class'=>'btn btn-md btn-primary float-end']) }}
                     </div>
