@@ -957,9 +957,11 @@ public function getUserAssignedWorkouts(Request $request)
                     /* ---------------- ALTERNATE EXERCISE ---------------- */
                     $alternate = null;
 
-                    if ($exercise->exercise_id) {
+                    $alternateExerciseId = $wde->alternate_exercise_id ?: $exercise->exercise_id;
+
+                    if ($alternateExerciseId) {
                         $alt = Exercise::with('exerciseVideos')
-                            ->find($exercise->exercise_id);
+                            ->find($alternateExerciseId);
 
                         if ($alt) {
                             $altVideo =
@@ -971,7 +973,7 @@ public function getUserAssignedWorkouts(Request $request)
                             $alternate = [
                                 'id' => $alt->id,
                                 'title' => $alt->title,
-                                'description' => $alt->instruction,
+                                'description' => $wde->alternate_exercise_description ?? $alt->instruction,
                                 'exercise_image' => $alt->exercise_image
                                     ? cloudfrontUrl($alt->exercise_image)
                                     : null,

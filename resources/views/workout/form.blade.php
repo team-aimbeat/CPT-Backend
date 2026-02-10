@@ -70,6 +70,12 @@
             clone.find('[name^="exercise_titles"]')
                 .attr('name', 'exercise_titles[' + row + '][]');
 
+            clone.find('[name^="alternate_exercise_ids"]')
+                .attr('name', 'alternate_exercise_ids[' + row + '][]');
+
+            clone.find('[name^="alternate_exercise_description"]')
+                .attr('name', 'alternate_exercise_description[' + row + '][]');
+
             clone.find('[name^="is_rest"]')
                 .attr('name', 'is_rest[' + row + ']')
                 .prop('checked', false);
@@ -194,6 +200,8 @@
     <th>Day</th>
     <th>Exercise</th>
     <th>Exercise Title</th>
+    <th>Alt Exercise</th>
+    <th>Alt Description</th>
     <th>Instruction</th>
     <th>Rest</th>
     <th></th>
@@ -210,6 +218,9 @@
     $exerciseIds  = $day->exercise_ids ?? [];
     $instructions = $day->exercise_description ?? [];
     $exerciseTitles = $day->exercise_titles ?? [];
+    $alternateExerciseData = $day->alternate_exercise_data ?? [];
+    $alternateExerciseIds = $day->alternate_exercise_ids ?? [];
+    $alternateExerciseDescriptions = $day->alternate_exercise_descriptions ?? [];
 @endphp
 
 <tr id="row_{{ $i }}" row="{{ $i }}">
@@ -233,6 +244,20 @@
 <td>
 <input type="text" name="exercise_titles[{{ $i }}][]" class="form-control"
        value="{{ $exerciseTitles[0] ?? '' }}" placeholder="Exercise Title">
+</td>
+
+<td>
+{{ Form::select("alternate_exercise_ids[$i][]",$alternateExerciseData,$alternateExerciseIds[0] ?? null,[
+    'class'=>'select2js',
+    'data-ajax--url'=>route('ajax-list',['type'=>'exercise']),
+    'placeholder' => 'Select Alternate'
+]) }}
+</td>
+
+<td>
+<textarea name="alternate_exercise_description[{{ $i }}][]" class="form-control tinymce-description">
+{{ $alternateExerciseDescriptions[0] ?? '' }}
+</textarea>
 </td>
 
 <td>
@@ -263,6 +288,12 @@
 </td>
 <td>
 <input type="text" name="exercise_titles[0][]" class="form-control" placeholder="Exercise Title">
+</td>
+<td>
+{{ Form::select('alternate_exercise_ids[0][]',[],null,['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'exercise']),'placeholder'=>'Select Alternate']) }}
+</td>
+<td>
+<textarea name="alternate_exercise_description[0][]" class="form-control tinymce-description"></textarea>
 </td>
 
 <td>
