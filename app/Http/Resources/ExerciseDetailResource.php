@@ -39,6 +39,7 @@ class ExerciseDetailResource extends JsonResource
             'video_type'        => $this->video_type,
             'video_url'         => $video_url ?? null,
             'bodypart_name'     => $selected_bodypart,
+            'category'          => optional($this->equipment)->title,
             'duration'          => $this->duration,
             'sets'              => $this->sets,
             'based'             => $this->based,

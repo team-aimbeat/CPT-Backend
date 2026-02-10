@@ -188,9 +188,9 @@ class ExerciseController extends Controller
 
         $pageTitle = __('message.add_form_title',[ 'form' => __('message.exercise')]);
 
-        $selected_bodypart = [];
+        $selected_equipment = [];
 
-        return view('exercise.form', compact('pageTitle', 'selected_bodypart'));
+        return view('exercise.form', compact('pageTitle', 'selected_equipment'));
     }
 
     /**
@@ -273,13 +273,13 @@ class ExerciseController extends Controller
         $data = Exercise::findOrFail($id);
         $pageTitle = __('message.update_form_title',[ 'form' => __('message.exercise') ]);
 
-        $selected_bodypart = [];
-        if(isset($data->bodypart_id)) {
-            $selected_bodypart = BodyPart::where('id', $data->bodypart_id)->get()->mapWithKeys(function ($item) {
+        $selected_equipment = [];
+        if (isset($data->equipment_id)) {
+            $selected_equipment = Equipment::where('id', $data->equipment_id)->get()->mapWithKeys(function ($item) {
                 return [ $item->id => $item->title ];
             });
         }
-        return view('exercise.form', compact('data','id','pageTitle','selected_bodypart'));
+        return view('exercise.form', compact('data','id','pageTitle','selected_equipment'));
     }
 
     /**

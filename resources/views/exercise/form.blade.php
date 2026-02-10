@@ -61,7 +61,7 @@
             });
 
             $(document).on('click', '#category_clear', function () {
-                $('.bodypart').val(null).trigger('change');
+                $('.equipment').val(null).trigger('change');
             });
             
             $(document).on('click', '#sets_clear', function () {
@@ -164,18 +164,20 @@
                             </div>
                             
                             <div class="form-group col-md-4">
-                                {{ Form::label('bodypart_id', __('message.category'), [ 'class' => 'form-control-label' ]) }}
+                                {{ Form::label('equipment_id', __('message.category').' *', [ 'class' => 'form-control-label' ]) }}
                                 <a id="category_clear" class="float-end" href="javascript:void(0)">{{ __('message.l_clear') }}</a>
                                 {{ Form::select(
-                                    'bodypart_id',
-                                    $selected_bodypart ?? [],
-                                    old('bodypart_id', $data->bodypart_id ?? null),
+                                    'equipment_id',
+                                    $selected_equipment ?? [],
+                                    old('equipment_id', $data->equipment_id ?? null),
                                     [
-                                        'class' => 'select2js form-group bodypart',
+                                        'class' => 'select2js form-group equipment',
                                         'data-placeholder' => __('message.select_name',['select' => __('message.category')]),
-                                        'data-ajax--url' => route('ajax-list', ['type' => 'bodypart'])
+                                        'data-ajax--url' => route('ajax-list', ['type' => 'equipment']),
+                                        'required' => true,
                                     ]
                                 ) }}
+                                @error('equipment_id')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
 
 
