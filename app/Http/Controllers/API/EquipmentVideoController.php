@@ -38,27 +38,30 @@ class EquipmentVideoController extends Controller
 
         $languageId = $request->input('language_id', $request->input('lang_id'));
 
-        $query = EquipmentVideo::query()
+        $query = \App\Models\ExerciseVideo::query()
             ->select([
-                'id',
-                'equipment_id',
-                'languagelist_id',
-                'video_url',
-                'thumbnail_url',
-                'hls_master_url',
-                'hls_1080p_url',
-                'hls_720p_url',
-                'hls_480p_url',
-                'transcoding_status',
-                'created_at',
+                'exercise_video.id',
+                'exercise_video.exercise_id',
+                'exercise_video.languagelist_id',
+                'exercise_video.video_url',
+                'exercise_video.hls_master_url',
+                'exercise_video.hls_1080p_url',
+                'exercise_video.hls_720p_url',
+                'exercise_video.hls_480p_url',
+                'exercise_video.poster_url',
+                'exercise_video.transcoding_status',
+                'exercise_video.created_at',
             ])
             ->with([
-                'equipment:id,title',
+                'exercise:id,title,equipment_id',
+                'exercise.equipment:id,title',
                 'languageList:id,language_name',
             ]);
 
         if (!empty($equipmentIds)) {
-            $query->whereIn('equipment_id', $equipmentIds);
+            $query->whereHas('exercise', function ($q) use ($equipmentIds) {
+                $q->whereIn('equipment_id', $equipmentIds);
+            });
         }
 
         if (!empty($languageId)) {
@@ -102,17 +105,20 @@ class EquipmentVideoController extends Controller
 
                 return [
                     'id' => $video->id,
-                    'equipment_id' => $video->equipment_id,
-                    'equipment_title' => optional($video->equipment)->title,
+                    'equipment_id' => optional($video->exercise)->equipment_id,
+                    'equipment_title' => optional(optional($video->exercise)->equipment)->title,
+                    'exercise_title' => optional($video->exercise)->title,
                     'language_id' => $video->languagelist_id,
                     'language_name' => optional($video->languageList)->language_name,
                     'video_url' => $preferredPath ? cloudfrontUrl($preferredPath) : null,
-                    'thumbnail_url' => $video->thumbnail_url ? cloudfrontUrl($video->thumbnail_url) : null,
+                    'thumbnail_url' => $video->poster_url ? cloudfrontUrl($video->poster_url) : null,
                     'is_locked' => false,
                 ];
             });
         } else {
-            $grouped = $videos->groupBy('equipment_id');
+            $grouped = $videos->groupBy(function ($video) {
+                return optional($video->exercise)->equipment_id;
+            });
             $lockedData = collect();
 
             foreach ($grouped as $equipmentId => $items) {
@@ -124,12 +130,13 @@ class EquipmentVideoController extends Controller
 
                     $lockedData->push([
                         'id' => $video->id,
-                        'equipment_id' => $video->equipment_id,
-                        'equipment_title' => optional($video->equipment)->title,
+                        'equipment_id' => optional($video->exercise)->equipment_id,
+                        'equipment_title' => optional(optional($video->exercise)->equipment)->title,
+                        'exercise_title' => optional($video->exercise)->title,
                         'language_id' => $video->languagelist_id,
                         'language_name' => optional($video->languageList)->language_name,
                         'video_url' => $isFirst ? ($preferredPath ? cloudfrontUrl($preferredPath) : null) : null,
-                        'thumbnail_url' => $video->thumbnail_url ? cloudfrontUrl($video->thumbnail_url) : null,
+                        'thumbnail_url' => $video->poster_url ? cloudfrontUrl($video->poster_url) : null,
                         'is_locked' => !$isFirst,
                     ]);
 
