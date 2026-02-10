@@ -21,7 +21,7 @@
         });
         tinymce.init({
             selector: '.tinymce-description',
-            height: 140,
+            height: 220,
             menubar: false,
             plugins: 'lists link',
             toolbar: 'bold italic | bullist numlist | link',
