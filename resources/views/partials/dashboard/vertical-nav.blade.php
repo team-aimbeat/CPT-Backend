@@ -60,6 +60,8 @@
                 ->link->attr(['class' => activeRoute(route('injury.create')) || request()->is('injury/*/edit') ? 'nav-link active' : 'nav-link']);
 
 
+        // Sub Admin menu hidden
+        if (false) {
         $menu->add('<span class="item-name">'.__('message.sub_admin').'</span>', ['class' => ''])
             ->prepend('<i class="icon">
                 <svg class="icon-24" width="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -82,6 +84,7 @@
                 ->data('permission', [ 'subadmin-add', 'subadmin-edit'])
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')          
                 ->link->attr(['class' => activeRoute(route('subadmin.create')) || request()->is('subadmin/*/edit') ? 'nav-link active' : 'nav-link']);
+        }
 
         $menu->add('<span class="item-name">'.__('message.equipment').'</span>', ['class' => ''])
             ->prepend('<i class="icon">
