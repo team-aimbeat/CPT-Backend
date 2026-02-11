@@ -405,6 +405,7 @@
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('subscription.index')) ? 'nav-link active' : 'nav-link']);
 
+        /*
         $menu->add('<span>'.__('message.account_setting').'</span>', ['class' => ''])
             ->prepend('<i class="icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -427,6 +428,7 @@
                 ->data('permission', 'permission-list')
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('permission.index')) ? 'nav-link active' : 'nav-link']);
+        */
 
         $menu->add('<span>'.__('message.pages').'</span>', ['class' => ''])
             ->prepend('<i class="icon">
@@ -451,6 +453,7 @@
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('pages.privacy_policy')) ? 'nav-link active' : 'nav-link']);
 
+        /*
         $menu->add('<span class="item-name">'.__('message.pushnotification').'</span>', ['class' => ''])
             ->prepend('<i class="icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -492,6 +495,7 @@
                 ->data('permission', [ 'quotes-add', 'quotes-edit'])
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('quotes.create')) || request()->is('quotes/*/edit') ? 'nav-link active' : 'nav-link']);
+        */
 
                 $menu->add('<span class="item-name">'.__('message.faq').'</span>', ['class' => ''])
                 ->prepend('<i class="icon">
