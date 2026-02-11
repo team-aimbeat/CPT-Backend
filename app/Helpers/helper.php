@@ -124,15 +124,15 @@ function getSingleMedia($model, $collection = 'image_icon',$skip=true)
     if (!Auth::check() && $skip) {
         return asset('images/avatars/01.png');
     }
+    $media = null;
     if ($model !== null) {
         $media = $model->getFirstMedia($collection);
     }
-    $imgurl= isset($media)?$media->getPath():'';
-    if (file_exists($imgurl)) {
+
+    // Use disk-aware media existence check (local/S3 both)
+    if ($media && getFileExistsCheck($media)) {
         return $media->getFullUrl();
-    }
-    else
-    {
+    } else {
         switch ($collection) {
             case 'image_icon':
                 $media = asset('images/avatars/01.png');
