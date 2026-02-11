@@ -405,30 +405,7 @@
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('subscription.index')) ? 'nav-link active' : 'nav-link']);
 
-        /*
-        $menu->add('<span>'.__('message.account_setting').'</span>', ['class' => ''])
-            ->prepend('<i class="icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M14 20.8344C13.3663 20.9421 12.695 21 12 21C8.13401 21 5 19.2091 5 17C5 14.7909 8.13401 13 12 13C13.7135 13 15.2832 13.3518 16.5 13.9359" stroke="currentColor" stroke-width="1.5"/>
-                    <circle cx="17" cy="18" r="1.25" stroke="currentColor"/>
-                        <path d="M17.7343 13.8969C17.5812 13.8335 17.387 13.8335 16.9987 13.8335C16.6104 13.8335 16.4163 13.8335 16.2632 13.8969C16.059 13.9815 15.8967 14.1437 15.8122 14.3479C15.7736 14.4411 15.7584 14.5495 15.7525 14.7077C15.7438 14.94 15.6247 15.1551 15.4233 15.2714C15.2219 15.3876 14.9761 15.3833 14.7705 15.2746C14.6306 15.2007 14.5292 15.1596 14.4291 15.1464C14.21 15.1176 13.9884 15.177 13.8131 15.3115C13.6815 15.4124 13.5845 15.5805 13.3903 15.9168C13.1962 16.2531 13.0991 16.4212 13.0775 16.5855C13.0486 16.8047 13.108 17.0263 13.2426 17.2016C13.304 17.2816 13.3903 17.3489 13.5242 17.4331C13.7212 17.5568 13.8479 17.7676 13.8478 18.0002C13.8478 18.2327 13.7211 18.4435 13.5242 18.5672C13.3903 18.6514 13.3039 18.7186 13.2425 18.7987C13.108 18.974 13.0486 19.1956 13.0774 19.4148C13.0991 19.5791 13.1962 19.7472 13.3903 20.0835C13.5844 20.4198 13.6815 20.5879 13.813 20.6888C13.9884 20.8233 14.21 20.8827 14.4291 20.8539C14.5291 20.8407 14.6305 20.7996 14.7704 20.7257C14.976 20.617 15.2219 20.6127 15.4233 20.7289C15.6247 20.8452 15.7438 21.0603 15.7525 21.2927C15.7584 21.4508 15.7736 21.5592 15.8122 21.6524C15.8967 21.8566 16.059 22.0188 16.2632 22.1034C16.4163 22.1668 16.6104 22.1668 16.9987 22.1668C17.387 22.1668 17.5812 22.1668 17.7343 22.1034C17.9385 22.0188 18.1007 21.8566 18.1853 21.6524C18.2239 21.5592 18.239 21.4508 18.2449 21.2927C18.2536 21.0603 18.3728 20.8452 18.5741 20.7289C18.7755 20.6126 19.0214 20.617 19.227 20.7256C19.3669 20.7996 19.4683 20.8407 19.5683 20.8538C19.7875 20.8827 20.0091 20.8233 20.1844 20.6888C20.3159 20.5879 20.413 20.4197 20.6071 20.0835C20.8013 19.7472 20.8983 19.5791 20.92 19.4147C20.9488 19.1956 20.8894 18.974 20.7549 18.7987C20.6935 18.7186 20.6072 18.6513 20.4732 18.5672C20.2763 18.4434 20.1496 18.2327 20.1496 18.0001C20.1496 17.7676 20.2763 17.5569 20.4732 17.4332C20.6072 17.349 20.6935 17.2817 20.7549 17.2016C20.8895 17.0263 20.9489 16.8047 20.92 16.5856C20.8984 16.4212 20.8013 16.2531 20.6072 15.9168C20.413 15.5806 20.316 15.4124 20.1845 15.3115C20.0091 15.177 19.7875 15.1176 19.5684 15.1464C19.4684 15.1596 19.3669 15.2007 19.227 15.2747C19.0214 15.3833 18.7756 15.3877 18.5742 15.2714C18.3728 15.1551 18.2536 14.94 18.2449 14.7076C18.239 14.5495 18.2239 14.4411 18.1853 14.3479C18.1007 14.1437 17.9385 13.9815 17.7343 13.8969Z" stroke="currentColor"/>
-                </svg></i>')
-            ->nickname('account_setting')
-            ->data('permission', ['role-list','permission-list'])
-            ->link->attr(['class' => 'nav-link' ])
-            ->href('#account_setting');
-
-            $menu->account_setting->add('<span>'.__('message.list_form_title',['form' => __('message.role')]).'</span>', ['route' => 'role.index'])
-                ->data('permission', 'role-list')
-                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('role.index')) ? 'nav-link active' : 'nav-link']);
-
-            $menu->account_setting->add('<span>'.__('message.list_form_title',['form' => __('message.permission')]).'</span>', ['route' => 'permission.index'])
-                ->data('permission', 'permission-list')
-                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('permission.index')) ? 'nav-link active' : 'nav-link']);
-        */
+        // Account Setting menu hidden
 
         $menu->add('<span>'.__('message.pages').'</span>', ['class' => ''])
             ->prepend('<i class="icon">
@@ -453,49 +430,8 @@
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('pages.privacy_policy')) ? 'nav-link active' : 'nav-link']);
 
-        /*
-        $menu->add('<span class="item-name">'.__('message.pushnotification').'</span>', ['class' => ''])
-            ->prepend('<i class="icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18.7491 9.70957V9.00497C18.7491 5.13623 15.7274 2 12 2C8.27256 2 5.25087 5.13623 5.25087 9.00497V9.70957C5.25087 10.5552 5.00972 11.3818 4.5578 12.0854L3.45036 13.8095C2.43882 15.3843 3.21105 17.5249 4.97036 18.0229C9.57274 19.3257 14.4273 19.3257 19.0296 18.0229C20.789 17.5249 21.5612 15.3843 20.5496 13.8095L19.4422 12.0854C18.9903 11.3818 18.7491 10.5552 18.7491 9.70957Z" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M7.5 19C8.15503 20.7478 9.92246 22 12 22C14.0775 22 15.845 20.7478 16.5 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg></i>')
-            ->nickname('pushnotification')
-            ->data('permission', 'pushnotification-list')
-            ->link->attr(['class' => 'nav-link' ])
-            ->href('#pushnotification');
-
-            $menu->pushnotification->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.pushnotification')]).'</span>', ['route' => 'pushnotification.index'])
-                ->data('permission', 'pushnotification-list')
-                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('pushnotification.index')) ? 'nav-link active' : 'nav-link']);
-
-            $menu->pushnotification->add('<span class="item-name">'.__('message.add_form_title',['form' => __('message.pushnotification')]).'</span>', ['route' => 'pushnotification.create'])
-                ->data('permission', 'pushnotification-add')
-                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('pushnotification.create')) ? 'nav-link active' : 'nav-link']);
-
-        $menu->add('<span class="item-name">'.__('message.quotes').'</span>', ['class' => ''])
-                ->prepend('<i class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6.0894 14.3092L6.58097 14.4006C6.60635 14.2642 6.5739 14.1234 6.49139 14.0118C6.40888 13.9003 6.28372 13.828 6.14586 13.8124L6.0894 14.3092ZM6.21523 5.9626L6.18824 6.46188L6.20173 6.4626H6.21523V5.9626ZM9.75938 13.701L10.229 13.8726L9.75938 13.701ZM3.38411 19.0277L2.9762 18.7386C2.8602 18.9022 2.85322 19.1193 2.95847 19.2901C3.06372 19.4608 3.26083 19.5522 3.45914 19.5221L3.38411 19.0277ZM6.14586 13.8124C5.30247 13.7165 4.37659 13.38 3.67228 12.7945C2.98015 12.2191 2.5 11.4052 2.5 10.3037H1.5C1.5 11.7387 2.14181 12.8226 3.03302 13.5635C3.91204 14.2942 5.03086 14.6921 6.03295 14.806L6.14586 13.8124ZM2.5 10.3037C2.5 8.01378 4.18533 6.35361 6.18824 6.46188L6.24222 5.46333C3.58951 5.31994 1.5 7.52057 1.5 10.3037H2.5ZM6.21523 6.4626C8.40815 6.4626 9.84658 8.47295 9.84658 10.3037H10.8466C10.8466 8.06594 9.09529 5.4626 6.21523 5.4626V6.4626ZM9.84658 10.3037C9.84658 11.3473 9.76326 12.2337 9.28976 13.5294L10.229 13.8726C10.7518 12.4421 10.8466 11.4347 10.8466 10.3037H9.84658ZM9.28976 13.5294C9.11014 14.0209 7.7045 17.8662 3.30907 18.5334L3.45914 19.5221C8.45885 18.7632 10.0408 14.3878 10.229 13.8726L9.28976 13.5294ZM3.79202 19.3169C4.34794 18.5326 4.98077 17.7465 5.47004 16.9968C5.9777 16.2189 6.39675 15.3908 6.58097 14.4006L5.59784 14.2177C5.44652 15.0311 5.10012 15.7339 4.63261 16.4502C4.14671 17.1947 3.59466 17.8661 2.9762 18.7386L3.79202 19.3169Z" stroke="currentColor" stroke-width="1"/>
-                            <path d="M16.7432 14.2938L17.2348 14.3853C17.2602 14.2488 17.2277 14.108 17.1452 13.9965C17.0627 13.8849 16.9375 13.8127 16.7997 13.797L16.7432 14.2938ZM16.869 5.94722L16.8421 6.44649L16.8555 6.44722H16.869V5.94722ZM20.4132 13.6856L20.8828 13.8573L20.4132 13.6856ZM14.0379 19.0123L13.63 18.7232C13.514 18.8868 13.507 19.104 13.6123 19.2747C13.7175 19.4455 13.9146 19.5368 14.1129 19.5067L14.0379 19.0123ZM16.7997 13.797C15.9563 13.7012 15.0304 13.3646 14.3261 12.7791C13.634 12.2037 13.1538 11.3898 13.1538 10.2883H12.1538C12.1538 11.7233 12.7956 12.8072 13.6868 13.5481C14.5659 14.2788 15.6847 14.6767 16.6868 14.7906L16.7997 13.797ZM13.1538 10.2883C13.1538 7.9984 14.8391 6.33823 16.8421 6.44649L16.896 5.44795C14.2433 5.30456 12.1538 7.50519 12.1538 10.2883H13.1538ZM16.869 6.44722C19.062 6.44722 20.5004 8.45757 20.5004 10.2883H21.5004C21.5004 8.05056 19.7491 5.44722 16.869 5.44722V6.44722ZM20.5004 10.2883C20.5004 11.3319 20.4171 12.2183 19.9436 13.514L20.8828 13.8573C21.4056 12.4267 21.5004 11.4193 21.5004 10.2883H20.5004ZM19.9436 13.514C19.764 14.0055 18.3583 17.8508 13.9629 18.518L14.1129 19.5067C19.1127 18.7478 20.6946 14.3724 20.8828 13.8573L19.9436 13.514ZM14.4458 19.3015C15.0018 18.5172 15.6346 17.7311 16.1239 16.9814C16.6315 16.2035 17.0506 15.3754 17.2348 14.3853L16.2516 14.2023C16.1003 15.0157 15.7539 15.7185 15.2864 16.4349C14.8005 17.1794 14.2485 17.8507 13.63 18.7232L14.4458 19.3015Z" stroke="currentColor" stroke-width="1"/>
-                        </svg></i>')
-                ->nickname('quotes')
-                ->data('permission', 'quotes-list')
-                ->link->attr(['class' => 'nav-link' ])
-                ->href('#quotes');
-                
-            $menu->quotes->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.quotes')]).'</span>', ['route' => 'quotes.index'])
-                ->data('permission', 'quotes-list')
-                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('quotes.index')) ? 'nav-link active' : 'nav-link']);
-
-            $menu->quotes->add('<span class="item-name">'.__('message.add_form_title',['form' => __('message.quotes')]).'</span>', ['route' => 'quotes.create'])
-                ->data('permission', [ 'quotes-add', 'quotes-edit'])
-                ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('quotes.create')) || request()->is('quotes/*/edit') ? 'nav-link active' : 'nav-link']);
-        */
+        // Push Notification menu hidden
+        // Quotes menu hidden
 
                 $menu->add('<span class="item-name">'.__('message.faq').'</span>', ['class' => ''])
                 ->prepend('<i class="icon">
