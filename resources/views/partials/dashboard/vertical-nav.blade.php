@@ -536,6 +536,7 @@
             ->link->attr(['class' => 'nav-link' ])
             ->href('#app_language_setting');
                 
+            /*
             $menu->app_language_setting->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.screen')]).'</span>', ['route' => 'screen.index'])
                 ->data('permission', 'screen-list')
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
@@ -545,12 +546,14 @@
                 ->data('permission', 'defaultkeyword-list')
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => activeRoute(route('defaultkeyword.index')) ? 'nav-link active' : 'nav-link']);
+            */
 
             $menu->app_language_setting->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.language')]).'</span>', ['route' => 'languagelist.index'])
                 ->data('permission', 'languagelist-list')
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
                 ->link->attr(['class' => request()->is('languagelist') || request()->is('languagelist/*/edit') || request()->is('languagelist/create') ? 'nav-link active' : 'nav-link']);
 
+            /*
             $menu->app_language_setting->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.language_keyword')]).'</span>', ['route' => 'languagewithkeyword.index'])
                 ->data('permission', 'languagewithkeyword-list')
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
@@ -559,7 +562,8 @@
             $menu->app_language_setting->add('<span class="item-name">'.__('message.list_form_title',['form' => __('message.bulk_import_langugage_data')]).'</span>', ['route' => 'bulk.language.data'])
                 ->data('permission', 'bulkimport-add')
                 ->prepend('<i class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="10" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="12" cy="12" r="8" fill="currentColor"></circle></g></svg></i>')
-                ->link->attr(['class' => activeRoute(route('bulk.language.data')) ? 'nav-link active' : 'nav-link']);           
+                ->link->attr(['class' => activeRoute(route('bulk.language.data')) ? 'nav-link active' : 'nav-link']);
+            */
         
         $menu->add('<span class="item-name">'.__('message.setting').'</span>', ['route' => 'setting.index'])
             ->prepend('<i class="icon">
