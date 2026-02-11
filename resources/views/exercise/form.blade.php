@@ -159,8 +159,8 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="form-group col-md-4">
-                                {{ Form::label('title', __('message.title').' *',[ 'class' => 'form-control-label' ], false ) }}
-                                {{ Form::text('title', old('title'),[ 'placeholder' => __('message.title'),'class' =>'form-control','required']) }}
+                                {{ Form::label('title', 'Exercise Title *',[ 'class' => 'form-control-label' ], false ) }}
+                                {{ Form::text('title', old('title'),[ 'placeholder' => 'Exercise Title','class' =>'form-control','required']) }}
                             </div>
                             
                             <div class="form-group col-md-4">
