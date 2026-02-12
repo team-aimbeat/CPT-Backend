@@ -150,6 +150,9 @@ class TranscodeExerciseVideo implements ShouldQueue
             } else {
                 ExerciseVideo::where('id', $this->exerciseVideoId)->update([
                     'hls_master_url' => $hlsMasterKey,
+                    'hls_1080p_url' => $hlsDir . '/1080p.m3u8',
+                    'hls_720p_url' => $hlsDir . '/720p.m3u8',
+                    'hls_480p_url' => $hlsDir . '/480p.m3u8',
                 ]);
             }
             unlink($masterPath);
@@ -183,6 +186,12 @@ class TranscodeExerciseVideo implements ShouldQueue
             if ($this->targetType === 'exercise_gif') {
                 Exercise::where('id', $this->exerciseVideoId)->update([
                     'exercise_gif_poster_url' => $thumbDir . '/poster.jpg',
+                ]);
+            } else {
+                ExerciseVideo::where('id', $this->exerciseVideoId)->update([
+                    'thumb_1_url' => $thumbDir . '/thumb_1.jpg',
+                    'thumb_2_url' => $thumbDir . '/thumb_2.jpg',
+                    'poster_url' => $thumbDir . '/poster.jpg',
                 ]);
             }
 
