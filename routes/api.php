@@ -32,6 +32,7 @@ Route::get('user-detail',[ API\UserController::class, 'userDetail']);
 Route::get('get-appsetting', [ API\UserController::class, 'getAppSetting'] );
 Route::get('language-table-list',[API\LanguageTableController::class, 'getList']);
 Route::get('language-list',[API\LanguageTableController::class, 'geLanguagetList']);
+Route::get('faq-list', [ API\FaqController::class, 'getList' ]);
 
 
 Route::post('google-auth', [API\UserController::class, 'googleLoginOrRegister']);
