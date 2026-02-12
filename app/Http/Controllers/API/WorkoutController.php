@@ -705,7 +705,14 @@ public function getUserAssignedWorkouts(Request $request)
     $preferredLanguageId = (int) $request->input('lang', 2);
     $fallbackLanguageId  = 2;
 
-    $workoutDays = (int) optional($user->userProfile)->workout_days;
+    $assignedWorkoutPlan = DB::table('assign_workouts')
+        ->join('workouts', 'workouts.id', '=', 'assign_workouts.workout_id')
+        ->where('assign_workouts.user_id', $user->id)
+        ->where('assign_workouts.disable', 0)
+        ->orderByDesc('assign_workouts.id')
+        ->value('workouts.workout_days_plan');
+
+    $workoutDays = (int) ($assignedWorkoutPlan ?: optional($user->userProfile)->workout_days);
     if (!in_array($workoutDays, [3, 6], true)) {
         $workoutDays = 6;
     }

@@ -174,6 +174,11 @@
     </div>
 
     <div class="col-md-4 mt-2">
+        {{ Form::label('workout_days_plan','Workout Days Plan *') }}
+        {{ Form::select('workout_days_plan',[3 => '3 Days', 6 => '6 Days'], old('workout_days_plan', $data->workout_days_plan ?? 6),['class'=>'form-control','required']) }}
+    </div>
+
+    <div class="col-md-4 mt-2">
         {{ Form::checkbox('is_premium',1,null) }} Premium
     </div>
 </div>

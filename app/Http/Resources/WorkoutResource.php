@@ -20,6 +20,7 @@ class WorkoutResource extends JsonResource
             'title'         => $this->title,
             'status'        => $this->status,
             'is_premium'    => $this->is_premium,
+            'workout_days_plan' => (int) ($this->workout_days_plan ?? 6),
             'workout_image' => getSingleMedia($this, 'workout_image',null),
             'level_id'      => $this->level_id,
             'level_title'   => optional($this->level)->title,

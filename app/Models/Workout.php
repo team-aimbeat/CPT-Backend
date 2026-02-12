@@ -13,10 +13,11 @@ class Workout extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia;
 
-    protected $fillable = [ 'title', 'description', 'status', 'workout_type_id', 'level_id','goal_id', 'is_premium', 'video_type', 'video_url' ,'stetch_video','gender'];
+    protected $fillable = [ 'title', 'description', 'status', 'workout_type_id', 'workout_days_plan', 'level_id','goal_id', 'is_premium', 'video_type', 'video_url' ,'stetch_video','gender'];
 
     protected $casts = [
         'workout_type_id'   => 'integer',
+        'workout_days_plan' => 'integer',
         'level_id'          => 'integer',
         'is_premium'        => 'integer',
     ];

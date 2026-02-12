@@ -32,6 +32,7 @@ class WorkoutRequest extends FormRequest
             case 'post':
                 $rules = [
                     'title' => 'required',
+                    'workout_days_plan' => 'required|in:3,6',
                     'video_url' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                     'stetch_video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                 ];
@@ -39,6 +40,7 @@ class WorkoutRequest extends FormRequest
             case 'patch':
                 $rules = [
                     'title' => 'required',
+                    'workout_days_plan' => 'required|in:3,6',
                     'video_url' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                     'stetch_video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                 ];
