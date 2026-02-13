@@ -61,12 +61,22 @@
             clone.find('input, textarea').val('');
             clone.find('select').val(null);
             clone.find('.select2-container').remove();
+            clone.find('select').each(function () {
+                $(this)
+                    .removeClass('select2-hidden-accessible')
+                    .removeAttr('data-select2-id')
+                    .removeAttr('aria-hidden')
+                    .removeAttr('tabindex');
+
+                $(this).find('option').removeAttr('data-select2-id');
+            });
 
             clone.find('[name^="week"]').attr('name', 'week[' + row + ']').val(1);
             clone.find('[name^="day"]').attr('name', 'day[' + row + ']');
 
             clone.find('[name^="exercise_ids"]')
-                .attr('name', 'exercise_ids[' + row + '][]');
+                .attr('name', 'exercise_ids[' + row + '][]')
+                .empty();
 
             clone.find('[name^="exercise_description"]')
                 .attr('name', 'exercise_description[' + row + '][]');
