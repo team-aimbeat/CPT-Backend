@@ -97,7 +97,7 @@ class ExerciseController extends Controller
         $request->validate([
             'exercise_id' => 'required|exists:exercises,id',
             'language_id' => 'required|exists:language_lists,id', 
-            'video_file' => 'required|file|mimetypes:video/*|max:512000',
+            'video_file' => 'required|file|mimetypes:video/*|max:819200',
         ]);
 
         $videoPath = $this->storeExerciseVideoFile($request->file('video_file'));
