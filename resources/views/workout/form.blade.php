@@ -1,3 +1,55 @@
+@push('styles')
+<style>
+    .workout-days-wrap {
+        overflow-x: auto;
+    }
+
+    #table_list.workout-days-table {
+        min-width: 1850px;
+    }
+
+    #table_list.workout-days-table th,
+    #table_list.workout-days-table td {
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    #table_list.workout-days-table th:nth-child(1),
+    #table_list.workout-days-table td:nth-child(1) { min-width: 60px; }
+    #table_list.workout-days-table th:nth-child(2),
+    #table_list.workout-days-table td:nth-child(2) { min-width: 90px; }
+    #table_list.workout-days-table th:nth-child(3),
+    #table_list.workout-days-table td:nth-child(3) { min-width: 90px; }
+    #table_list.workout-days-table th:nth-child(4),
+    #table_list.workout-days-table td:nth-child(4) { min-width: 360px; }
+    #table_list.workout-days-table th:nth-child(5),
+    #table_list.workout-days-table td:nth-child(5) { min-width: 260px; }
+    #table_list.workout-days-table th:nth-child(6),
+    #table_list.workout-days-table td:nth-child(6) { min-width: 300px; }
+    #table_list.workout-days-table th:nth-child(7),
+    #table_list.workout-days-table td:nth-child(7) { min-width: 380px; }
+    #table_list.workout-days-table th:nth-child(8),
+    #table_list.workout-days-table td:nth-child(8) { min-width: 380px; }
+    #table_list.workout-days-table th:nth-child(9),
+    #table_list.workout-days-table td:nth-child(9) { min-width: 90px; text-align: center; }
+    #table_list.workout-days-table th:nth-child(10),
+    #table_list.workout-days-table td:nth-child(10) { min-width: 80px; text-align: center; }
+
+    #table_list.workout-days-table input.form-control,
+    #table_list.workout-days-table select.form-control {
+        min-height: 44px;
+    }
+
+    #table_list.workout-days-table .select2-container {
+        min-width: 260px !important;
+    }
+
+    #table_list.workout-days-table textarea.tinymce-description {
+        min-height: 220px;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 (function ($) {
@@ -214,7 +266,8 @@
     <button type="button" id="add_button" class="btn btn-sm btn-primary float-end">Add</button>
 </h5>
 
-<table class="table" id="table_list">
+<div class="workout-days-wrap">
+<table class="table workout-days-table" id="table_list">
 <thead>
 <tr>
     <th>#</th>
@@ -333,6 +386,7 @@
 
 </tbody>
 </table>
+</div>
 
 
 <hr>
