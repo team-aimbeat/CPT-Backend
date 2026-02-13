@@ -23,7 +23,7 @@
     #table_list.workout-days-table th:nth-child(4),
     #table_list.workout-days-table td:nth-child(4) { min-width: 360px; }
     #table_list.workout-days-table th:nth-child(5),
-    #table_list.workout-days-table td:nth-child(5) { min-width: 260px; }
+    #table_list.workout-days-table td:nth-child(5) { min-width: 360px; }
     #table_list.workout-days-table th:nth-child(6),
     #table_list.workout-days-table td:nth-child(6) { min-width: 300px; }
     #table_list.workout-days-table th:nth-child(7),
@@ -46,6 +46,11 @@
 
     #table_list.workout-days-table textarea.tinymce-description {
         min-height: 220px;
+    }
+
+    #table_list.workout-days-table .exercise-title-input {
+        width: 100%;
+        min-width: 340px;
     }
 </style>
 @endpush
@@ -317,7 +322,7 @@
 </td>
 
 <td>
-<input type="text" name="exercise_titles[{{ $i }}][]" class="form-control"
+<input type="text" name="exercise_titles[{{ $i }}][]" class="form-control exercise-title-input"
        value="{{ $exerciseTitles[0] ?? '' }}" placeholder="Exercise Title">
 </td>
 
@@ -362,7 +367,7 @@
 {{ Form::select('exercise_ids[0][]',[],null,['class'=>'select2tagsjs','multiple','data-ajax--url'=>route('ajax-list',['type'=>'exercise'])]) }}
 </td>
 <td>
-<input type="text" name="exercise_titles[0][]" class="form-control" placeholder="Exercise Title">
+<input type="text" name="exercise_titles[0][]" class="form-control exercise-title-input" placeholder="Exercise Title">
 </td>
 <td>
 {{ Form::select('alternate_exercise_ids[0][]',[],null,['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'exercise']),'placeholder'=>'Select Alternate']) }}
