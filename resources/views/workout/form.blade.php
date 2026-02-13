@@ -45,7 +45,11 @@
         $('#add_button').on('click', function () {
 
             tinymce.remove();
-            $('.select2tagsjs').select2('destroy');
+            $('.select2tagsjs, .select2js').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
 
             let last = $('#table_list tbody tr:last');
             let clone = last.clone();
@@ -56,6 +60,7 @@
 
             clone.find('input, textarea').val('');
             clone.find('select').val(null);
+            clone.find('.select2-container').remove();
 
             clone.find('[name^="week"]').attr('name', 'week[' + row + ']').val(1);
             clone.find('[name^="day"]').attr('name', 'day[' + row + ']');
@@ -71,7 +76,9 @@
                 .attr('name', 'exercise_titles[' + row + '][]');
 
             clone.find('[name^="alternate_exercise_ids"]')
-                .attr('name', 'alternate_exercise_ids[' + row + '][]');
+                .attr('name', 'alternate_exercise_ids[' + row + '][]')
+                .empty()
+                .append('<option value="">Select Alternate</option>');
 
             clone.find('[name^="alternate_exercise_description"]')
                 .attr('name', 'alternate_exercise_description[' + row + '][]');
