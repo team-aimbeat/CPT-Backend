@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\UserAssignedWorkout;
 
 class Workout extends Model implements HasMedia
 {
@@ -105,7 +104,7 @@ class Workout extends Model implements HasMedia
     
      public function assignedWorkouts(): HasMany
     {
-        return $this->hasMany(UserAssignedWorkout::class, 'workout_id');
+        return $this->hasMany(AssignWorkout::class, 'workout_id');
         
     }
     
