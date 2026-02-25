@@ -868,22 +868,32 @@ public function updateWorkoutMode(Request $request)
                 ['user_id' => $user->id],
                 $request->user_profile
             );
+        } else {
+            $userProfile = $user->userProfile;
         }
 
         /* -------------------------------
          | 6. ASSIGN FIRST WORKOUT CYCLE (✅ FIXED)
          |--------------------------------*/
-        $assignedWorkouts = collect();
+        $assignedWorkouts = DB::table('assign_workouts')
+            ->where('user_id', $user->id)
+            ->where('is_active', 1)
+            ->get();
 
-        if ($action === 'register' && $userProfile) {
+        $levelId = $userProfile->workout_level ?? null;
+        $goalId  = $userProfile->goal ?? null;
+        $modeId  = $userProfile->workout_mode ?? null;
+        $canAssign = $levelId && $goalId && $modeId;
 
-            $levelId = $userProfile->workout_level;
-            $goalId  = $userProfile->goal;
-            $modeId  = $userProfile->workout_mode;
+        if ($canAssign && $assignedWorkouts->isEmpty()) {
 
-            if ($levelId && $goalId && $modeId) {
+                $cycleNo = (int) DB::table('assign_workouts')
+                    ->where('user_id', $user->id)
+                    ->max('cycle_no') + 1;
 
-                $cycleNo = 1;
+                if ($cycleNo <= 0) {
+                    $cycleNo = 1;
+                }
 
                 // 🔒 deactivate any previous cycles (safety)
                 DB::table('assign_workouts')
@@ -908,7 +918,7 @@ public function updateWorkoutMode(Request $request)
                             'cycle_no'      => $cycleNo,
                             'status'        => 0,
                             'is_active'     => 1, // ✅ VERY IMPORTANT
-                            'assigned_from' => 'google_register',
+                            'assigned_from' => $action === 'register' ? 'google_register' : 'google_login_recovery',
                             'created_at'    => $now,
                             'updated_at'    => $now,
                         ];
@@ -918,10 +928,9 @@ public function updateWorkoutMode(Request $request)
 
                     $assignedWorkouts = DB::table('assign_workouts')
                         ->where('user_id', $user->id)
-                        ->where('cycle_no', $cycleNo)
+                        ->where('is_active', 1)
                         ->get();
                 }
-            }
         }
 
         /* -------------------------------
