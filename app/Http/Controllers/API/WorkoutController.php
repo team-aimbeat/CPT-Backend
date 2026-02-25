@@ -1492,12 +1492,24 @@ public function getMonthlyAttendance(Request $request)
         
         $totalDaysAssigned++;
 
-        $completedCount = UserCompletedExercise::where('user_id', $userId)
+        // Day-level completion (from /workout/complete-day)
+        $hasDayCompletion = WorkoutCompletion::where('user_id', $userId)
+            ->whereDate('completed_date', $date->toDateString())
+            ->exists();
+
+        // Exercise-level completion (from /exercise/complete)
+        $exerciseCompletedCount = UserCompletedExercise::where('user_id', $userId)
             ->whereIn('exercise_id', $requiredExerciseIds->unique()->toArray())
             ->whereDate('completed_at', $date->toDateString())
             ->count();
-        
-        $isPresent = ($completedCount > 0 && $completedCount === $assignedExercisesCount);
+
+        if ($hasDayCompletion) {
+            $completedCount = $assignedExercisesCount;
+            $isPresent = true;
+        } else {
+            $completedCount = $exerciseCompletedCount;
+            $isPresent = ($completedCount > 0 && $completedCount === $assignedExercisesCount);
+        }
         
         if ($isPresent) {
             $totalDaysPresent++;
