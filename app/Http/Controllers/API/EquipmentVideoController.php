@@ -104,7 +104,7 @@ class EquipmentVideoController extends Controller
             $videos = $videos->map(function ($video) use ($selectedField) {
                 $resolutionPath = $selectedField ? $video->{$selectedField} : null;
                 $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
-                $thumbnailPath = $video->poster_url ?: $video->thumb_1_url ?: $video->thumb_2_url;
+                $thumbnailPath = $video->thumb_1_url ?: $video->thumb_2_url;
 
                 return [
                     'id' => $video->id,
@@ -130,7 +130,7 @@ class EquipmentVideoController extends Controller
                 foreach ($items as $video) {
                     $resolutionPath = $selectedField ? $video->{$selectedField} : null;
                     $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
-                    $thumbnailPath = $video->poster_url ?: $video->thumb_1_url ?: $video->thumb_2_url;
+                    $thumbnailPath = $video->thumb_1_url ?: $video->thumb_2_url;
 
                     $lockedData->push([
                         'id' => $video->id,
