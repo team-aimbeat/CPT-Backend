@@ -48,6 +48,8 @@ class EquipmentVideoController extends Controller
                 'exercise_video.hls_1080p_url',
                 'exercise_video.hls_720p_url',
                 'exercise_video.hls_480p_url',
+                'exercise_video.thumb_1_url',
+                'exercise_video.thumb_2_url',
                 'exercise_video.poster_url',
                 'exercise_video.transcoding_status',
                 'exercise_video.created_at',
@@ -102,6 +104,7 @@ class EquipmentVideoController extends Controller
             $videos = $videos->map(function ($video) use ($selectedField) {
                 $resolutionPath = $selectedField ? $video->{$selectedField} : null;
                 $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
+                $thumbnailPath = $video->poster_url ?: $video->thumb_1_url ?: $video->thumb_2_url;
 
                 return [
                     'id' => $video->id,
@@ -111,7 +114,7 @@ class EquipmentVideoController extends Controller
                     'language_id' => $video->languagelist_id,
                     'language_name' => optional($video->languageList)->language_name,
                     'video_url' => $preferredPath ? cloudfrontUrl($preferredPath) : null,
-                    'thumbnail_url' => $video->poster_url ? cloudfrontUrl($video->poster_url) : null,
+                    'thumbnail_url' => $thumbnailPath ? cloudfrontUrl($thumbnailPath) : null,
                     'is_locked' => false,
                 ];
             });
@@ -127,6 +130,7 @@ class EquipmentVideoController extends Controller
                 foreach ($items as $video) {
                     $resolutionPath = $selectedField ? $video->{$selectedField} : null;
                     $preferredPath = $resolutionPath ?: $video->hls_master_url ?: $video->video_url;
+                    $thumbnailPath = $video->poster_url ?: $video->thumb_1_url ?: $video->thumb_2_url;
 
                     $lockedData->push([
                         'id' => $video->id,
@@ -136,7 +140,7 @@ class EquipmentVideoController extends Controller
                         'language_id' => $video->languagelist_id,
                         'language_name' => optional($video->languageList)->language_name,
                         'video_url' => $isFirst ? ($preferredPath ? cloudfrontUrl($preferredPath) : null) : null,
-                        'thumbnail_url' => $video->poster_url ? cloudfrontUrl($video->poster_url) : null,
+                        'thumbnail_url' => $thumbnailPath ? cloudfrontUrl($thumbnailPath) : null,
                         'is_locked' => !$isFirst,
                     ]);
 
