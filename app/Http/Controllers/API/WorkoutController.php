@@ -22,6 +22,7 @@ use App\Models\LanguageList;
 use App\Models\UserCompletedExercise;
 use App\Models\Subscription;
 use App\Models\CouponRedemption;
+use App\Models\Level;
 use App\Http\Resources\WorkoutDayExerciseResource;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -1415,17 +1416,181 @@ public function getUserAssignedWorkouts(Request $request)
             ]);
         }
 
-        $completion = WorkoutCompletion::create([
-            'user_id' => $user->id,
-            'workout_id' => $validated['workout_id'],
-            'completed_date' => $completedDate,
-        ]);
+        $completion = null;
+        $promotionData = null;
+
+        DB::transaction(function () use ($user, $validated, $completedDate, &$completion, &$promotionData) {
+            $completion = WorkoutCompletion::create([
+                'user_id' => $user->id,
+                'workout_id' => $validated['workout_id'],
+                'completed_date' => $completedDate,
+            ]);
+
+            $promotionData = $this->promoteUserLevelIfEligible($user->id);
+        });
+
+        $message = 'Workout day marked as completed.';
+        if ($promotionData) {
+            $message .= ' Level updated to ' . $promotionData['new_level_title'] . '.';
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Workout day marked as completed.',
+            'message' => $message,
             'data' => $completion,
+            'level_up' => $promotionData,
         ]);
+    }
+
+    private function promoteUserLevelIfEligible(int $userId): ?array
+    {
+        $user = User::with('userProfile')->find($userId);
+        if (!$user || !$user->userProfile) {
+            return null;
+        }
+
+        $profile = $user->userProfile;
+
+        $currentCycle = DB::table('assign_workouts')
+            ->where('user_id', $userId)
+            ->where('is_active', 1)
+            ->max('cycle_no');
+
+        if (!$currentCycle) {
+            return null;
+        }
+
+        $assignedWorkoutIds = DB::table('assign_workouts')
+            ->where('user_id', $userId)
+            ->where('cycle_no', $currentCycle)
+            ->where('is_active', 1)
+            ->where(function ($query) {
+                $query->whereNull('disable')
+                    ->orWhere('disable', 0);
+            })
+            ->pluck('workout_id')
+            ->unique()
+            ->values();
+
+        if ($assignedWorkoutIds->isEmpty()) {
+            return null;
+        }
+
+        $completedWorkoutIds = WorkoutCompletion::where('user_id', $userId)
+            ->whereIn('workout_id', $assignedWorkoutIds)
+            ->pluck('workout_id')
+            ->unique()
+            ->values();
+
+        if ($completedWorkoutIds->count() < $assignedWorkoutIds->count()) {
+            return null;
+        }
+
+        $currentLevel = Level::find($profile->workout_level);
+        if (!$currentLevel) {
+            return null;
+        }
+
+        $nextLevel = $this->resolveNextLevel($currentLevel);
+        if (!$nextLevel || (int) $nextLevel->id === (int) $currentLevel->id) {
+            return null;
+        }
+
+        $nextWorkoutIds = Workout::where('level_id', $nextLevel->id)
+            ->where('goal_id', $profile->goal)
+            ->where('workout_type_id', $profile->workout_mode)
+            ->where('status', 'active')
+            ->pluck('id');
+
+        if ($nextWorkoutIds->isEmpty()) {
+            return null;
+        }
+
+        $profile->update([
+            'workout_level' => $nextLevel->id,
+        ]);
+
+        DB::table('assign_workouts')
+            ->where('user_id', $userId)
+            ->where('cycle_no', $currentCycle)
+            ->update([
+                'is_active' => 0,
+                'updated_at' => now(),
+            ]);
+
+        $newCycle = ((int) DB::table('assign_workouts')
+            ->where('user_id', $userId)
+            ->max('cycle_no')) + 1;
+
+        $now = now();
+        $insertData = [];
+
+        foreach ($nextWorkoutIds as $workoutId) {
+            $insertData[] = [
+                'user_id' => $userId,
+                'workout_id' => $workoutId,
+                'cycle_no' => $newCycle,
+                'status' => 0,
+                'disable' => 0,
+                'is_active' => 1,
+                'assigned_from' => 'auto_level_up',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        DB::table('assign_workouts')->insert($insertData);
+
+        return [
+            'old_level_id' => $currentLevel->id,
+            'old_level_title' => $currentLevel->title,
+            'new_level_id' => $nextLevel->id,
+            'new_level_title' => $nextLevel->title,
+            'new_cycle' => $newCycle,
+            'assigned_workout_count' => count($insertData),
+        ];
+    }
+
+    private function resolveNextLevel(Level $currentLevel): ?Level
+    {
+        $levels = Level::orderBy('id')->get();
+        if ($levels->isEmpty()) {
+            return null;
+        }
+
+        $normalizedCurrent = strtolower(trim($currentLevel->title));
+
+        $orderedLevels = collect([
+            $levels->first(function ($level) {
+                return str_contains(strtolower($level->title), 'beginner');
+            }),
+            $levels->first(function ($level) {
+                return str_contains(strtolower($level->title), 'intermediate');
+            }),
+            $levels->first(function ($level) {
+                return str_contains(strtolower($level->title), 'advanced');
+            }),
+        ])->filter();
+
+        if ($orderedLevels->count() >= 2) {
+            $currentIndex = $orderedLevels->search(function ($level) use ($normalizedCurrent) {
+                return strtolower(trim($level->title)) === $normalizedCurrent;
+            });
+
+            if ($currentIndex !== false) {
+                return $orderedLevels->get($currentIndex + 1);
+            }
+        }
+
+        $currentIndex = $levels->search(function ($level) use ($currentLevel) {
+            return (int) $level->id === (int) $currentLevel->id;
+        });
+
+        if ($currentIndex === false) {
+            return null;
+        }
+
+        return $levels->get($currentIndex + 1);
     }
 
 
