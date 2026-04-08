@@ -706,11 +706,36 @@ public function getUserAssignedWorkouts(Request $request)
     $preferredLanguageId = (int) $request->input('lang', 2);
     $fallbackLanguageId  = 2;
 
+    $currentCycle = DB::table('assign_workouts')
+        ->where('user_id', $user->id)
+        ->where('is_active', 1)
+        ->max('cycle_no');
+
+    $activeAssignedWorkoutIds = collect();
+    if ($currentCycle) {
+        $activeAssignedWorkoutIds = DB::table('assign_workouts')
+            ->where('user_id', $user->id)
+            ->where('cycle_no', $currentCycle)
+            ->where('is_active', 1)
+            ->where(function ($query) {
+                $query->whereNull('disable')
+                    ->orWhere('disable', 0);
+            })
+            ->pluck('workout_id')
+            ->unique()
+            ->values();
+    }
+
     $assignedWorkoutPlan = DB::table('assign_workouts')
         ->join('workouts', 'workouts.id', '=', 'assign_workouts.workout_id')
         ->where('assign_workouts.user_id', $user->id)
-        ->where('assign_workouts.disable', 0)
-        ->orderByDesc('assign_workouts.id')
+        ->when($currentCycle, function ($query) use ($currentCycle) {
+            $query->where('assign_workouts.cycle_no', $currentCycle)
+                ->where('assign_workouts.is_active', 1);
+        }, function ($query) {
+            $query->where('assign_workouts.disable', 0)
+                ->orderByDesc('assign_workouts.id');
+        })
         ->value('workouts.workout_days_plan');
 
     $workoutDays = (int) ($assignedWorkoutPlan ?: optional($user->userProfile)->workout_days);
@@ -767,8 +792,14 @@ public function getUserAssignedWorkouts(Request $request)
     /* -------------------------------------------------
      | 3. DAY & WEEK (PROGRESS-BASED)
      |--------------------------------------------------*/
-    $completedDates = WorkoutCompletion::where('user_id', $user->id)
-        ->where('completed_date', '>=', $startDate->toDateString())
+    $completedDatesQuery = WorkoutCompletion::where('user_id', $user->id)
+        ->where('completed_date', '>=', $startDate->toDateString());
+
+    if ($activeAssignedWorkoutIds->isNotEmpty()) {
+        $completedDatesQuery->whereIn('workout_id', $activeAssignedWorkoutIds);
+    }
+
+    $completedDates = $completedDatesQuery
         ->get()
         ->map(function ($item) {
             return $item->completed_date->format('Y-m-d');
@@ -777,8 +808,14 @@ public function getUserAssignedWorkouts(Request $request)
         ->values();
 
     $todayKey = $today->format('Y-m-d');
-    $recentCompletion = WorkoutCompletion::where('user_id', $user->id)
-        ->whereDate('completed_date', $todayKey)
+    $recentCompletionQuery = WorkoutCompletion::where('user_id', $user->id)
+        ->whereDate('completed_date', $todayKey);
+
+    if ($activeAssignedWorkoutIds->isNotEmpty()) {
+        $recentCompletionQuery->whereIn('workout_id', $activeAssignedWorkoutIds);
+    }
+
+    $recentCompletion = $recentCompletionQuery
         ->orderByDesc('created_at')
         ->first();
 
@@ -841,11 +878,6 @@ public function getUserAssignedWorkouts(Request $request)
     /* -------------------------------------------------
      | 4. CURRENT ACTIVE CYCLE
      |--------------------------------------------------*/
-    $currentCycle = DB::table('assign_workouts')
-        ->where('user_id', $user->id)
-        ->where('is_active', 1)
-        ->value('cycle_no');
-
     if (!$currentCycle) {
         return response()->json([
             'success' => true,
