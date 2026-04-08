@@ -1248,6 +1248,13 @@ public function updateWorkoutMode(Request $request)
             // 🔹 Inactivate ONLY pending workouts (completed untouched)
             DB::table('assign_workouts')
                 ->where('user_id', $user->id)
+                ->update([
+                    'is_active' => 0,
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('assign_workouts')
+                ->where('user_id', $user->id)
                 ->where('status', 0) // pending
                 ->update([
                     'status' => 2, // inactive
@@ -1279,6 +1286,8 @@ public function updateWorkoutMode(Request $request)
                         'workout_id'    => $workoutId,
                         'cycle_no'      => $newCycle,
                         'status'        => 0, // pending
+                        'disable'       => 0,
+                        'is_active'     => 1,
                         'assigned_from' => 'profile_update',
                         'created_at'    => $now,
                         'updated_at'    => $now,
