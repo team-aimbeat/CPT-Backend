@@ -1,8 +1,8 @@
 @push('styles')
 <style>
     #table_list.workout-days-table input.form-control, #table_list.workout-days-table select.form-control {
-        width: 65px;
-    }
+    width: 65px;
+}
     .workout-days-wrap {
         overflow-x: auto;
     }
