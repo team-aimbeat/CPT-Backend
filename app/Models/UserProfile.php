@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class UserProfile extends Model
 {
@@ -14,6 +15,104 @@ class UserProfile extends Model
     protected $casts = [
         'user_id'   => 'integer',
     ];
+
+    public static function normalizeWorkoutMode($mode): ?string
+    {
+        if ($mode === null || $mode === '') {
+            return null;
+        }
+
+        if (is_numeric($mode)) {
+            $title = optional(WorkoutType::find((int) $mode))->title;
+            return static::normalizeWorkoutMode($title);
+        }
+
+        $mode = Str::lower(trim((string) $mode));
+
+        if (str_contains($mode, 'home')) {
+            return 'home';
+        }
+
+        if (str_contains($mode, 'gym')) {
+            return 'gym';
+        }
+
+        return $mode;
+    }
+
+    public static function normalizeWorkoutLevel($level): ?string
+    {
+        if ($level === null || $level === '') {
+            return null;
+        }
+
+        if (is_numeric($level)) {
+            $title = optional(Level::find((int) $level))->title;
+            return static::normalizeWorkoutLevel($title);
+        }
+
+        $level = Str::lower(trim((string) $level));
+
+        if (str_contains($level, 'beginner')) {
+            return 'beginner';
+        }
+
+        if (str_contains($level, 'intermediate')) {
+            return 'intermediate';
+        }
+
+        if (str_contains($level, 'advance')) {
+            return 'advanced';
+        }
+
+        return $level;
+    }
+
+    public static function isWorkoutLevelAllowed($mode, $level): bool
+    {
+        $modeKey = static::normalizeWorkoutMode($mode);
+        $levelKey = static::normalizeWorkoutLevel($level);
+
+        if (!$modeKey || !$levelKey) {
+            return true;
+        }
+
+        if ($modeKey === 'home') {
+            return in_array($levelKey, ['beginner', 'advanced'], true);
+        }
+
+        if ($modeKey === 'gym') {
+            return in_array($levelKey, ['beginner', 'intermediate', 'advanced'], true);
+        }
+
+        return true;
+    }
+
+    public static function resolveLevelValueForStorage(string $targetLevel, $currentValue = null)
+    {
+        if (is_numeric($currentValue)) {
+            $level = Level::query()
+                ->whereRaw('LOWER(title) LIKE ?', ['%' . Str::lower($targetLevel) . '%'])
+                ->orderBy('id')
+                ->first();
+
+            return $level?->id ?? $currentValue;
+        }
+
+        return $targetLevel === 'advanced' ? 'advance' : $targetLevel;
+    }
+
+    public static function sanitizeWorkoutProfileData(array $profile): array
+    {
+        $mode = $profile['workout_mode'] ?? null;
+        $level = $profile['workout_level'] ?? null;
+
+        if (!static::isWorkoutLevelAllowed($mode, $level)) {
+            $profile['workout_level'] = static::resolveLevelValueForStorage('advanced', $level);
+        }
+
+        return $profile;
+    }
 
     public function user()
     {

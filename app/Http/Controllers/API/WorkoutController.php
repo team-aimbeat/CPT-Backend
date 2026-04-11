@@ -23,6 +23,7 @@ use App\Models\UserCompletedExercise;
 use App\Models\Subscription;
 use App\Models\CouponRedemption;
 use App\Models\Level;
+use App\Models\UserProfile;
 use App\Http\Resources\WorkoutDayExerciseResource;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -1541,7 +1542,7 @@ public function getUserAssignedWorkouts(Request $request)
             return null;
         }
 
-        $nextLevel = $this->resolveNextLevel($currentLevel);
+        $nextLevel = $this->resolveNextLevel($currentLevel, $profile->workout_mode);
         if (!$nextLevel || (int) $nextLevel->id === (int) $currentLevel->id) {
             return null;
         }
@@ -1601,7 +1602,7 @@ public function getUserAssignedWorkouts(Request $request)
         ];
     }
 
-    private function resolveNextLevel(Level $currentLevel): ?Level
+    private function resolveNextLevel(Level $currentLevel, $workoutMode = null): ?Level
     {
         $levels = Level::orderBy('id')->get();
         if ($levels->isEmpty()) {
@@ -1609,18 +1610,19 @@ public function getUserAssignedWorkouts(Request $request)
         }
 
         $normalizedCurrent = strtolower(trim($currentLevel->title));
+        $modeKey = UserProfile::normalizeWorkoutMode($workoutMode);
 
-        $orderedLevels = collect([
-            $levels->first(function ($level) {
-                return str_contains(strtolower($level->title), 'beginner');
-            }),
-            $levels->first(function ($level) {
-                return str_contains(strtolower($level->title), 'intermediate');
-            }),
-            $levels->first(function ($level) {
-                return str_contains(strtolower($level->title), 'advanced');
-            }),
-        ])->filter();
+        $levelKeys = $modeKey === 'home'
+            ? ['beginner', 'advanced']
+            : ['beginner', 'intermediate', 'advanced'];
+
+        $orderedLevels = collect($levelKeys)
+            ->map(function ($levelKey) use ($levels) {
+                return $levels->first(function ($level) use ($levelKey) {
+                    return str_contains(strtolower($level->title), $levelKey);
+                });
+            })
+            ->filter();
 
         if ($orderedLevels->count() >= 2) {
             $currentIndex = $orderedLevels->search(function ($level) use ($normalizedCurrent) {

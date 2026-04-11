@@ -1,6 +1,42 @@
 @push('scripts')
 <script>
     (function ($) {
+        const levelOptionsByMode = {
+            gym: [
+                { value: 'beginner', label: 'Beginner' },
+                { value: 'intermediate', label: 'Intermediate' },
+                { value: 'advance', label: 'Advanced' }
+            ],
+            home: [
+                { value: 'beginner', label: 'Beginner' },
+                { value: 'advance', label: 'Advanced' }
+            ]
+        };
+
+        function syncWorkoutLevelOptions() {
+            const $mode = $('select[name="user_profile[workout_mode]"]');
+            const $level = $('select[name="user_profile[workout_level]"]');
+            const mode = $mode.val();
+            const currentValue = $level.val();
+            const options = levelOptionsByMode[mode] || levelOptionsByMode.gym;
+            const hasCurrent = options.some(function (option) {
+                return option.value === currentValue;
+            });
+            const fallbackValue = mode === 'home' ? 'advance' : options[0].value;
+
+            $level.empty();
+
+            options.forEach(function (option) {
+                const selectedValue = hasCurrent ? currentValue : fallbackValue;
+                $level.append(new Option(option.label, option.value, false, option.value === selectedValue));
+            });
+
+            if (!$level.val() && options.length) {
+                $level.val(fallbackValue);
+            }
+
+            $level.trigger('change.select2');
+        }
         
 
         $(document).on('click', '#equipment_clear', function () {
@@ -27,6 +63,7 @@
 
         $( 'select[name="user_profile[workout_mode]"]' ).on( "change", function() {
             $('.equipment_ids').val(null).trigger('change');
+            syncWorkoutLevelOptions();
 
             $('.equipment_ids').select2('destroy');
             $('.equipment_ids').select2({
@@ -41,6 +78,8 @@
                 }
             });
         });
+
+        syncWorkoutLevelOptions();
 
     })(jQuery);
     function changeInjuryInfo() {
@@ -222,7 +261,7 @@
                                     {{ Form::select('user_profile[workout_level]',[ 
                                         'beginner' => 'Beginner' ,
                                         'intermediate' => 'Intermediate',
-                                        'advance' => 'Advance'
+                                        'advance' => 'Advanced'
                                         ], old('user_profile[workout_level]') ,[ 'class' =>'form-control select2js','required']) }}
                                 </div>
 

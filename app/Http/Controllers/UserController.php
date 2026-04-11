@@ -19,6 +19,7 @@ use App\DataTables\UserExerciseDataTable;
 use App\Models\Equipment;
 use App\Models\Exercise;
 use App\Models\Injury;
+use App\Models\UserProfile;
 use App\Models\UserGraph;
 use Carbon\Carbon;
 
@@ -88,9 +89,9 @@ class UserController extends Controller
         $user->assignRole($request->user_type);
 
         if($user->userProfile != null && $request->has('user_profile') ) {
-            $user->userProfile->fill($request->user_profile)->update();
+            $user->userProfile->fill(UserProfile::sanitizeWorkoutProfileData($request->user_profile))->update();
         } else if( $request->has('user_profile') && $request->user_profile != null ) {
-            $user->userProfile()->create($request->user_profile);
+            $user->userProfile()->create(UserProfile::sanitizeWorkoutProfileData($request->user_profile));
         }
 
         // Save user Profile data...
@@ -238,9 +239,9 @@ class UserController extends Controller
         }
 
         if($user->userProfile != null && $request->has('user_profile') ) {
-            $user->userProfile->fill($request->user_profile)->update();
+            $user->userProfile->fill(UserProfile::sanitizeWorkoutProfileData($request->user_profile))->update();
         } else if( $request->has('user_profile') && $request->user_profile != null ) {
-            $user->userProfile()->create($request->user_profile);
+            $user->userProfile()->create(UserProfile::sanitizeWorkoutProfileData($request->user_profile));
         }
         // user profile data....
         // $user->userProfile->fill($request->userProfile)->update();

@@ -3,9 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Models\UserProfile;
 
 
 class UserRequest extends FormRequest
@@ -66,6 +66,27 @@ class UserRequest extends FormRequest
         return [
             
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $profile = $this->input('user_profile', []);
+
+            if (!is_array($profile)) {
+                return;
+            }
+
+            $mode = $profile['workout_mode'] ?? null;
+            $level = $profile['workout_level'] ?? null;
+
+            if (!UserProfile::isWorkoutLevelAllowed($mode, $level)) {
+                $validator->errors()->add(
+                    'user_profile.workout_level',
+                    'Selected workout level is not allowed for the chosen workout mode.'
+                );
+            }
+        });
     }
 
      /**

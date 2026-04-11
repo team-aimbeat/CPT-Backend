@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Workout;
 use App\Models\AssignWorkout;
 use App\Models\WorkoutCompletion;
+use App\Models\UserProfile;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 
@@ -191,7 +192,9 @@ class UserController extends Controller
          |--------------------------*/
         $userProfile = null;
         if ($request->filled('user_profile')) {
-            $userProfile = $user->userProfile()->create($request->user_profile);
+            $userProfile = $user->userProfile()->create(
+                UserProfile::sanitizeWorkoutProfileData($request->user_profile)
+            );
         }
 
         /* -------------------------
@@ -498,11 +501,17 @@ public function updateWorkoutMode(Request $request)
             ]);
         }
 
+        $newLevel = $profile->workout_level;
+        if (!UserProfile::isWorkoutLevelAllowed($newMode, $newLevel)) {
+            $newLevel = UserProfile::resolveLevelValueForStorage('advanced', $newLevel);
+        }
+
         /* ---------------------------------
          | 3. UPDATE PROFILE
          |----------------------------------*/
         $profile->update([
-            'workout_mode' => $newMode
+            'workout_mode' => $newMode,
+            'workout_level' => $newLevel,
         ]);
 
         /* ---------------------------------
@@ -864,9 +873,11 @@ public function updateWorkoutMode(Request $request)
         $userProfile = null;
 
         if ($request->filled('user_profile')) {
+            $userProfileData = UserProfile::sanitizeWorkoutProfileData($request->user_profile);
+
             $userProfile = $user->userProfile()->updateOrCreate(
                 ['user_id' => $user->id],
-                $request->user_profile
+                $userProfileData
             );
         } else {
             $userProfile = $user->userProfile;
@@ -1221,9 +1232,9 @@ public function updateWorkoutMode(Request $request)
         $oldMode  = $profile->workout_mode ?? null;
 
         if ($profile && $request->filled('user_profile')) {
-            $profile->fill($request->user_profile)->update();
+            $profile->fill(UserProfile::sanitizeWorkoutProfileData($request->user_profile))->update();
         } elseif ($request->filled('user_profile')) {
-            $profile = $user->userProfile()->create($request->user_profile);
+            $profile = $user->userProfile()->create(UserProfile::sanitizeWorkoutProfileData($request->user_profile));
         }
 
         $profile->refresh();
