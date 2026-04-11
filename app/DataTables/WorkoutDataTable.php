@@ -11,6 +11,50 @@ use App\Traits\DataTableTrait;
 class WorkoutDataTable extends DataTable
 {
     use DataTableTrait;
+
+    protected function formatNumberSummary($values, string $prefix = ''): string
+    {
+        $values = collect($values)
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->map(fn ($value) => (int) $value)
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($values->isEmpty()) {
+            return '-';
+        }
+
+        return $values
+            ->map(fn ($value) => $prefix . $value)
+            ->implode(', ');
+    }
+
+    protected function formatWorkoutSchedule($workout): string
+    {
+        $days = $workout->workoutDay ?? collect();
+
+        if ($days->isEmpty()) {
+            return '-';
+        }
+
+        return $days
+            ->map(function ($day) {
+                $month = (int) ($day->month_no ?? 1);
+                $week = (int) ($day->week ?? 0);
+                $dayNo = (int) ($day->day ?? 0);
+
+                if ($week < 1 || $dayNo < 1) {
+                    return null;
+                }
+
+                return "M{$month} / W{$week} / D{$dayNo}";
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->implode('<br>');
+    }
     /**
      * Build DataTable class.
      *
@@ -44,6 +88,27 @@ class WorkoutDataTable extends DataTable
             ->editColumn('workout_type.title', function($query) {
                 return optional($query->workouttype)->title ?? '-';
             })
+            ->addColumn('month_no_summary', function ($query) {
+                return $this->formatNumberSummary(
+                    optional($query->workoutDay)->pluck('month_no')->all(),
+                    'M'
+                );
+            })
+            ->addColumn('week_summary', function ($query) {
+                return $this->formatNumberSummary(
+                    optional($query->workoutDay)->pluck('week')->all(),
+                    'W'
+                );
+            })
+            ->addColumn('day_summary', function ($query) {
+                return $this->formatNumberSummary(
+                    optional($query->workoutDay)->pluck('day')->all(),
+                    'D'
+                );
+            })
+            ->addColumn('schedule_summary', function ($query) {
+                return $this->formatWorkoutSchedule($query);
+            })
             ->filterColumn('workout_type.title', function($query, $keyword) {
                 return $query->orWhereHas('workouttype', function($q) use($keyword) {
                     $q->where('title', 'like', "%{$keyword}%");
@@ -75,7 +140,7 @@ class WorkoutDataTable extends DataTable
                     $query->orderBy($column_name, $direction);
                 }
             })
-            ->rawColumns(['action','status']);
+            ->rawColumns(['action','status', 'schedule_summary']);
     }
 
     public function dataTableForGrid()
@@ -106,6 +171,27 @@ class WorkoutDataTable extends DataTable
                 })
                 ->editColumn('workout_type.title', function($query) {
                     return optional($query->workouttype)->title ?? '-';
+                })
+                ->addColumn('month_no_summary', function ($query) {
+                    return $this->formatNumberSummary(
+                        optional($query->workoutDay)->pluck('month_no')->all(),
+                        'M'
+                    );
+                })
+                ->addColumn('week_summary', function ($query) {
+                    return $this->formatNumberSummary(
+                        optional($query->workoutDay)->pluck('week')->all(),
+                        'W'
+                    );
+                })
+                ->addColumn('day_summary', function ($query) {
+                    return $this->formatNumberSummary(
+                        optional($query->workoutDay)->pluck('day')->all(),
+                        'D'
+                    );
+                })
+                ->addColumn('schedule_summary', function ($query) {
+                    return $this->formatWorkoutSchedule($query);
                 })
                 ->filterColumn('workout_type.title', function($query, $keyword) {
                     return $query->orWhereHas('workouttype', function($q) use($keyword) {
@@ -138,7 +224,7 @@ class WorkoutDataTable extends DataTable
                         $query->orderBy($column_name, $direction);
                     }
                 })
-                ->rawColumns(['action','status', 'img']);
+                ->rawColumns(['action','status', 'img', 'schedule_summary']);
     
     }
 
@@ -150,7 +236,11 @@ class WorkoutDataTable extends DataTable
      */
     public function query(Workout $model)
     {
-        return $model->newQuery();
+        return $model->newQuery()->with([
+            'level:id,title',
+            'workouttype:id,title',
+            'workoutDay:id,workout_id,month_no,week,day,sequence',
+        ]);
     }
 
 
@@ -169,6 +259,10 @@ class WorkoutDataTable extends DataTable
             ['data' => 'title', 'name' => 'title', 'title' => __('message.title')],
             ['data' => 'level.title', 'name' => 'level.title', 'title' => __('message.level'), 'orderable' => false],   
             ['data' => 'workout_type.title', 'name' => 'workout_type.title', 'title' => __('message.workouttype'), 'orderable' => false],  
+            ['data' => 'month_no_summary', 'name' => 'month_no_summary', 'title' => 'Month', 'orderable' => false, 'searchable' => false],
+            ['data' => 'week_summary', 'name' => 'week_summary', 'title' => 'Week', 'orderable' => false, 'searchable' => false],
+            ['data' => 'day_summary', 'name' => 'day_summary', 'title' => 'Day', 'orderable' => false, 'searchable' => false],
+            ['data' => 'schedule_summary', 'name' => 'schedule_summary', 'title' => 'Month / Week / Day', 'orderable' => false, 'searchable' => false],
             ['data' => 'status', 'name' => 'status', 'title' => __('message.status')],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => __('message.created_at')],
             ['data' => 'updated_at', 'name' => 'updated_at', 'title' => __('message.updated_at')],
@@ -187,6 +281,10 @@ class WorkoutDataTable extends DataTable
             ['data' => 'title', 'name' => 'title', 'title' => __('message.title')],
             ['data' => 'level.title', 'name' => 'level.title', 'title' => __('message.level'), 'orderable' => false],   
             ['data' => 'workout_type.title', 'name' => 'workout_type.title', 'title' => __('message.workouttype'), 'orderable' => false],  
+            ['data' => 'month_no_summary', 'name' => 'month_no_summary', 'title' => 'Month', 'orderable' => false],
+            ['data' => 'week_summary', 'name' => 'week_summary', 'title' => 'Week', 'orderable' => false],
+            ['data' => 'day_summary', 'name' => 'day_summary', 'title' => 'Day', 'orderable' => false],
+            ['data' => 'schedule_summary', 'name' => 'schedule_summary', 'title' => 'Month / Week / Day', 'orderable' => false],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => __('message.created_at')],
             ['data' => 'updated_at', 'name' => 'updated_at', 'title' => __('message.updated_at')],
             ['data' => 'status', 'name' => 'status', 'title' => __('message.status')],
