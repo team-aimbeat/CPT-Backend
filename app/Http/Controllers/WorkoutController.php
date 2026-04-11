@@ -99,6 +99,7 @@ class WorkoutController extends Controller
 
                 $workoutday = WorkoutDay::create([
                     'workout_id' => $workout->id,
+                    'month_no' => $request->month_no[$i] ?? 1,
                     'is_rest' => $value,
                     'sequence' => $i,
                     'week' => $request->week[$i] ?? null,
@@ -228,7 +229,8 @@ class WorkoutController extends Controller
         $workout = Workout::findOrFail($id);
 
         /* ---------------- BASIC DATA ---------------- */
-    $workout->update($request->except([
+        $workout->update($request->except([
+        'month_no',
         'week',
         'day',
         'exercise_ids',
@@ -290,6 +292,7 @@ class WorkoutController extends Controller
                     ['id' => $request->workout_days_id[$i] ?? null],
                     [
                         'workout_id' => $workout->id,
+                        'month_no'   => $request->month_no[$i] ?? 1,
                         'week'       => $week,
                         'day'        => $request->day[$i] ?? null,
                         'is_rest'    => $request->is_rest[$i] ?? 0,

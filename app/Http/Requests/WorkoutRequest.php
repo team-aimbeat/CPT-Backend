@@ -33,6 +33,7 @@ class WorkoutRequest extends FormRequest
                 $rules = [
                     'title' => 'required',
                     'workout_days_plan' => 'required|in:3,6',
+                    'month_no.*' => 'nullable|integer|min:1',
                     'video_url' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                     'stetch_video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                 ];
@@ -41,6 +42,7 @@ class WorkoutRequest extends FormRequest
                 $rules = [
                     'title' => 'required',
                     'workout_days_plan' => 'required|in:3,6',
+                    'month_no.*' => 'nullable|integer|min:1',
                     'video_url' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                     'stetch_video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-m4v,video/webm|max:512000',
                 ];

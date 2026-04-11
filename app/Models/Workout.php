@@ -44,7 +44,11 @@ class Workout extends Model implements HasMedia
 
     public function workoutDay()
     {
-        return $this->hasMany(WorkoutDay::class, 'workout_id', 'id');
+        return $this->hasMany(WorkoutDay::class, 'workout_id', 'id')
+            ->orderBy('month_no')
+            ->orderBy('week')
+            ->orderBy('day')
+            ->orderBy('sequence');
     }
     
     public function userFavouriteWorkout()
@@ -91,7 +95,11 @@ class Workout extends Model implements HasMedia
     //added by pooja
     public function workoutDays(): HasMany
     {
-        return $this->hasMany(WorkoutDay::class, 'workout_id', 'id');
+        return $this->hasMany(WorkoutDay::class, 'workout_id', 'id')
+            ->orderBy('month_no')
+            ->orderBy('week')
+            ->orderBy('day')
+            ->orderBy('sequence');
     }
 
     public function workoutExercise() {

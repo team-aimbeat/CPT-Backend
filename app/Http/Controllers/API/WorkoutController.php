@@ -373,7 +373,11 @@ public function getAbsenteeCircularWorkouts(Request $request)
 
     public function workoutDayList(Request $request)
     {
-        $workoutday = WorkoutDay::where('workout_id',request('workout_id'));
+        $workoutday = WorkoutDay::where('workout_id',request('workout_id'))
+            ->orderBy('month_no')
+            ->orderBy('week')
+            ->orderBy('day')
+            ->orderBy('sequence');
         
         $per_page = config('constant.PER_PAGE_LIMIT');
         if( $request->has('per_page') && !empty($request->per_page)){
@@ -830,8 +834,10 @@ public function getUserAssignedWorkouts(Request $request)
             'message' => 'Workout already completed for today.',
             'user_id' => $user->id,
             'user_name' => $user->first_name,
+            'current_month' => $currentMonthNumber,
             'today_is' => null,
             'current_week' => null,
+            'current_week_in_month' => null,
             'current_cycle' => null,
             'workout_days_plan' => $workoutDays,
             'completed_days_this_week' => null,
@@ -851,6 +857,8 @@ public function getUserAssignedWorkouts(Request $request)
     $currentWeekNumber = (int) floor($effectiveCompletedTotal / $cycleLength) + 1;
     $currentDayNumber = (int) ($effectiveCompletedTotal % $cycleLength) + 1;
     $completedThisWeek = $effectiveCompletedTotal % $cycleLength;
+    $currentMonthNumber = (int) floor(($currentWeekNumber - 1) / 4) + 1;
+    $currentWeekInMonth = (int) (($currentWeekNumber - 1) % 4) + 1;
 
     $dayNames = [
         1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday',
@@ -864,8 +872,10 @@ public function getUserAssignedWorkouts(Request $request)
             'message' => 'Workout skipped for today.',
             'user_id' => $user->id,
             'user_name' => $user->first_name,
+            'current_month' => $currentMonthNumber,
             'today_is' => 'Day ' . $currentDayNumber,
             'current_week' => $currentWeekNumber,
+            'current_week_in_month' => $currentWeekInMonth,
             'current_cycle' => null,
             'workout_days_plan' => $workoutDays,
             'completed_days_this_week' => $completedThisWeek,
@@ -883,8 +893,10 @@ public function getUserAssignedWorkouts(Request $request)
             'success' => true,
             'user_id' => $user->id,
             'user_name' => $user->first_name,
+            'current_month' => $currentMonthNumber,
             'today_is' => 'Day ' . $currentDayNumber,
             'current_week' => $currentWeekNumber,
+            'current_week_in_month' => $currentWeekInMonth,
             'current_cycle' => null,
             'workout_days_plan' => $workoutDays,
             'completed_days_this_week' => $completedThisWeek,
@@ -899,7 +911,8 @@ public function getUserAssignedWorkouts(Request $request)
      |--------------------------------------------------*/
     $user->load([
         'assignedWorkouts' => function ($q) use (
-            $currentWeekNumber,
+            $currentMonthNumber,
+            $currentWeekInMonth,
             $currentDayNumber,
             $currentCycle
         ) {
@@ -907,10 +920,12 @@ public function getUserAssignedWorkouts(Request $request)
               ->where('assign_workouts.disable', 0)
               ->with([
                   'workoutDays' => function ($qd) use (
-                      $currentWeekNumber,
+                      $currentMonthNumber,
+                      $currentWeekInMonth,
                       $currentDayNumber
                   ) {
-                      $qd->where('week', $currentWeekNumber)
+                      $qd->where('month_no', $currentMonthNumber)
+                         ->where('week', $currentWeekInMonth)
                          ->where('day', $currentDayNumber)
                          ->with('workoutDayExercises.exercise.exerciseVideos');
                   }
@@ -1071,6 +1086,7 @@ public function getUserAssignedWorkouts(Request $request)
             return [
                 'workout_id' => $workout->id,
                 'workout_name' => $workout->title,
+                'workout_month' => (string) ($day->month_no ?? 1),
                 'day_name' => $dayNames[$day->day] ?? null,
                 'workout_week' => (string) $day->week,
                 'workout_day_number' => (string) $day->day,
@@ -1088,8 +1104,10 @@ public function getUserAssignedWorkouts(Request $request)
         'success' => true,
         'user_id' => $user->id,
         'user_name' => $user->first_name,
+        'current_month' => $currentMonthNumber,
         'today_is' => 'Day ' . $currentDayNumber,
         'current_week' => $currentWeekNumber,
+        'current_week_in_month' => $currentWeekInMonth,
         'current_cycle' => $currentCycle,
         'workout_days_plan' => $workoutDays,
         'completed_days_this_week' => $completedThisWeek,

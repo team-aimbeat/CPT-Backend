@@ -5,7 +5,7 @@
     }
 
     #table_list.workout-days-table {
-        min-width: 1850px;
+        min-width: 1950px;
     }
 
     #table_list.workout-days-table th,
@@ -17,23 +17,25 @@
     #table_list.workout-days-table th:nth-child(1),
     #table_list.workout-days-table td:nth-child(1) { min-width: 60px; }
     #table_list.workout-days-table th:nth-child(2),
-    #table_list.workout-days-table td:nth-child(2) { min-width: 90px; }
+    #table_list.workout-days-table td:nth-child(2) { min-width: 100px; }
     #table_list.workout-days-table th:nth-child(3),
     #table_list.workout-days-table td:nth-child(3) { min-width: 90px; }
     #table_list.workout-days-table th:nth-child(4),
-    #table_list.workout-days-table td:nth-child(4) { min-width: 360px; }
+    #table_list.workout-days-table td:nth-child(4) { min-width: 90px; }
     #table_list.workout-days-table th:nth-child(5),
     #table_list.workout-days-table td:nth-child(5) { min-width: 360px; }
     #table_list.workout-days-table th:nth-child(6),
-    #table_list.workout-days-table td:nth-child(6) { min-width: 300px; }
+    #table_list.workout-days-table td:nth-child(6) { min-width: 360px; }
     #table_list.workout-days-table th:nth-child(7),
-    #table_list.workout-days-table td:nth-child(7) { min-width: 380px; }
+    #table_list.workout-days-table td:nth-child(7) { min-width: 300px; }
     #table_list.workout-days-table th:nth-child(8),
     #table_list.workout-days-table td:nth-child(8) { min-width: 380px; }
     #table_list.workout-days-table th:nth-child(9),
-    #table_list.workout-days-table td:nth-child(9) { min-width: 90px; text-align: center; }
+    #table_list.workout-days-table td:nth-child(9) { min-width: 380px; }
     #table_list.workout-days-table th:nth-child(10),
-    #table_list.workout-days-table td:nth-child(10) { min-width: 80px; text-align: center; }
+    #table_list.workout-days-table td:nth-child(10) { min-width: 90px; text-align: center; }
+    #table_list.workout-days-table th:nth-child(11),
+    #table_list.workout-days-table td:nth-child(11) { min-width: 80px; text-align: center; }
 
     #table_list.workout-days-table input.form-control,
     #table_list.workout-days-table select.form-control {
@@ -129,7 +131,9 @@
             });
 
             clone.find('[name^="week"]').attr('name', 'week[' + row + ']').val(1);
+            clone.find('[name^="month_no"]').attr('name', 'month_no[' + row + ']').val(1);
             clone.find('[name^="day"]').attr('name', 'day[' + row + ']');
+            clone.find('[name^="workout_days_id"]').attr('name', 'workout_days_id[' + row + ']').val('');
 
             clone.find('[name^="exercise_ids"]')
                 .attr('name', 'exercise_ids[' + row + '][]')
@@ -276,6 +280,7 @@
 <thead>
 <tr>
     <th>#</th>
+    <th>Month</th>
     <th>Week</th>
     <th>Day</th>
     <th>Exercise</th>
@@ -306,7 +311,11 @@
 <tr id="row_{{ $i }}" row="{{ $i }}">
 <td></td>
 
-<td>{{ Form::select("week[$i]",array_combine(range(1,12), range(1,12))
+<td>{{ Form::number("month_no[$i]", old("month_no.$i", $day->month_no ?? 1), ['class' => 'form-control', 'min' => 1]) }}</td>
+
+<td>
+<input type="hidden" name="workout_days_id[{{ $i }}]" value="{{ $day->id }}">
+{{ Form::select("week[$i]",array_combine(range(1,4), range(1,4))
 ,$day->week,['class'=>'form-control']) }}</td>
 
 <td>{{ Form::select("day[$i]",
@@ -360,7 +369,10 @@
 @else
 <tr id="row_0" row="0">
 <td></td>
-<td>{{ Form::select('week[0]',array_combine(range(1,12), range(1,12))
+<td>{{ Form::number('month_no[0]', 1, ['class' => 'form-control', 'min' => 1]) }}</td>
+<td>
+<input type="hidden" name="workout_days_id[0]" value="">
+{{ Form::select('week[0]',array_combine(range(1,4), range(1,4))
 ,1,['class'=>'form-control']) }}</td>
 <td>{{ Form::select('day[0]',array_combine(range(1,7), range(1,7)),null,['class'=>'form-control']) }}</td>
 <td>

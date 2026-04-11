@@ -12,11 +12,12 @@ class WorkoutDay extends Model implements HasMedia
 {
     use HasFactory,InteractsWithMedia;
     
-    protected $fillable = [ 'workout_id', 'sequence', 'is_rest','week','day'];
+    protected $fillable = [ 'workout_id', 'month_no', 'sequence', 'is_rest','week','day'];
 
     protected $casts = [
         'is_rest'       => 'integer',
         'workout_id'    => 'integer',
+        'month_no'      => 'integer',
         'sequence'      => 'integer',
     ];
     
