@@ -829,6 +829,14 @@ public function getUserAssignedWorkouts(Request $request)
         $withinTwoHours = now()->lt($recentCompletion->created_at->addHours(2));
     }
 
+    $completedTotal = $completedDates->count();
+    $cycleLength = $workoutDays;
+
+    $currentWeekNumber = (int) floor($completedTotal / $cycleLength) + 1;
+    $currentDayNumber = (int) ($completedTotal % $cycleLength) + 1;
+    $currentMonthNumber = (int) floor(($currentWeekNumber - 1) / 4) + 1;
+    $currentWeekInMonth = (int) (($currentWeekNumber - 1) % 4) + 1;
+
     if ($completedDates->contains($todayKey) && !$withinTwoHours) {
         return response()->json([
             'success' => true,
@@ -848,12 +856,10 @@ public function getUserAssignedWorkouts(Request $request)
         ]);
     }
 
-    $completedTotal = $completedDates->count();
     $effectiveCompletedTotal = $completedTotal;
     if ($withinTwoHours && $completedDates->contains($todayKey)) {
         $effectiveCompletedTotal = max(0, $completedTotal - 1);
     }
-    $cycleLength = $workoutDays;
 
     $currentWeekNumber = (int) floor($effectiveCompletedTotal / $cycleLength) + 1;
     $currentDayNumber = (int) ($effectiveCompletedTotal % $cycleLength) + 1;
