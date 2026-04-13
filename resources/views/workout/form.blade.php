@@ -411,7 +411,10 @@
 
 <hr>
 
-{{ Form::submit('Save Workout',['class'=>'btn btn-success float-end']) }}
+<div class="d-flex justify-content-end gap-2">
+    <button type="button" id="preview_workout_button" class="btn btn-primary">Preview Workout</button>
+    {{ Form::submit('Save Workout',['class'=>'btn btn-success']) }}
+</div>
 
 {!! Form::close() !!}
 </div>
