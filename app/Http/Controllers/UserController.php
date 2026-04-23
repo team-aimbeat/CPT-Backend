@@ -318,7 +318,15 @@ class UserController extends Controller
     public function getAssignWorkoutList(Request $request)
     {
         $user_id = request('user_id');
-        $data = Workout::myWorkout($user_id)->orderBy('id', 'desc')->get();
+        $data = Workout::myWorkout($user_id)
+            ->with([
+                'workouttype:id,title',
+                'level:id,title',
+                'goal:id,title',
+                'workoutDay:id,workout_id,month_no,week,day',
+            ])
+            ->orderBy('id', 'desc')
+            ->get();
         $view = view('users.assign-workout-list',compact('user_id', 'data'))->render();
         return response()->json([ 'data' => $view, 'status' => true ]);
     }

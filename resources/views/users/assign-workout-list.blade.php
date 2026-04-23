@@ -1,8 +1,29 @@
 @if( count($data) > 0 )
     @foreach ($data as $assignworkout)
+        @php
+            $workoutDays = $assignworkout->workoutDay ?? collect();
+            $monthList = $workoutDays->pluck('month_no')->filter()->unique()->sort()->values()->implode(', ');
+            $weekList = $workoutDays->pluck('week')->filter()->unique()->sort()->values()->implode(', ');
+            $dayList = $workoutDays->pluck('day')->filter()->unique()->sort()->values()->implode(', ');
+
+            $details = array_filter([
+                $monthList ? 'Month: '.$monthList : null,
+                $weekList ? 'Week: '.$weekList : null,
+                $dayList ? 'Day: '.$dayList : null,
+                $assignworkout->gender ? 'Gender: '.ucfirst($assignworkout->gender) : null,
+                optional($assignworkout->level)->title ? 'Level: '.optional($assignworkout->level)->title : null,
+                optional($assignworkout->workouttype)->title ? 'Workout Type: '.optional($assignworkout->workouttype)->title : null,
+                optional($assignworkout->goal)->title ? 'Goal: '.optional($assignworkout->goal)->title : null,
+            ]);
+        @endphp
         <tr>
             <td><img src="{{ getSingleMedia($assignworkout, 'workout_image') }}" alt="workout-image"class="bg-soft-primary rounded img-fluid avatar-40 me-3"></td>
-            <td>{{ $assignworkout->title }}</td>
+            <td>
+                <div class="fw-semibold">{{ $assignworkout->title }}</div>
+                @if(count($details))
+                    <small class="text-muted d-block mt-1">{{ implode(' | ', $details) }}</small>
+                @endif
+            </td>
             <td>
                 <a class="btn btn-sm btn-icon btn-danger" 
                     data-bs-toggle="tooltip" href="{{ route('delete.assignworkout', [ 'workout_id' => $assignworkout->id, 'user_id' => $user_id ]) }}"
