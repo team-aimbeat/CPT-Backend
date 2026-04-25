@@ -137,7 +137,13 @@ class UserController extends Controller
         $toDate = request('to');
         $filterWorkoutId = request('workout_id');
 
-        $workoutCompletionsQuery = WorkoutCompletion::with('workout:id,title')
+        $workoutCompletionsQuery = WorkoutCompletion::with([
+                'workout:id,title,gender,level_id,workout_type_id,goal_id',
+                'workout.level:id,title',
+                'workout.workouttype:id,title',
+                'workout.goal:id,title',
+                'workout.workoutDay:id,workout_id,month_no,week,day',
+            ])
             ->where('user_id', $id);
 
         if (!empty($fromDate) && !empty($toDate)) {

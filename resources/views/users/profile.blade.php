@@ -383,10 +383,30 @@
                             </thead>
                             <tbody>
                                 @forelse($workoutCompletions as $completion)
+                                    @php
+                                        $workout = $completion->workout;
+                                        $workoutDays = optional($workout)->workoutDay ?? collect();
+                                        $monthList = $workoutDays->pluck('month_no')->filter()->unique()->sort()->implode(', ');
+                                        $weekList = $workoutDays->pluck('week')->filter()->unique()->sort()->implode(', ');
+                                        $dayList = $workoutDays->pluck('day')->filter()->unique()->sort()->implode(', ');
+                                    @endphp
                                     <tr>
                                         <td>{{ optional($completion->completed_date)->format('Y-m-d') ?? $completion->created_at->format('Y-m-d') }}</td>
                                         <td>{{ $completion->created_at->format('H:i') }}</td>
-                                        <td>{{ optional($completion->workout)->title ?? '-' }}</td>
+                                        <td>
+                                            {{ optional($workout)->title ?? '-' }}
+                                            @if($workout)
+                                                <span class="text-muted">
+                                                    (Month: {{ $monthList ?: '-' }},
+                                                    Week: {{ $weekList ?: '-' }},
+                                                    Day: {{ $dayList ?: '-' }},
+                                                    Gender: {{ $workout->gender ? ucfirst($workout->gender) : '-' }},
+                                                    Level: {{ optional($workout->level)->title ?? '-' }},
+                                                    Type: {{ optional($workout->workouttype)->title ?? '-' }},
+                                                    Goal: {{ optional($workout->goal)->title ?? '-' }})
+                                                </span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
