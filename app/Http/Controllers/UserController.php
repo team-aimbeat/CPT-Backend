@@ -138,7 +138,7 @@ class UserController extends Controller
         $filterWorkoutId = request('workout_id');
 
         $workoutCompletionsQuery = WorkoutCompletion::with([
-                'workout:id,title,gender,level_id,workout_type_id,goal_id',
+                'workout:id,title,gender,level_id,workout_type_id,goal_id,workout_days_plan',
                 'workout.level:id,title',
                 'workout.workouttype:id,title',
                 'workout.goal:id,title',

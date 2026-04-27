@@ -400,6 +400,7 @@
                                                     (Month: {{ $monthList ?: '-' }},
                                                     Week: {{ $weekList ?: '-' }},
                                                     Day: {{ $dayList ?: '-' }},
+                                                    Workout Days: {{ $workout->workout_days_plan ?: '-' }},
                                                     Gender: {{ $workout->gender ? ucfirst($workout->gender) : '-' }},
                                                     Level: {{ optional($workout->level)->title ?? '-' }},
                                                     Type: {{ optional($workout->workouttype)->title ?? '-' }},
