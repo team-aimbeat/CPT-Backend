@@ -10,6 +10,7 @@
                 $monthList ? 'Month: '.$monthList : null,
                 $weekList ? 'Week: '.$weekList : null,
                 $dayList ? 'Day: '.$dayList : null,
+                $assignworkout->workout_days_plan ? 'Workout Days: '.$assignworkout->workout_days_plan : null,
                 $assignworkout->gender ? 'Gender: '.ucfirst($assignworkout->gender) : null,
                 optional($assignworkout->level)->title ? 'Level: '.optional($assignworkout->level)->title : null,
                 optional($assignworkout->workouttype)->title ? 'Workout Type: '.optional($assignworkout->workouttype)->title : null,
@@ -19,7 +20,11 @@
         <tr>
             <td><img src="{{ getSingleMedia($assignworkout, 'workout_image') }}" alt="workout-image"class="bg-soft-primary rounded img-fluid avatar-40 me-3"></td>
             <td>
-                <div class="fw-semibold">{{ $assignworkout->title }}</div>
+                <div class="fw-semibold">
+                    <a href="{{ route('workout.edit', $assignworkout->id) }}" class="text-decoration-none text-dark">
+                        {{ $assignworkout->title }}
+                    </a>
+                </div>
                 @if(count($details))
                     <small class="text-muted d-block mt-1">{{ implode(' | ', $details) }}</small>
                 @endif
