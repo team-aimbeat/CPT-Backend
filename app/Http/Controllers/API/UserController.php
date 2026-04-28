@@ -207,6 +207,8 @@ class UserController extends Controller
             $levelId       = $userProfile->workout_level;
             $goalId        = $userProfile->goal;
             $workoutTypeId = $userProfile->workout_mode;
+            $gender        = $user->gender ? strtolower(trim($user->gender)) : null;
+            $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
 
             if ($levelId && $goalId && $workoutTypeId) {
 
@@ -220,6 +222,15 @@ class UserController extends Controller
                 $workoutIds = Workout::where('level_id', $levelId)
                     ->where('goal_id', $goalId)
                     ->where('workout_type_id', $workoutTypeId)
+                    ->when($gender, function ($query, $gender) {
+                        $query->where(function ($query) use ($gender) {
+                            $query->whereIn('gender', ['both', $gender])
+                                  ->orWhereNull('gender');
+                        });
+                    })
+                    ->when($workoutDaysPlan, function ($query, $workoutDaysPlan) {
+                        $query->where('workout_days_plan', $workoutDaysPlan);
+                    })
                     ->where('status', 'active')
                     ->pluck('id');
 
@@ -291,7 +302,49 @@ class UserController extends Controller
     }
 }
 
-        
+    /**
+     * Normalize workout_days into a valid workout_days_plan value.
+     *
+     * @param mixed $workoutDays
+     * @return int|null
+     */
+    private function resolveWorkoutDaysPlan($workoutDays)
+    {
+        if ($workoutDays === null) {
+            return null;
+        }
+
+        if (is_array($workoutDays)) {
+            $numericDays = array_filter($workoutDays, function ($item) {
+                return is_numeric($item) && trim((string) $item) !== '';
+            });
+
+            if (!empty($numericDays)) {
+                return (int) reset($numericDays);
+            }
+
+            return count($workoutDays);
+        }
+
+        if (is_numeric($workoutDays)) {
+            return (int) $workoutDays;
+        }
+
+        if (is_string($workoutDays)) {
+            $parts = array_filter(array_map('trim', explode(',', $workoutDays)), function ($item) {
+                return $item !== '';
+            });
+
+            if (count($parts) === 1 && is_numeric($parts[0])) {
+                return (int) $parts[0];
+            }
+
+            return count($parts);
+        }
+
+        return null;
+    }
+
         
         
 //         public function updateWorkoutMode(Request $request)
@@ -911,9 +964,21 @@ public function updateWorkoutMode(Request $request)
                     ->where('user_id', $user->id)
                     ->update(['is_active' => 0]);
 
+                $gender = $user->gender ? strtolower(trim($user->gender)) : null;
+                $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
+
                 $workoutIds = Workout::where('level_id', $levelId)
                     ->where('goal_id', $goalId)
                     ->where('workout_type_id', $modeId)
+                    ->when($gender, function ($query, $gender) {
+                        $query->where(function ($query) use ($gender) {
+                            $query->whereIn('gender', ['both', $gender])
+                                  ->orWhereNull('gender');
+                        });
+                    })
+                    ->when($workoutDaysPlan, function ($query, $workoutDaysPlan) {
+                        $query->where('workout_days_plan', $workoutDaysPlan);
+                    })
                     ->where('status', 'active')
                     ->pluck('id');
 
