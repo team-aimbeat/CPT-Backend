@@ -204,13 +204,13 @@ class UserController extends Controller
 
         if ($userProfile) {
 
-            $levelId       = $userProfile->workout_level;
-            $goalId        = $userProfile->goal;
-            $workoutTypeId = $userProfile->workout_mode;
-            $gender        = $user->gender ? strtolower(trim($user->gender)) : null;
+            $levelId         = $userProfile->workout_level;
+            $goalId          = $userProfile->goal;
+            $workoutTypeId   = $userProfile->workout_mode;
+            $gender          = $user->gender ? strtolower(trim($user->gender)) : null;
             $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
 
-            if ($levelId && $goalId && $workoutTypeId) {
+            if ($levelId && $goalId && $workoutTypeId && $gender && $workoutDaysPlan) {
 
                 $cycleNo = 1; // FIRST CYCLE
 
@@ -947,7 +947,9 @@ public function updateWorkoutMode(Request $request)
         $levelId = $userProfile->workout_level ?? null;
         $goalId  = $userProfile->goal ?? null;
         $modeId  = $userProfile->workout_mode ?? null;
-        $canAssign = $levelId && $goalId && $modeId;
+        $gender = $user->gender ? strtolower(trim($user->gender)) : null;
+        $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
+        $canAssign = $levelId && $goalId && $modeId && $gender && $workoutDaysPlan;
 
         if ($canAssign && $assignedWorkouts->isEmpty()) {
 
