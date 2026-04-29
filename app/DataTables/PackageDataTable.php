@@ -51,6 +51,9 @@ class PackageDataTable extends DataTable
                 }
                 return $duration_unit;
             })
+            ->editColumn('platform', function($query) {
+                return ucfirst($query->platform ?? 'android');
+            })
             ->addColumn('price', function($price){             
                 $price = getPriceFormat($price->price);
                 return $price;
@@ -112,6 +115,7 @@ class PackageDataTable extends DataTable
             ['data' => 'duration_unit', 'name' => 'duration_unit', 'title' => __('message.duration_unit')],
             ['data' => 'price', 'name' => 'price', 'title' => __('message.price')],
             ['data' => 'package_type', 'name' => 'package_type', 'title' => __('message.type')],
+            ['data' => 'platform', 'name' => 'platform', 'title' => 'Platform'],
             ['data' => 'status', 'name' => 'status', 'title' => __('message.status')],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => __('message.created_at')],
             ['data' => 'updated_at', 'name' => 'updated_at', 'title' => __('message.updated_at')],

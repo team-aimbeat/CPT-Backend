@@ -11,7 +11,8 @@ class PackageController  extends Controller
 {
     public function getList(Request $request)
     {
-        $package = Package::where('status', 'active');
+        $platform = strtolower($request->input('platform', $request->input('device_type', 'android')));
+        $package = Package::where('status', 'active')->where('platform', $platform);
 
         $package->when(request('name'), function ($q) {
             return $q->where('name', 'LIKE', '%' . request('name') . '%');

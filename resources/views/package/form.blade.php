@@ -76,6 +76,10 @@
                                 {{ Form::select('package_type',[ 'workout' => __('message.workout'), 'diet' => __('message.diet') , 'both' => __('message.both') ], old('package_type'), [ 'class' =>'form-control select2js','required']) }}
                             </div>
                             <div class="form-group col-md-4">
+                                {{ Form::label('platform','Platform <span class="text-danger">*</span>',['class'=>'form-control-label'],false) }}
+                                {{ Form::select('platform',[ 'android' => 'Android', 'ios' => 'iOS' ], old('platform', $data->platform ?? 'android'), [ 'class' =>'form-control select2js','required']) }}
+                            </div>
+                            <div class="form-group col-md-4">
                                 {{ Form::label('status',__('message.status').' <span class="text-danger">*</span>',['class'=>'form-control-label'],false) }}
                                 {{ Form::select('status',[ 'active' => __('message.active'), 'inactive' => __('message.inactive') ], old('status'), [ 'class' =>'form-control select2js','required']) }}
                             </div>
