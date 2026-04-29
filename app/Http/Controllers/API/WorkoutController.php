@@ -1553,9 +1553,21 @@ public function getUserAssignedWorkouts(Request $request)
             return null;
         }
 
+        $gender = $user->gender ? strtolower(trim($user->gender)) : null;
+        $workoutDaysPlan = $this->resolveWorkoutDaysPlan($profile->workout_days);
+
+        if (!$gender || !$workoutDaysPlan) {
+            return null;
+        }
+
         $nextWorkoutIds = Workout::where('level_id', $nextLevel->id)
             ->where('goal_id', $profile->goal)
             ->where('workout_type_id', $profile->workout_mode)
+            ->where(function ($query) use ($gender) {
+                $query->whereIn('gender', ['both', $gender])
+                    ->orWhereNull('gender');
+            })
+            ->where('workout_days_plan', $workoutDaysPlan)
             ->where('status', 'active')
             ->pluck('id');
 
@@ -1606,6 +1618,43 @@ public function getUserAssignedWorkouts(Request $request)
             'new_cycle' => $newCycle,
             'assigned_workout_count' => count($insertData),
         ];
+    }
+
+    private function resolveWorkoutDaysPlan($workoutDays)
+    {
+        if ($workoutDays === null) {
+            return null;
+        }
+
+        if (is_array($workoutDays)) {
+            $numericDays = array_filter($workoutDays, function ($item) {
+                return is_numeric($item) && trim((string) $item) !== '';
+            });
+
+            if (!empty($numericDays)) {
+                return (int) reset($numericDays);
+            }
+
+            return count($workoutDays);
+        }
+
+        if (is_numeric($workoutDays)) {
+            return (int) $workoutDays;
+        }
+
+        if (is_string($workoutDays)) {
+            $parts = array_filter(array_map('trim', explode(',', $workoutDays)), function ($item) {
+                return $item !== '';
+            });
+
+            if (count($parts) === 1 && is_numeric($parts[0])) {
+                return (int) $parts[0];
+            }
+
+            return count($parts);
+        }
+
+        return null;
     }
 
     private function resolveNextLevel(Level $currentLevel, $workoutMode = null): ?Level

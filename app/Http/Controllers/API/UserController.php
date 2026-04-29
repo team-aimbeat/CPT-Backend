@@ -566,6 +566,19 @@ public function updateWorkoutMode(Request $request)
             'workout_mode' => $newMode,
             'workout_level' => $newLevel,
         ]);
+        $profile->refresh();
+
+        $gender = $user->gender ? strtolower(trim($user->gender)) : null;
+        $workoutDaysPlan = $this->resolveWorkoutDaysPlan($profile->workout_days);
+
+        if (!$gender || !$workoutDaysPlan) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gender and workout days are required to assign workouts.'
+            ], 422);
+        }
 
         /* ---------------------------------
          | 4. FIND EXISTING CYCLE (RESUME)
@@ -576,6 +589,11 @@ public function updateWorkoutMode(Request $request)
             ->where('workouts.workout_type_id', $newMode)
             ->where('workouts.level_id', $profile->workout_level)
             ->where('workouts.goal_id', $profile->goal)
+            ->where(function ($query) use ($gender) {
+                $query->whereIn('workouts.gender', ['both', $gender])
+                    ->orWhereNull('workouts.gender');
+            })
+            ->where('workouts.workout_days_plan', $workoutDaysPlan)
             ->orderByDesc('assign_workouts.cycle_no')
             ->select('assign_workouts.cycle_no')
             ->first();
@@ -630,6 +648,11 @@ public function updateWorkoutMode(Request $request)
         $workoutIds = Workout::where('workout_type_id', $newMode)
             ->where('level_id', $profile->workout_level)
             ->where('goal_id', $profile->goal)
+            ->where(function ($query) use ($gender) {
+                $query->whereIn('gender', ['both', $gender])
+                    ->orWhereNull('gender');
+            })
+            ->where('workout_days_plan', $workoutDaysPlan)
             ->where('status', 'active')
             ->pluck('id');
 
