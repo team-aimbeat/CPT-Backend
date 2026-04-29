@@ -1271,6 +1271,8 @@ public function updateWorkoutMode(Request $request)
         /* -------------------------
          | 3. USER BASIC UPDATE
          |--------------------------*/
+        $oldGender = $user->gender ? strtolower(trim($user->gender)) : null;
+
         $user->fill($request->all())->update();
 
         /* -------------------------
@@ -1297,6 +1299,7 @@ public function updateWorkoutMode(Request $request)
         $oldLevel = $profile->workout_level ?? null;
         $oldGoal  = $profile->goal ?? null;
         $oldMode  = $profile->workout_mode ?? null;
+        $oldWorkoutDaysPlan = $profile ? $this->resolveWorkoutDaysPlan($profile->workout_days) : null;
 
         if ($profile && $request->filled('user_profile')) {
             $profile->fill(UserProfile::sanitizeWorkoutProfileData($request->user_profile))->update();
@@ -1312,16 +1315,21 @@ public function updateWorkoutMode(Request $request)
         $newLevel = $profile->workout_level ?? null;
         $newGoal  = $profile->goal ?? null;
         $newMode  = $profile->workout_mode ?? null;
+        $freshUser = $user->fresh();
+        $newGender = $freshUser->gender ? strtolower(trim($freshUser->gender)) : null;
+        $newWorkoutDaysPlan = $profile ? $this->resolveWorkoutDaysPlan($profile->workout_days) : null;
 
         $workoutPlanChanged =
             ($oldLevel != $newLevel) ||
             ($oldGoal  != $newGoal) ||
-            ($oldMode  != $newMode);
+            ($oldMode  != $newMode) ||
+            ($oldGender != $newGender) ||
+            ($oldWorkoutDaysPlan != $newWorkoutDaysPlan);
 
         /* -------------------------
          | 7. ASSIGN / REASSIGN WORKOUTS
          |--------------------------*/
-        if ($workoutPlanChanged && $newLevel && $newGoal && $newMode) {
+        if ($workoutPlanChanged && $newLevel && $newGoal && $newMode && $newGender && $newWorkoutDaysPlan) {
 
             // 🔹 Inactivate ONLY pending workouts (completed untouched)
             DB::table('assign_workouts')
@@ -1350,6 +1358,11 @@ public function updateWorkoutMode(Request $request)
             $workoutIds = Workout::where('level_id', $newLevel)
                 ->where('goal_id', $newGoal)
                 ->where('workout_type_id', $newMode)
+                ->where(function ($query) use ($newGender) {
+                    $query->whereIn('gender', ['both', $newGender])
+                        ->orWhereNull('gender');
+                })
+                ->where('workout_days_plan', $newWorkoutDaysPlan)
                 ->where('status', 'active')
                 ->pluck('id');
 
