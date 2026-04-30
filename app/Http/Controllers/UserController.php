@@ -324,6 +324,24 @@ class UserController extends Controller
     public function getAssignWorkoutList(Request $request)
     {
         $user_id = request('user_id');
+        $currentCycle = AssignWorkout::where('user_id', $user_id)
+            ->where('is_active', 1)
+            ->max('cycle_no');
+
+        $activeAssignedWorkoutIds = collect();
+
+        if ($currentCycle !== null) {
+            $activeAssignedWorkoutIds = AssignWorkout::where('user_id', $user_id)
+                ->where('cycle_no', $currentCycle)
+                ->where('is_active', 1)
+                ->where(function ($query) {
+                    $query->whereNull('disable')
+                        ->orWhere('disable', 0);
+                })
+                ->pluck('workout_id')
+                ->map(fn ($workoutId) => (int) $workoutId);
+        }
+
         $data = Workout::myWorkout($user_id)
             ->with([
                 'workouttype:id,title',
@@ -333,7 +351,7 @@ class UserController extends Controller
             ])
             ->orderBy('id', 'desc')
             ->get();
-        $view = view('users.assign-workout-list',compact('user_id', 'data'))->render();
+        $view = view('users.assign-workout-list',compact('user_id', 'data', 'activeAssignedWorkoutIds'))->render();
         return response()->json([ 'data' => $view, 'status' => true ]);
     }
 

@@ -16,12 +16,13 @@
                 optional($assignworkout->workouttype)->title ? 'Workout Type: '.optional($assignworkout->workouttype)->title : null,
                 optional($assignworkout->goal)->title ? 'Goal: '.optional($assignworkout->goal)->title : null,
             ]);
+            $isCurrentCycleWorkout = isset($activeAssignedWorkoutIds) && $activeAssignedWorkoutIds->contains((int) $assignworkout->id);
         @endphp
-        <tr>
+        <tr class="{{ $isCurrentCycleWorkout ? 'table-success' : '' }}" @if($isCurrentCycleWorkout) style="--bs-table-bg: #d1e7dd; --bs-table-striped-bg: #c7dbd2; border-left: 4px solid #198754;" @endif>
             <td><img src="{{ getSingleMedia($assignworkout, 'workout_image') }}" alt="workout-image"class="bg-soft-primary rounded img-fluid avatar-40 me-3"></td>
             <td>
                 <div class="fw-semibold">
-                    <a href="{{ route('workout.edit', $assignworkout->id) }}" class="text-decoration-none text-dark">
+                    <a href="{{ route('workout.edit', $assignworkout->id) }}" class="text-decoration-none {{ $isCurrentCycleWorkout ? 'text-success' : 'text-dark' }}">
                         {{ $assignworkout->title }}
                     </a>
                 </div>
