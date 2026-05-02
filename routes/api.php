@@ -33,6 +33,9 @@ Route::get('get-appsetting', [ API\UserController::class, 'getAppSetting'] );
 Route::get('language-table-list',[API\LanguageTableController::class, 'getList']);
 Route::get('language-list',[API\LanguageTableController::class, 'geLanguagetList']);
 Route::get('faq-list', [ API\FaqController::class, 'getList' ]);
+Route::get('terms-condition', [ API\PageController::class, 'termsCondition' ]);
+Route::get('privacy-policy', [ API\PageController::class, 'privacyPolicy' ]);
+Route::get('pages/{type}', [ API\PageController::class, 'show' ]);
 
 
 Route::post('google-auth', [API\UserController::class, 'googleLoginOrRegister']);
