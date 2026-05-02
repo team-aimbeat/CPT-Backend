@@ -35,6 +35,11 @@ class UserRequest extends FormRequest
                 'email' => 'required|max:191|email|unique:users,email,'.$user_id,
                 'phone_number' => 'nullable|max:20|unique:users,phone_number,'.$user_id,
             ];
+
+            if (request()->is('api/register')) {
+                $rules['accepted_terms'] = 'required|accepted';
+                $rules['accepted_privacy'] = 'required|accepted';
+            }
         } else {
             
             $method = strtolower($this->method());

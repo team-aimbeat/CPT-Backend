@@ -151,6 +151,8 @@ Route::get('/exercise/{exerciseId}', [API\WorkoutController::class, 'getExercise
     Route::post('apply-coupon', [ API\CouponController::class, 'apply' ]);
     Route::get('offer-coupons', [ API\CouponController::class, 'getOfferCoupons' ]);
     Route::get('referral-info', [ API\ReferralController::class, 'getInfo' ]);
+    Route::post('policy-acceptance', [ API\PolicyAcceptanceController::class, 'store' ]);
+    Route::get('policy-acceptance-status', [ API\PolicyAcceptanceController::class, 'status' ]);
 
 
     Route::get('get-setting',[ API\DashboardController::class, 'getSetting']);

@@ -23,6 +23,7 @@ use App\Models\UserOtp;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Controllers\API\PolicyAcceptanceController;
 
 class UserController extends Controller
 {
@@ -186,6 +187,8 @@ class UserController extends Controller
 
         $user = User::create($input);
         $user->assignRole($input['user_type']);
+        PolicyAcceptanceController::recordAcceptance($user, $request, 'terms_condition');
+        PolicyAcceptanceController::recordAcceptance($user, $request, 'privacy_policy');
 
         /* -------------------------
          | 2. USER PROFILE

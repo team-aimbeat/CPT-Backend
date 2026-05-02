@@ -87,6 +87,11 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         return $this->hasMany(Notification::class, 'notifiable_id', 'id');
     }
 
+    public function policyAcceptances()
+    {
+        return $this->hasMany(UserPolicyAcceptance::class, 'user_id', 'id');
+    }
+
     public function chatgptFitBot(){
         return $this->hasMany(ChatgptFitBot::class, 'user_id', 'id');
     }
