@@ -22,6 +22,7 @@ use App\Http\Resources\UserDetailResource;
 use App\Models\UserOtp;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Http\Controllers\API\PolicyAcceptanceController;
 
