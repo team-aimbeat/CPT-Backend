@@ -13,10 +13,10 @@ use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 
 use App\Models\AppSetting;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Traits\SubscriptionTrait;
 use App\Http\Resources\UserDetailResource;
 use App\Models\UserOtp;
@@ -1643,13 +1643,113 @@ public function updateWorkoutMode(Request $request)
             'email' => 'required|email',
         ]);
 
-        $response = Password::sendResetLink(
-            $request->only('email')
-        );
+        try {
+            $user = User::where('email', $request->email)->first();
 
-        return $response == Password::RESET_LINK_SENT
-            ? response()->json(['message' => __($response), 'status' => true], 200)
-            : response()->json(['message' => __($response), 'status' => false], 400);
+            if (!$user) {
+                return json_custom_response([
+                    'status' => false,
+                    'message' => __('passwords.user'),
+                ], 400);
+            }
+
+            $now = now();
+            $userOtp = UserOtp::where('email', $request->email)->latest()->first();
+
+            if (!$userOtp || empty($userOtp->expire_at) || $now->isAfter($userOtp->expire_at)) {
+                $userOtp = UserOtp::create([
+                    'user_id' => $user->id,
+                    'email' => $request->email,
+                    'otp' => random_int(100000, 999999),
+                    'expire_at' => $now->copy()->addMinutes(10),
+                ]);
+            }
+
+            $messageText = "\n\n";
+            $messageText .= "OTP is " . $userOtp->otp . " for resetting your password on " . env('APP_NAME') . ". This OTP can be used only once and is valid for 10 min only\n";
+
+            Mail::raw($messageText, function ($message) use ($request) {
+                $message->to($request->email)
+                    ->subject('Forgot Password OTP');
+            });
+
+            return json_custom_response([
+                'status' => true,
+                'message' => 'OTP Mail sent successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Forgot Password OTP Error', [
+                'email' => $request->email,
+                'message' => $e->getMessage(),
+            ]);
+
+            return json_custom_response([
+                'status' => false,
+                'message' => 'Please try again!',
+            ], 500);
+        }
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required',
+            'password' => 'required|string|confirmed|min:8',
+        ]);
+
+        try {
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return json_custom_response([
+                    'status' => false,
+                    'message' => __('passwords.user'),
+                ], 400);
+            }
+
+            $userOtp = UserOtp::where([
+                'email' => $request->email,
+                'otp' => $request->otp,
+            ])->latest()->first();
+
+            if (!$userOtp) {
+                return json_custom_response([
+                    'status' => false,
+                    'message' => 'Your Otp Not Valid',
+                ], 400);
+            }
+
+            if (empty($userOtp->expire_at) || now()->isAfter($userOtp->expire_at)) {
+                return json_custom_response([
+                    'status' => false,
+                    'message' => 'Your Otp has been expired',
+                ], 400);
+            }
+
+            $user->forceFill([
+                'password' => Hash::make($request->password),
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            $userOtp->expire_at = now();
+            $userOtp->save();
+
+            return json_custom_response([
+                'status' => true,
+                'message' => __('passwords.reset'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Reset Password API Error', [
+                'email' => $request->email,
+                'message' => $e->getMessage(),
+            ]);
+
+            return json_custom_response([
+                'status' => false,
+                'message' => 'Please try again!',
+            ], 500);
+        }
     }
     
     public function socialMailLogin(Request $request)

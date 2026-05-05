@@ -26,6 +26,8 @@ Route::post('assign-workout/status', [API\UserController::class, 'updateAssignme
 Route::get('assign-workouts/user/{user_id}/workout/month', [API\UserController::class, 'getMonthlyAssignmentStatus']);
 Route::post('login',[ API\UserController::class, 'login']);
 Route::post('forget-password',[ API\UserController::class, 'forgetPassword']);
+Route::post('forgot-password',[ API\UserController::class, 'forgetPassword']);
+Route::post('reset-password',[ API\UserController::class, 'resetPassword']);
 Route::post('social-mail-login',[ API\UserController::class, 'socialMailLogin' ]);
 Route::post('social-otp-login',[ API\UserController::class, 'socialOTPLogin' ]);
 Route::get('user-detail',[ API\UserController::class, 'userDetail']);
