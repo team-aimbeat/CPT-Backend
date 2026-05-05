@@ -23,6 +23,7 @@ class PackageResource  extends JsonResource
             'duration_unit'       => $this->duration_unit,
             'price'               => $this->price,
             'platform'            => $this->platform,
+            'product_id'          => $this->product_id,
             'android_package_id'  => $this->android_package_id,
             'description'         => $this->description,
             'status'              => $this->status,

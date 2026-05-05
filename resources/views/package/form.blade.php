@@ -80,6 +80,10 @@
                                 {{ Form::select('platform',[ 'android' => 'Android', 'ios' => 'iOS' ], old('platform', $data->platform ?? 'android'), [ 'class' =>'form-control select2js','required']) }}
                             </div>
                             <div class="form-group col-md-4">
+                                {{ Form::label('product_id','Product ID',[ 'class' => 'form-control-label' ]) }}
+                                {{ Form::text('product_id', old('product_id', $data->product_id ?? null), [ 'class' => 'form-control', 'placeholder' => 'Product ID' ]) }}
+                            </div>
+                            <div class="form-group col-md-4">
                                 {{ Form::label('status',__('message.status').' <span class="text-danger">*</span>',['class'=>'form-control-label'],false) }}
                                 {{ Form::select('status',[ 'active' => __('message.active'), 'inactive' => __('message.inactive') ], old('status'), [ 'class' =>'form-control select2js','required']) }}
                             </div>
