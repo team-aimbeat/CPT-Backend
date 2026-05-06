@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Invoice</title>
     <style>
-        body { font-family: 'Helvetica', sans-serif; color: #333; line-height: 1.5; }
+        body { font-family: Helvetica, sans-serif; color: #333; line-height: 1.5; }
         .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; }
         .header { text-align: center; margin-bottom: 20px; }
         .details-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -19,14 +19,23 @@
             <p>Date: {{ $date }}</p>
         </div>
 
+        @php
+            $customerName = $user->display_name ?? $user->name ?? $user->email ?? 'Customer';
+            $paymentId = $payment->transaction_id ?? $payment->razorpay_payment_id ?? $payment->id;
+            $packageName = optional($package)->name ?? ($subscription->package_data['name'] ?? 'Subscription Package');
+            $packageDuration = optional($package)->duration ?? ($subscription->package_data['duration'] ?? null);
+            $packageDurationUnit = optional($package)->duration_unit ?? ($subscription->package_data['duration_unit'] ?? null);
+            $duration = trim($packageDuration . ' ' . $packageDurationUnit);
+        @endphp
+
         <table class="details-table">
             <tr>
-                <td><strong>Customer:</strong> {{ $user->name }}</td>
-                <td><strong>Payment ID:</strong> {{ $payment->razorpay_payment_id }}</td>
+                <td><strong>Customer:</strong> {{ $customerName }}</td>
+                <td><strong>Payment ID:</strong> {{ $paymentId }}</td>
             </tr>
             <tr>
-                <td><strong>Package:</strong> {{ $package->name }}</td>
-                <td><strong>Duration:</strong> {{ $package->duration }} {{ $package->duration_unit }}</td>
+                <td><strong>Package:</strong> {{ $packageName }}</td>
+                <td><strong>Duration:</strong> {{ $duration }}</td>
             </tr>
         </table>
 
@@ -39,12 +48,12 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Subscription Fee for {{ $package->name }} ({{ $subscription->subscription_start_date }} to {{ $subscription->subscription_end_date }})</td>
-                    <td>₹{{ number_format($payment->amount, 2) }}</td>
+                    <td>Subscription Fee for {{ $packageName }} ({{ $subscription->subscription_start_date }} to {{ $subscription->subscription_end_date }})</td>
+                    <td>Rs. {{ number_format($payment->amount, 2) }}</td>
                 </tr>
                 <tr class="total">
                     <td style="text-align: right;">Total Paid</td>
-                    <td>₹{{ number_format($payment->amount, 2) }}</td>
+                    <td>Rs. {{ number_format($payment->amount, 2) }}</td>
                 </tr>
             </tbody>
         </table>

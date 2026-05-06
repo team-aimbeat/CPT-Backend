@@ -48,4 +48,14 @@ return [
 
     'cloudfront_domain' => env('CLOUDFRONT_DOMAIN'),
 
+    'apple_iap' => [
+        'shared_secret' => env('APPLE_IAP_SHARED_SECRET'),
+        'production_url' => env('APPLE_IAP_VERIFY_RECEIPT_URL', 'https://buy.itunes.apple.com/verifyReceipt'),
+        'sandbox_url' => env('APPLE_IAP_SANDBOX_VERIFY_RECEIPT_URL', 'https://sandbox.itunes.apple.com/verifyReceipt'),
+    ],
+
+    'razorpay' => [
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+    ],
+
 ];

@@ -38,6 +38,8 @@ Route::get('faq-list', [ API\FaqController::class, 'getList' ]);
 Route::get('terms-condition', [ API\PageController::class, 'termsCondition' ]);
 Route::get('privacy-policy', [ API\PageController::class, 'privacyPolicy' ]);
 Route::get('pages/{type}', [ API\PageController::class, 'show' ]);
+Route::post('razorpay/webhook', [API\PaymentGatewayController::class, 'razorpayWebhook']);
+Route::post('ios/iap/notification', [API\PaymentGatewayController::class, 'appleIapNotification']);
 
 
 Route::post('google-auth', [API\UserController::class, 'googleLoginOrRegister']);
@@ -75,6 +77,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('payment-gateway-list', [ API\PaymentGatewayController::class, 'getList'] );
     
     Route::post('/payment-complete', [API\PaymentGatewayController::class, 'completePayment']);
+    Route::post('/android/autopay/create', [API\PaymentGatewayController::class, 'createRazorpayAutopaySubscription']);
+    Route::post('/android/autopay/complete', [API\PaymentGatewayController::class, 'completeRazorpayAutopayPayment']);
+    Route::post('/ios/payment-complete', [API\PaymentGatewayController::class, 'completeIosPayment']);
+    Route::post('/iap/verify-purchase', [API\PaymentGatewayController::class, 'completeIosPayment']);
+    Route::post('/ios/subscription-status', [API\PaymentGatewayController::class, 'iosSubscriptionStatus']);
 
     Route::get('assign-diet-list', [ API\AssignUserController::class, 'getAssignDiet' ]);
     

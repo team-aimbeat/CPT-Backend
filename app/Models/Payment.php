@@ -9,6 +9,10 @@ class Payment extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'gateway_response' => 'array',
+    ];
+
     protected $fillable = [
         'user_id',
         'subscription_id',
@@ -16,6 +20,10 @@ class Payment extends Model
         'razorpay_payment_id',
         'razorpay_order_id',
         'razorpay_signature',
+        'gateway',
+        'transaction_id',
+        'gateway_subscription_id',
+        'gateway_response',
         'amount',
         'currency',
         'status',

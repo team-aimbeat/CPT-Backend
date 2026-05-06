@@ -9,13 +9,14 @@ class Subscription extends Model
 {
     use HasFactory;
    
-   protected $fillable = [ 'user_id', 'package_id', 'referral_code_id', 'referral_referrer_id', 'total_amount', 'referral_credit_used', 'payment_type', 'txn_id', 'transaction_detail', 'payment_status', 'subscription_start_date', 'subscription_end_date', 'package_data', 'status', 'callback' ];
+   protected $fillable = [ 'user_id', 'package_id', 'referral_code_id', 'referral_referrer_id', 'total_amount', 'referral_credit_used', 'payment_type', 'txn_id', 'gateway_subscription_id', 'autopay_status', 'autopay_cancelled_at', 'transaction_detail', 'payment_status', 'subscription_start_date', 'subscription_end_date', 'package_data', 'status', 'callback' ];
 
     protected $casts = [
         'user_id'  => 'integer',
         'package_id'  => 'integer',
         'total_amount' => 'double',
         'referral_credit_used' => 'double',
+        'autopay_cancelled_at' => 'datetime',
     ];
     
     public function user()
