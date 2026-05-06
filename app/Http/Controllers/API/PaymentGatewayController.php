@@ -13,7 +13,6 @@ use App\Models\Coupon;
 use App\Models\ReferralCode;
 use App\Models\ReferralRedemption;
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -831,13 +830,17 @@ class PaymentGatewayController extends Controller
             $transactionId = $payment->transaction_id ?: $payment->razorpay_payment_id ?: ('payment_' . $payment->id);
             $fileName = 'invoices/inv_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $transactionId) . '.pdf';
 
-            $pdf = Pdf::loadView('invoice.pdf', [
+            $pdf = $this->loadInvoicePdf([
                 'payment' => $payment,
                 'subscription' => $subscription,
                 'user' => $user,
                 'package' => $package,
                 'date' => now()->format('d-m-Y'),
             ]);
+
+            if (!$pdf) {
+                return null;
+            }
 
             Storage::disk('public')->put($fileName, $pdf->output());
             $payment->update(['invoice_path' => $fileName]);
@@ -854,6 +857,23 @@ class PaymentGatewayController extends Controller
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    private function loadInvoicePdf(array $data)
+    {
+        if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            return \Barryvdh\DomPDF\Facade\Pdf::loadView('invoice.pdf', $data);
+        }
+
+        if (class_exists(\Barryvdh\DomPDF\Facade::class)) {
+            return \Barryvdh\DomPDF\Facade::loadView('invoice.pdf', $data);
+        }
+
+        if (class_exists(\PDF::class)) {
+            return \PDF::loadView('invoice.pdf', $data);
+        }
+
+        return null;
     }
 
     private function finalizePaidSubscription(Subscription $subscription, User $user): ?array

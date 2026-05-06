@@ -1,0 +1,499 @@
+{
+  "info": {
+    "_postman_id": "cpt-payment-apis-2026-05-06",
+    "name": "CPT Payment APIs",
+    "description": "Android Razorpay, Android Autopay, iOS IAP, invoice, and webhook API collection for CPT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-domain.com/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "android_package_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ios_package_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subscription_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "razorpay_payment_id",
+      "value": "pay_xxxxxxxxxxxxxx",
+      "type": "string"
+    },
+    {
+      "key": "razorpay_subscription_id",
+      "value": "sub_xxxxxxxxxxxxxx",
+      "type": "string"
+    },
+    {
+      "key": "razorpay_signature",
+      "value": "signature_xxxxxxxxxxxxxx",
+      "type": "string"
+    },
+    {
+      "key": "apple_product_id",
+      "value": "com.cpt.monthly",
+      "type": "string"
+    },
+    {
+      "key": "apple_transaction_id",
+      "value": "apple_transaction_id",
+      "type": "string"
+    },
+    {
+      "key": "apple_original_transaction_id",
+      "value": "apple_original_transaction_id",
+      "type": "string"
+    },
+    {
+      "key": "apple_receipt_data",
+      "value": "base64_receipt_data",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Common",
+      "item": [
+        {
+          "name": "Android Package List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/package-list?platform=android",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "package-list"
+              ],
+              "query": [
+                {
+                  "key": "platform",
+                  "value": "android"
+                }
+              ]
+            },
+            "description": "Use this before Android payment. Copy the selected package id to `android_package_id`."
+          }
+        },
+        {
+          "name": "iOS Package List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/package-list?platform=ios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "package-list"
+              ],
+              "query": [
+                {
+                  "key": "platform",
+                  "value": "ios"
+                }
+              ]
+            },
+            "description": "Use this before iOS IAP. Response includes Apple `product_id`."
+          }
+        },
+        {
+          "name": "Create Subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('subscription_id', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"package_id\": \"{{android_package_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscribe-package",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscribe-package"
+              ]
+            },
+            "description": "Creates local pending subscription. For iOS, replace `android_package_id` with `ios_package_id`."
+          }
+        },
+        {
+          "name": "Subscription List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscriptionplan-list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "subscriptionplan-list"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Android Razorpay Normal Payment",
+      "item": [
+        {
+          "name": "Complete Android Razorpay Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\",\n  \"razorpay_payment_id\": \"{{razorpay_payment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment-complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment-complete"
+              ]
+            },
+            "description": "Existing Android one-time Razorpay payment completion."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Android Razorpay Autopay",
+      "item": [
+        {
+          "name": "Create Razorpay Autopay Subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.subscription_id) {",
+                  "    pm.collectionVariables.set('razorpay_subscription_id', json.data.subscription_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/android/autopay/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "android",
+                "autopay",
+                "create"
+              ]
+            },
+            "description": "Creates Razorpay subscription. Android package Product ID must contain Razorpay plan_id, or pass `plan_id` in body."
+          }
+        },
+        {
+          "name": "Complete Razorpay Autopay Authorization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\",\n  \"razorpay_subscription_id\": \"{{razorpay_subscription_id}}\",\n  \"razorpay_payment_id\": \"{{razorpay_payment_id}}\",\n  \"razorpay_signature\": \"{{razorpay_signature}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/android/autopay/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "android",
+                "autopay",
+                "complete"
+              ]
+            },
+            "description": "Call after Razorpay checkout returns payment_id, subscription_id and signature."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. iOS In-App Purchase",
+      "item": [
+        {
+          "name": "Complete iOS IAP Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\",\n  \"product_id\": \"{{apple_product_id}}\",\n  \"transaction_id\": \"{{apple_transaction_id}}\",\n  \"original_transaction_id\": \"{{apple_original_transaction_id}}\",\n  \"receipt_data\": \"{{apple_receipt_data}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ios/payment-complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ios",
+                "payment-complete"
+              ]
+            },
+            "description": "Verifies Apple receipt and activates subscription."
+          }
+        },
+        {
+          "name": "Verify iOS Purchase Alias",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\",\n  \"product_id\": \"{{apple_product_id}}\",\n  \"transaction_id\": \"{{apple_transaction_id}}\",\n  \"original_transaction_id\": \"{{apple_original_transaction_id}}\",\n  \"receipt_data\": \"{{apple_receipt_data}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/iap/verify-purchase",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "iap",
+                "verify-purchase"
+              ]
+            },
+            "description": "Alias for `/ios/payment-complete`."
+          }
+        },
+        {
+          "name": "Refresh iOS Subscription Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"{{subscription_id}}\",\n  \"product_id\": \"{{apple_product_id}}\",\n  \"receipt_data\": \"{{apple_receipt_data}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ios/subscription-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ios",
+                "subscription-status"
+              ]
+            },
+            "description": "Use when app needs to refresh Apple auto-renew status."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Webhooks",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Razorpay Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Razorpay-Signature",
+                "value": "webhook_signature"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"subscription.charged\",\n  \"payload\": {\n    \"subscription\": {\n      \"entity\": {\n        \"id\": \"{{razorpay_subscription_id}}\",\n        \"status\": \"active\",\n        \"current_start\": 1773461489,\n        \"current_end\": 1776053489\n      }\n    },\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"{{razorpay_payment_id}}\",\n        \"subscription_id\": \"{{razorpay_subscription_id}}\",\n        \"status\": \"captured\",\n        \"amount\": 10000,\n        \"currency\": \"INR\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/razorpay/webhook",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "razorpay",
+                "webhook"
+              ]
+            },
+            "description": "For Razorpay dashboard setup. If webhook secret is configured, signature must be valid."
+          }
+        },
+        {
+          "name": "Apple IAP Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"environment\": \"Sandbox\",\n  \"unified_receipt\": {\n    \"latest_receipt_info\": [\n      {\n        \"product_id\": \"{{apple_product_id}}\",\n        \"transaction_id\": \"{{apple_transaction_id}}\",\n        \"original_transaction_id\": \"{{apple_original_transaction_id}}\",\n        \"purchase_date_ms\": \"1773461489000\",\n        \"expires_date_ms\": \"1776053489000\"\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ios/iap/notification",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ios",
+                "iap",
+                "notification"
+              ]
+            },
+            "description": "For App Store Server Notification URL setup."
+          }
+        }
+      ]
+    }
+  ]
+}
