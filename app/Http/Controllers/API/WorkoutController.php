@@ -21,7 +21,6 @@ use App\Models\WorkoutCompletion;
 use App\Models\LanguageList;
 use App\Models\UserCompletedExercise;
 use App\Models\Subscription;
-use App\Models\CouponRedemption;
 use App\Models\Level;
 use App\Models\UserProfile;
 use App\Http\Resources\WorkoutDayExerciseResource;
@@ -754,23 +753,6 @@ public function getUserAssignedWorkouts(Request $request)
     $trialStart = $user->created_at ? Carbon::parse($user->created_at)->startOfDay() : $today;
     $trialEnd = (clone $trialStart)->addDays(2); // Day 1-3 free
 
-    $paidStart = null;
-    if ($subscription) {
-        $paidStart = $subscription->subscription_start_date ?: $subscription->created_at;
-    }
-
-    if (!$paidStart && $hasCouponAccess) {
-        $couponRedemption = CouponRedemption::where('user_id', $user->id)
-            ->whereHas('coupon', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->orderByDesc('redeemed_at')
-            ->orderByDesc('created_at')
-            ->first();
-
-        $paidStart = $couponRedemption?->redeemed_at ?: $couponRedemption?->created_at;
-    }
-
     $trialRemainingDays = $today->lte($trialEnd)
         ? $today->diffInDays($trialEnd) + 1
         : 0;
@@ -783,17 +765,9 @@ public function getUserAssignedWorkouts(Request $request)
         ], 403);
     }
 
-    if ($hasAccess) {
-        $paidStart = $paidStart ? Carbon::parse($paidStart)->startOfDay() : $today;
-        $trialResume = (clone $trialEnd)->addDay(); // Day 4 onward
-        $startDate = $paidStart->greaterThan($trialResume) ? $paidStart : $trialResume;
-    } else {
-        $startDate = $trialStart;
-    }
-
-    if ($today->lt($startDate)) {
-        $startDate = $today;
-    }
+    // Progress must include workouts completed during the free trial. Access can pause
+    // after trial expiry, but paid/coupon access should resume from the next incomplete day.
+    $startDate = $trialStart;
     /* -------------------------------------------------
      | 3. DAY & WEEK (PROGRESS-BASED)
      |--------------------------------------------------*/
