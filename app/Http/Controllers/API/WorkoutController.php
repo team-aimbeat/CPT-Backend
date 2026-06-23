@@ -701,8 +701,25 @@ public function getUserAssignedWorkouts(Request $request)
         ->first();
 
     $hasAccess = (bool) $subscription;
+    $activeTrialSubscription = Subscription::where('user_id', $user->id)
+        ->where('status', config('constant.SUBSCRIPTION_STATUS.TRIALING'))
+        ->where('trial_ends_at', '>=', now())
+        ->where(function ($query) {
+            $query->whereNotNull('mandate_authorized_at')
+                ->orWhereIn('autopay_status', [
+                    config('constant.AUTOPAY_STATUS.AUTHENTICATED'),
+                    config('constant.AUTOPAY_STATUS.ACTIVE'),
+                ]);
+        })
+        ->whereHas('package', function ($q) {
+            $q->whereIn('package_type', ['workout', 'both']);
+        })
+        ->orderByDesc('trial_ends_at')
+        ->first();
+
+    $hasTrialAccess = (bool) $activeTrialSubscription;
     $hasCouponAccess = $user->hasActiveCouponAccess();
-    $hasAccess = $hasAccess || $hasCouponAccess;
+    $hasAccess = $hasAccess || $hasTrialAccess || $hasCouponAccess;
 
     /* -------------------------------------------------
      | 2. LANGUAGE SETUP
@@ -750,12 +767,22 @@ public function getUserAssignedWorkouts(Request $request)
      | 2.1 TRIAL + START DATE (SUBSCRIPTION > COUPON)
      |--------------------------------------------------*/
     $today = Carbon::now()->startOfDay();
-    $trialStart = $user->created_at ? Carbon::parse($user->created_at)->startOfDay() : $today;
-    $trialEnd = (clone $trialStart)->addDays(2); // Day 1-3 free
+    $trialStart = $activeTrialSubscription && $activeTrialSubscription->trial_start_at
+        ? Carbon::parse($activeTrialSubscription->trial_start_at)->startOfDay()
+        : ($user->created_at ? Carbon::parse($user->created_at)->startOfDay() : $today);
+    $trialEnd = $activeTrialSubscription && $activeTrialSubscription->trial_ends_at
+        ? Carbon::parse($activeTrialSubscription->trial_ends_at)->startOfDay()
+        : (clone $trialStart)->addDays(2); // Existing Day 1-3 free fallback
 
-    $trialRemainingDays = $today->lte($trialEnd)
-        ? $today->diffInDays($trialEnd) + 1
-        : 0;
+    if ($activeTrialSubscription && $activeTrialSubscription->trial_ends_at) {
+        $trialRemainingDays = now()->lt($activeTrialSubscription->trial_ends_at)
+            ? max(1, (int) ceil(now()->floatDiffInDays($activeTrialSubscription->trial_ends_at, false)))
+            : 0;
+    } else {
+        $trialRemainingDays = $today->lte($trialEnd)
+            ? $today->diffInDays($trialEnd) + 1
+            : 0;
+    }
 
     if (!$hasAccess && $today->gt($trialEnd)) {
         return response()->json([

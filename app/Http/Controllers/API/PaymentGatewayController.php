@@ -153,6 +153,11 @@ class PaymentGatewayController extends Controller
                 ],
             ];
 
+            $billingStartsAt = $subscription->billing_starts_at ?: $subscription->trial_ends_at;
+            if ($billingStartsAt && Carbon::parse($billingStartsAt)->isFuture()) {
+                $payload['start_at'] = Carbon::parse($billingStartsAt)->timestamp;
+            }
+
             $razorpaySubscription = Http::withBasicAuth($credentials['key_id'], $credentials['secret_id'])
                 ->timeout(20)
                 ->asJson()
@@ -171,9 +176,13 @@ class PaymentGatewayController extends Controller
                 'payment_type' => 'razorpay_autopay',
                 'gateway_subscription_id' => $razorpaySubscription['id'],
                 'autopay_status' => $razorpaySubscription['status'] ?? 'created',
-                'transaction_detail' => [
+                'billing_starts_at' => !empty($payload['start_at'])
+                    ? Carbon::createFromTimestamp($payload['start_at'])->format('Y-m-d H:i:s')
+                    : $subscription->billing_starts_at,
+                'transaction_detail' => array_merge($subscription->transaction_detail ?: [], [
                     'razorpay_subscription' => $razorpaySubscription,
-                ],
+                    'razorpay_create_payload' => $payload,
+                ]),
             ]);
 
             return response()->json([
@@ -181,9 +190,12 @@ class PaymentGatewayController extends Controller
                 'message' => 'Razorpay autopay subscription created.',
                 'data' => [
                     'key_id' => $credentials['key_id'],
+                    'local_subscription_id' => $subscription->id,
                     'subscription_id' => $razorpaySubscription['id'],
                     'short_url' => $razorpaySubscription['short_url'] ?? null,
                     'status' => $razorpaySubscription['status'] ?? null,
+                    'trial_ends_at' => optional($subscription->trial_ends_at)->toDateTimeString(),
+                    'billing_starts_at' => optional($subscription->fresh()->billing_starts_at)->toDateTimeString(),
                     'razorpay_subscription' => $razorpaySubscription,
                 ],
             ]);
@@ -224,6 +236,9 @@ class PaymentGatewayController extends Controller
             }
 
             $result = DB::transaction(function () use ($request, $subscription, $user) {
+                $isTrialSubscription = $subscription->status === config('constant.SUBSCRIPTION_STATUS.TRIALING')
+                    || !empty($subscription->trial_ends_at);
+
                 $payment = Payment::create([
                     'user_id' => $user->id,
                     'subscription_id' => $subscription->id,
@@ -233,24 +248,39 @@ class PaymentGatewayController extends Controller
                     'transaction_id' => $request->razorpay_payment_id,
                     'gateway_subscription_id' => $request->razorpay_subscription_id,
                     'gateway_response' => $request->all(),
-                    'amount' => $subscription->total_amount,
-                    'status' => 'success',
+                    'amount' => $isTrialSubscription ? 0 : $subscription->total_amount,
+                    'status' => $isTrialSubscription ? 'authorized' : 'success',
+                    'method' => $isTrialSubscription ? 'mandate_authorization' : null,
                     'currency' => 'INR',
                 ]);
 
-                $subscription->update([
+                $subscriptionUpdates = [
                     'payment_type' => 'razorpay_autopay',
                     'txn_id' => $request->razorpay_payment_id,
                     'gateway_subscription_id' => $request->razorpay_subscription_id,
-                    'autopay_status' => 'active',
-                    'transaction_detail' => $request->all(),
-                ]);
+                    'autopay_status' => config('constant.AUTOPAY_STATUS.AUTHENTICATED'),
+                    'mandate_authorized_at' => now(),
+                    'transaction_detail' => array_merge($subscription->transaction_detail ?: [], [
+                        'razorpay_autopay_complete' => $request->all(),
+                    ]),
+                ];
 
-                $offerCoupon = $this->finalizePaidSubscription($subscription, $user);
+                if ($isTrialSubscription) {
+                    $subscriptionUpdates['payment_status'] = 'pending';
+                    $subscriptionUpdates['status'] = config('constant.SUBSCRIPTION_STATUS.TRIALING');
+                    $offerCoupon = null;
+                } else {
+                    $offerCoupon = $this->finalizePaidSubscription($subscription, $user);
+                    $subscriptionUpdates['autopay_status'] = config('constant.AUTOPAY_STATUS.ACTIVE');
+                }
+
+                $subscription->update($subscriptionUpdates);
 
                 return compact('payment', 'offerCoupon');
             });
-            $invoiceUrl = $this->generateAndSendInvoice($result['payment'], $subscription, $user);
+            $invoiceUrl = $result['payment']->status === 'success'
+                ? $this->generateAndSendInvoice($result['payment'], $subscription, $user)
+                : null;
 
             return response()->json([
                 'status' => true,
@@ -259,6 +289,7 @@ class PaymentGatewayController extends Controller
                 'subscription' => $subscription->fresh(),
                 'offer_coupon' => $this->formatOfferCoupons($result['offerCoupon']),
                 'invoice_url' => $invoiceUrl,
+                'access_type' => $subscription->fresh()->status === config('constant.SUBSCRIPTION_STATUS.TRIALING') ? 'trial' : 'paid',
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -296,7 +327,8 @@ class PaymentGatewayController extends Controller
 
         DB::transaction(function () use ($event, $payload, $paymentEntity, $subscriptionEntity, $subscription, $gatewaySubscriptionId) {
             if ($subscriptionEntity) {
-                $subscription->autopay_status = $subscriptionEntity['status'] ?? $subscription->autopay_status;
+                $gatewayStatus = $subscriptionEntity['status'] ?? $subscription->autopay_status;
+                $subscription->autopay_status = $gatewayStatus;
 
                 if (!empty($subscriptionEntity['current_start'])) {
                     $subscription->subscription_start_date = Carbon::createFromTimestamp($subscriptionEntity['current_start'])->format('Y-m-d H:i:s');
@@ -306,9 +338,22 @@ class PaymentGatewayController extends Controller
                     $subscription->subscription_end_date = Carbon::createFromTimestamp($subscriptionEntity['current_end'])->format('Y-m-d H:i:s');
                 }
 
+                if (in_array($gatewayStatus, ['authenticated', 'active'], true) && empty($subscription->mandate_authorized_at)) {
+                    $subscription->mandate_authorized_at = now();
+                }
+
                 if (in_array($subscriptionEntity['status'] ?? null, ['cancelled', 'completed', 'expired'])) {
                     $subscription->status = config('constant.SUBSCRIPTION_STATUS.INACTIVE');
                     $subscription->autopay_cancelled_at = now();
+                    optional($subscription->user)->update(['is_subscribe' => 0]);
+                }
+
+                if (($subscriptionEntity['status'] ?? null) === 'halted') {
+                    $subscription->status = config('constant.SUBSCRIPTION_STATUS.PAST_DUE');
+                    $subscription->payment_status = 'failed';
+                    $subscription->last_payment_failed_at = now();
+                    $subscription->failure_reason = 'Razorpay subscription halted.';
+                    optional($subscription->user)->update(['is_subscribe' => 0]);
                 }
 
                 $subscription->transaction_detail = array_merge($subscription->transaction_detail ?: [], [
@@ -317,7 +362,17 @@ class PaymentGatewayController extends Controller
                 $subscription->save();
             }
 
-            if ($paymentEntity && in_array($paymentEntity['status'] ?? null, ['captured', 'authorized'])) {
+            if ($event === 'subscription.authenticated') {
+                $subscription->status = !empty($subscription->trial_ends_at) && Carbon::parse($subscription->trial_ends_at)->isFuture()
+                    ? config('constant.SUBSCRIPTION_STATUS.TRIALING')
+                    : config('constant.SUBSCRIPTION_STATUS.PENDING');
+                $subscription->payment_status = 'pending';
+                $subscription->autopay_status = config('constant.AUTOPAY_STATUS.AUTHENTICATED');
+                $subscription->mandate_authorized_at = $subscription->mandate_authorized_at ?: now();
+                $subscription->save();
+            }
+
+            if ($event === 'subscription.charged' && $paymentEntity && in_array($paymentEntity['status'] ?? null, ['captured', 'authorized'])) {
                 $paymentId = $paymentEntity['id'] ?? null;
                 $paymentExists = $paymentId
                     ? Payment::where('gateway', 'razorpay_autopay')->where('transaction_id', $paymentId)->exists()
@@ -338,18 +393,30 @@ class PaymentGatewayController extends Controller
                         'currency' => $paymentEntity['currency'] ?? 'INR',
                     ]);
 
-                    $this->extendSubscriptionForRenewal($subscription);
+                    $this->activateAutopaySubscriptionAfterCharge($subscription, $subscriptionEntity);
                     $this->generateAndSendInvoice($payment, $subscription->fresh(['user', 'package']), $subscription->user);
                 }
             }
 
-            if (in_array($event, ['subscription.authenticated', 'subscription.activated', 'subscription.charged'])) {
+            if ($event === 'subscription.charged') {
                 $subscription->payment_status = 'paid';
                 $subscription->status = config('constant.SUBSCRIPTION_STATUS.ACTIVE');
-                $subscription->autopay_status = $subscriptionEntity['status'] ?? 'active';
+                $subscription->autopay_status = config('constant.AUTOPAY_STATUS.ACTIVE');
+                $subscription->last_payment_failed_at = null;
+                $subscription->failure_reason = null;
                 $subscription->save();
 
                 optional($subscription->user)->update(['is_subscribe' => 1]);
+            }
+
+            if ($paymentEntity && in_array($paymentEntity['status'] ?? null, ['failed'], true)) {
+                $subscription->payment_status = 'failed';
+                $subscription->status = config('constant.SUBSCRIPTION_STATUS.PAST_DUE');
+                $subscription->autopay_status = config('constant.AUTOPAY_STATUS.FAILED');
+                $subscription->last_payment_failed_at = now();
+                $subscription->failure_reason = $paymentEntity['error_description'] ?? $paymentEntity['error_reason'] ?? 'Razorpay payment failed.';
+                $subscription->save();
+                optional($subscription->user)->update(['is_subscribe' => 0]);
             }
         });
 
@@ -794,27 +861,33 @@ class PaymentGatewayController extends Controller
         ];
     }
 
-    private function extendSubscriptionForRenewal(Subscription $subscription): void
+    private function activateAutopaySubscriptionAfterCharge(Subscription $subscription, ?array $subscriptionEntity = null): void
     {
-        if (!empty($subscription->subscription_end_date) && Carbon::parse($subscription->subscription_end_date)->isFuture()) {
-            return;
-        }
-
         $package = $subscription->package;
-        if (!$package) {
-            return;
-        }
+        $start = !empty($subscriptionEntity['current_start'] ?? null)
+            ? Carbon::createFromTimestamp($subscriptionEntity['current_start'])
+            : Carbon::now();
 
-        $start = Carbon::now();
-        $end = $package->duration_unit === 'yearly'
-            ? $start->copy()->addYears((int) $package->duration)
-            : $start->copy()->addMonths((int) $package->duration);
+        if (!empty($subscriptionEntity['current_end'] ?? null)) {
+            $end = Carbon::createFromTimestamp($subscriptionEntity['current_end']);
+        } elseif ($package && $package->duration_unit === 'yearly') {
+            $end = $start->copy()->addYears((int) $package->duration);
+        } elseif ($package) {
+            $end = $start->copy()->addMonths((int) $package->duration);
+        } else {
+            $end = $subscription->subscription_end_date
+                ? Carbon::parse($subscription->subscription_end_date)
+                : $start->copy();
+        }
 
         $subscription->subscription_start_date = $start->format('Y-m-d H:i:s');
         $subscription->subscription_end_date = $end->format('Y-m-d H:i:s');
+        $subscription->billing_starts_at = $subscription->billing_starts_at ?: $start->format('Y-m-d H:i:s');
         $subscription->payment_status = 'paid';
         $subscription->status = config('constant.SUBSCRIPTION_STATUS.ACTIVE');
-        $subscription->autopay_status = 'active';
+        $subscription->autopay_status = config('constant.AUTOPAY_STATUS.ACTIVE');
+        $subscription->last_payment_failed_at = null;
+        $subscription->failure_reason = null;
         $subscription->save();
 
         optional($subscription->user)->update(['is_subscribe' => 1]);

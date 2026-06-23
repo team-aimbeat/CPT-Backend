@@ -57,8 +57,23 @@ return [
 
     'SUBSCRIPTION_STATUS' => [
         'PENDING'   => 'pending',
+        'TRIALING'  => 'trialing',
         'ACTIVE'    => 'active',
+        'PAST_DUE'  => 'past_due',
         'INACTIVE'  => 'inactive',
     ],
+
+    'AUTOPAY_STATUS' => [
+        'PENDING'      => 'pending',
+        'CREATED'      => 'created',
+        'AUTHENTICATED'=> 'authenticated',
+        'ACTIVE'       => 'active',
+        'HALTED'       => 'halted',
+        'CANCELLED'    => 'cancelled',
+        'EXPIRED'      => 'expired',
+        'FAILED'       => 'failed',
+    ],
+
+    'FREE_TRIAL_DAYS' => 3,
 
 ];

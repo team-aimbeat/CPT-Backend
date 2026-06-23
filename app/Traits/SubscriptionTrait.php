@@ -20,7 +20,37 @@ trait SubscriptionTrait {
 
     public function is_subscribed_users($user_id)
     {
-        return Subscription::where('user_id', $user_id)->where('status', config('constant.SUBSCRIPTION_STATUS.ACTIVE'))->exists();
+        return Subscription::where('user_id', $user_id)
+            ->where('status', config('constant.SUBSCRIPTION_STATUS.ACTIVE'))
+            ->where('payment_status', 'paid')
+            ->exists();
+    }
+
+    public function get_user_trial_subscription($user_id)
+    {
+        return Subscription::where('user_id', $user_id)
+            ->where('status', config('constant.SUBSCRIPTION_STATUS.TRIALING'))
+            ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '>=', now())
+            ->where(function ($query) {
+                $query->whereNotNull('mandate_authorized_at')
+                    ->orWhereIn('autopay_status', [
+                        config('constant.AUTOPAY_STATUS.AUTHENTICATED'),
+                        config('constant.AUTOPAY_STATUS.ACTIVE'),
+                    ]);
+            })
+            ->orderByDesc('trial_ends_at')
+            ->first();
+    }
+
+    public function is_trial_active($user_id)
+    {
+        return (bool) $this->get_user_trial_subscription($user_id);
+    }
+
+    public function has_subscription_or_trial_access($user_id)
+    {
+        return $this->is_subscribed_users($user_id) || $this->is_trial_active($user_id);
     }
 
     public function get_plan_expiration_date($plan_start_date = '', $duration_unit = '', $left_days = 0, $plan_duration = 1)
@@ -57,7 +87,10 @@ trait SubscriptionTrait {
     }
 
     public function is_plan_active($user_id){
-        $is_subscribe = Subscription::where('user_id', $user_id)->where('status', config('constant.SUBSCRIPTION_STATUS.ACTIVE'))->exists();
+        $is_subscribe = Subscription::where('user_id', $user_id)
+            ->where('status', config('constant.SUBSCRIPTION_STATUS.ACTIVE'))
+            ->where('payment_status', 'paid')
+            ->exists();
         return $is_subscribe;
     }
 
@@ -66,11 +99,13 @@ trait SubscriptionTrait {
         $subscription_plan = $this->get_user_active_subscription_plan($user_id);
         $is_subscribed_users = $this->is_subscribed_users($user_id);
         if(!$this->is_plan_active($user_id) && !$is_subscribed_users) {
-            $subscription_plan = $this->user_last_plan($user_id);
+            $trialPlan = $this->get_user_trial_subscription($user_id);
+            $subscription_plan = $trialPlan ? new SubscriptionResource($trialPlan) : $this->user_last_plan($user_id);
         }
         
         return [
             'is_subscribe' => (int) $is_subscribed_users,
+            'is_trial_active' => (int) $this->is_trial_active($user_id),
             'subscription_plan' => $subscription_plan,
         ];
         

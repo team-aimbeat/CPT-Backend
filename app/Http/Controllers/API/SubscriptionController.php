@@ -9,8 +9,11 @@ use App\Models\Package;
 use App\Models\User;
 use App\Models\ReferralCode;
 use App\Models\ReferralRedemption;
+use App\Models\PaymentGateway;
 use App\Http\Resources\SubscriptionResource;
 use App\Traits\SubscriptionTrait;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 
 class SubscriptionController extends Controller
 {
@@ -48,12 +51,55 @@ class SubscriptionController extends Controller
 
     public function subscriptionSave(Request $request)
     {
+        $request->validate([
+            'package_id' => 'required|exists:packages,id',
+            'payment_type' => 'nullable|string',
+            'trial_autopay' => 'nullable|boolean',
+        ]);
+
         $data = $request->all();
 
         $user_id = auth()->id();
         $user = User::where('id', $user_id)->first();
         $package_data = Package::where('id',$data['package_id'])->first();
         $referralCodeInput = $request->input('referral_code');
+        $requestedPaymentType = $request->input('payment_type');
+        $isTrialAutopay = in_array($requestedPaymentType, ['razorpay_autopay', 'android_autopay'], true)
+            || $request->boolean('trial_autopay');
+
+        if ($isTrialAutopay && $package_data->platform !== 'android') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Trial autopay is available only for Android packages.',
+            ], 422);
+        }
+
+        if ($isTrialAutopay) {
+            $existingTrial = Subscription::where('user_id', $user_id)
+                ->where('status', config('constant.SUBSCRIPTION_STATUS.TRIALING'))
+                ->where('trial_ends_at', '>=', now())
+                ->first();
+
+            if ($existingTrial) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Trial subscription already exists.',
+                    'data' => new SubscriptionResource($existingTrial),
+                    'requires_autopay_authorization' => empty($existingTrial->gateway_subscription_id),
+                ]);
+            }
+
+            $hasPreviousPaidSubscription = Subscription::where('user_id', $user_id)
+                ->where('payment_status', 'paid')
+                ->exists();
+
+            if ($hasPreviousPaidSubscription) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Free trial is available only before the first paid subscription.',
+                ], 422);
+            }
+        }
         
         $get_existing_plan = $this->get_user_active_subscription_plan($user_id);
         
@@ -126,6 +172,20 @@ class SubscriptionController extends Controller
                 $get_existing_plan->save();
             }
         }
+        if ($isTrialAutopay) {
+            $trialStartAt = Carbon::now();
+            $trialEndsAt = $trialStartAt->copy()->addDays((int) config('constant.FREE_TRIAL_DAYS', 3));
+
+            $data['payment_type'] = 'razorpay_autopay';
+            $data['payment_status'] = 'pending';
+            $data['status'] = config('constant.SUBSCRIPTION_STATUS.TRIALING');
+            $data['autopay_status'] = config('constant.AUTOPAY_STATUS.PENDING');
+            $data['trial_start_at'] = $trialStartAt->format('Y-m-d H:i:s');
+            $data['trial_ends_at'] = $trialEndsAt->format('Y-m-d H:i:s');
+            $data['billing_starts_at'] = $trialEndsAt->format('Y-m-d H:i:s');
+            $data['subscription_start_date'] = $trialEndsAt->format('Y-m-d H:i:s');
+        }
+
         $data['subscription_end_date'] = $this->get_plan_expiration_date( $data['subscription_start_date'], $package_data->duration_unit, $active_plan_left_days, $package_data->duration );
 
         $data['package_data'] = $package_data ?? null;
@@ -143,9 +203,11 @@ class SubscriptionController extends Controller
         return response()->json([
             'status' => true,
             'message' => $message,
-            'data' => $subscription,
+            'data' => $isTrialAutopay ? new SubscriptionResource($subscription) : $subscription,
             'referral_credit_balance' => (float) $user->referral_credit_balance,
             'referral_credit_used' => (float) $subscription->referral_credit_used,
+            'requires_autopay_authorization' => $isTrialAutopay,
+            'trial_remaining_days' => $isTrialAutopay ? (int) config('constant.FREE_TRIAL_DAYS', 3) : 0,
         ]);
     }
 
@@ -159,12 +221,70 @@ class SubscriptionController extends Controller
         $message = __('message.not_found_entry',['name' => __('message.subscription')] );
         if($user_subscription)
         {
+            $gatewayCancelResponse = null;
+            if ($user_subscription->payment_type === 'razorpay_autopay' && !empty($user_subscription->gateway_subscription_id)) {
+                $gatewayCancelResponse = $this->cancelRazorpaySubscription($user_subscription->gateway_subscription_id);
+            }
+
             $user_subscription->status = config('constant.SUBSCRIPTION_STATUS.INACTIVE');
+            $user_subscription->autopay_status = config('constant.AUTOPAY_STATUS.CANCELLED');
+            $user_subscription->autopay_cancelled_at = now();
+            if ($gatewayCancelResponse) {
+                $user_subscription->transaction_detail = array_merge($user_subscription->transaction_detail ?: [], [
+                    'razorpay_cancel_response' => $gatewayCancelResponse,
+                ]);
+            }
             $user_subscription->save();
             $user->is_subscribe = 0;
             $user->save();
             $message = __('message.subscription_cancelled');
         }
         return json_message_response($message);
+    }
+
+    private function cancelRazorpaySubscription(string $gatewaySubscriptionId): ?array
+    {
+        $credentials = $this->razorpayCredentials();
+        if (!$credentials) {
+            return null;
+        }
+
+        try {
+            return Http::withBasicAuth($credentials['key_id'], $credentials['secret_id'])
+                ->timeout(20)
+                ->asJson()
+                ->post('https://api.razorpay.com/v1/subscriptions/' . $gatewaySubscriptionId . '/cancel', [
+                    'cancel_at_cycle_end' => false,
+                ])
+                ->json();
+        } catch (\Throwable $e) {
+            return [
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    private function razorpayCredentials(): ?array
+    {
+        $gateway = PaymentGateway::where('type', 'razorpay')
+            ->where('status', 1)
+            ->first();
+
+        if (!$gateway) {
+            return null;
+        }
+
+        $values = ((int) $gateway->is_test === 1) ? $gateway->test_value : $gateway->live_value;
+        $keyId = $values['key_id'] ?? null;
+        $secretId = $values['secret_id'] ?? null;
+
+        if (empty($keyId) || empty($secretId)) {
+            return null;
+        }
+
+        return [
+            'key_id' => $keyId,
+            'secret_id' => $secretId,
+        ];
     }
 }
