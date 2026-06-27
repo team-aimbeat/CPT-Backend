@@ -12,14 +12,17 @@ use App\Models\User;
 use App\Models\Coupon;
 use App\Models\ReferralCode;
 use App\Models\ReferralRedemption;
+use App\Traits\SubscriptionTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class PaymentGatewayController extends Controller
 {
+    use SubscriptionTrait;
 
     public function getList(Request $request)
     {
@@ -470,13 +473,24 @@ class PaymentGatewayController extends Controller
 
             $purchase = null;
             $verification = [];
+            $jwsVerificationError = null;
             if ($request->filled('signed_transaction')) {
-                $purchase = $this->verifyAndDecodeAppleJws($request->signed_transaction);
+                $purchase = $this->verifyAndDecodeAppleJws($request->signed_transaction, $jwsVerificationError);
                 $verification = [
                     'status' => $purchase ? 0 : null,
                     'environment' => $purchase['environment'] ?? null,
                     'source' => 'storekit_signed_transaction',
+                    'error' => $jwsVerificationError,
                 ];
+
+                // Some StoreKit integrations send both values. If JWS validation cannot
+                // complete, use Apple's receipt endpoint instead of rejecting a valid sale.
+                if (!$purchase && $request->filled('receipt_data')) {
+                    $verification = $this->verifyAppleReceipt($request->receipt_data);
+                    if (($verification['status'] ?? null) === 0) {
+                        $purchase = $this->findApplePurchase($verification, $request->product_id, $request->transaction_id, $request->original_transaction_id);
+                    }
+                }
             } else {
                 $verification = $this->verifyAppleReceipt($request->receipt_data);
                 if (($verification['status'] ?? null) === 0) {
@@ -485,6 +499,17 @@ class PaymentGatewayController extends Controller
             }
 
             if (($verification['status'] ?? null) !== 0) {
+                Log::warning('Apple IAP purchase verification failed.', [
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                    'product_id' => $request->product_id,
+                    'transaction_id' => $request->transaction_id,
+                    'source' => $verification['source'] ?? ($request->filled('receipt_data') ? 'receipt_data' : 'unknown'),
+                    'apple_status' => $verification['status'] ?? null,
+                    'environment' => $verification['environment'] ?? null,
+                    'verification_error' => $verification['error'] ?? $verification['message'] ?? $jwsVerificationError,
+                ]);
+
                 return response()->json([
                     'status' => false,
                     'message' => 'Apple purchase verification failed.',
@@ -493,8 +518,18 @@ class PaymentGatewayController extends Controller
                 ], 422);
             }
 
-            if ($purchase && (($purchase['product_id'] ?? $purchase['productId'] ?? null) !== $request->product_id
-                || ($purchase['transaction_id'] ?? $purchase['transactionId'] ?? null) !== $request->transaction_id)) {
+            $configuredBundleId = config('services.apple_iap.bundle_id');
+            if (!empty($configuredBundleId)
+                && !empty($purchase['bundleId'])
+                && $purchase['bundleId'] !== $configuredBundleId) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Apple transaction bundle does not match this app.',
+                ], 422);
+            }
+
+            if ($purchase && ((string) ($purchase['product_id'] ?? $purchase['productId'] ?? '') !== (string) $request->product_id
+                || (string) ($purchase['transaction_id'] ?? $purchase['transactionId'] ?? '') !== (string) $request->transaction_id)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Apple transaction does not match the selected product.',
@@ -537,6 +572,7 @@ class PaymentGatewayController extends Controller
             $invoiceUrl = $result['paymentCreated'] && !$result['isTrialPurchase']
                 ? $this->generateAndSendInvoice($result['payment'], $subscription->fresh(['package']), $user)
                 : null;
+            $subscriptionDetail = $this->subscriptionPlanDetail($user->id);
 
             return response()->json([
                 'status' => true,
@@ -548,8 +584,18 @@ class PaymentGatewayController extends Controller
                 'offer_coupon' => $this->formatOfferCoupons($result['offerCoupon']),
                 'invoice_url' => $invoiceUrl,
                 'access_type' => $result['isTrialPurchase'] ? 'trial' : 'paid',
+                'subscription_detail' => $subscriptionDetail,
+                'has_subscription_access' => $subscriptionDetail['has_access'],
             ]);
         } catch (\Exception $e) {
+            Log::error('iOS payment completion failed.', [
+                'user_id' => auth()->id(),
+                'subscription_id' => $request->input('subscription_id'),
+                'product_id' => $request->input('product_id'),
+                'transaction_id' => $request->input('transaction_id'),
+                'exception' => $e->getMessage(),
+            ]);
+
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -580,13 +626,22 @@ class PaymentGatewayController extends Controller
 
             $purchase = null;
             $verification = [];
+            $jwsVerificationError = null;
             if ($request->filled('signed_transaction')) {
-                $purchase = $this->verifyAndDecodeAppleJws($request->signed_transaction);
+                $purchase = $this->verifyAndDecodeAppleJws($request->signed_transaction, $jwsVerificationError);
                 $verification = [
                     'status' => $purchase ? 0 : null,
                     'environment' => $purchase['environment'] ?? null,
                     'source' => 'storekit_signed_transaction',
+                    'error' => $jwsVerificationError,
                 ];
+
+                if (!$purchase && $request->filled('receipt_data')) {
+                    $verification = $this->verifyAppleReceipt($request->receipt_data);
+                    if (($verification['status'] ?? null) === 0) {
+                        $purchase = $this->latestApplePurchaseForProduct($verification, $productId);
+                    }
+                }
             } else {
                 $verification = $this->verifyAppleReceipt($request->receipt_data);
                 if (($verification['status'] ?? null) === 0) {
@@ -988,19 +1043,21 @@ class PaymentGatewayController extends Controller
         ];
     }
 
-    private function verifyAndDecodeAppleJws(string $jws): ?array
+    private function verifyAndDecodeAppleJws(string $jws, ?string &$verificationError = null): ?array
     {
         $parts = explode('.', $jws);
         if (count($parts) !== 3) {
+            $verificationError = 'The signed transaction is not a three-part JWS.';
             return null;
         }
 
         $header = json_decode($this->decodeBase64Url($parts[0]), true);
         if (!is_array($header) || ($header['alg'] ?? null) !== 'ES256' || empty($header['x5c']) || !is_array($header['x5c'])) {
+            $verificationError = 'The signed transaction has an invalid ES256/x5c header.';
             return null;
         }
 
-        $leafCertificate = $this->verifiedAppleLeafCertificate($header['x5c']);
+        $leafCertificate = $this->verifiedAppleLeafCertificate($header['x5c'], $verificationError);
         if (!$leafCertificate) {
             return null;
         }
@@ -1009,33 +1066,62 @@ class PaymentGatewayController extends Controller
             $decoded = \Firebase\JWT\JWT::decode($jws, new \Firebase\JWT\Key($leafCertificate, 'ES256'));
             return json_decode(json_encode($decoded), true);
         } catch (\Throwable $e) {
+            $verificationError = 'JWS signature validation failed: ' . $e->getMessage();
             return null;
         }
     }
 
-    private function verifiedAppleLeafCertificate(array $certificateChain): ?string
+    private function verifiedAppleLeafCertificate(array $certificateChain, ?string &$verificationError = null): ?string
     {
         if (count($certificateChain) < 2) {
+            $verificationError = 'Apple certificate chain is incomplete.';
             return null;
         }
 
         $rootCertificatePath = config('services.apple_iap.root_certificate_path');
+        $bundledRootCertificatePath = resource_path('certificates/AppleRootCA-G3.pem');
+        if ((empty($rootCertificatePath) || !is_readable($rootCertificatePath))
+            && is_readable($bundledRootCertificatePath)) {
+            $rootCertificatePath = $bundledRootCertificatePath;
+        }
+
         if (empty($rootCertificatePath) || !is_readable($rootCertificatePath)) {
+            $verificationError = 'Configured Apple root certificate is missing or unreadable.';
             return null;
         }
 
-        $leafCertificate = $this->appleCertificatePem($certificateChain[0]);
-        $intermediateCertificate = $this->appleCertificatePem($certificateChain[1]);
+        $certificates = array_map(fn ($certificate) => $this->appleCertificatePem($certificate), $certificateChain);
+        $leafCertificate = $certificates[0];
         $rootCertificate = file_get_contents($rootCertificatePath);
 
-        $intermediatePublicKey = openssl_pkey_get_public($intermediateCertificate);
         $rootPublicKey = openssl_pkey_get_public($rootCertificate);
-        if (!$intermediatePublicKey || !$rootPublicKey) {
+        if (!$rootPublicKey) {
+            $verificationError = 'Configured Apple root certificate is invalid.';
             return null;
         }
 
-        if (openssl_x509_verify($leafCertificate, $intermediatePublicKey) !== 1
-            || openssl_x509_verify($intermediateCertificate, $rootPublicKey) !== 1) {
+        foreach ($certificates as $index => $certificate) {
+            $certificateInfo = openssl_x509_parse($certificate);
+            $now = time();
+            if (!$certificateInfo
+                || ($certificateInfo['validFrom_time_t'] ?? PHP_INT_MAX) > $now
+                || ($certificateInfo['validTo_time_t'] ?? 0) < $now) {
+                $verificationError = 'Apple certificate chain contains an invalid or expired certificate.';
+                return null;
+            }
+
+            if (isset($certificates[$index + 1])) {
+                $issuerPublicKey = openssl_pkey_get_public($certificates[$index + 1]);
+                if (!$issuerPublicKey || openssl_x509_verify($certificate, $issuerPublicKey) !== 1) {
+                    $verificationError = 'Apple certificate chain signature validation failed.';
+                    return null;
+                }
+            }
+        }
+
+        $lastCertificate = $certificates[count($certificates) - 1];
+        if (openssl_x509_verify($lastCertificate, $rootPublicKey) !== 1) {
+            $verificationError = 'Apple certificate chain is not rooted in the configured Apple root CA.';
             return null;
         }
 

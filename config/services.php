@@ -53,7 +53,7 @@ return [
         'production_url' => env('APPLE_IAP_VERIFY_RECEIPT_URL', 'https://buy.itunes.apple.com/verifyReceipt'),
         'sandbox_url' => env('APPLE_IAP_SANDBOX_VERIFY_RECEIPT_URL', 'https://sandbox.itunes.apple.com/verifyReceipt'),
         'bundle_id' => env('APPLE_IAP_BUNDLE_ID'),
-        'root_certificate_path' => env('APPLE_IAP_ROOT_CERT_PATH', storage_path('app/apple/AppleRootCA-G3.pem')),
+        'root_certificate_path' => env('APPLE_IAP_ROOT_CERT_PATH') ?: resource_path('certificates/AppleRootCA-G3.pem'),
     ],
 
     'razorpay' => [
