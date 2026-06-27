@@ -64,13 +64,15 @@ class SubscriptionController extends Controller
         $package_data = Package::where('id',$data['package_id'])->first();
         $referralCodeInput = $request->input('referral_code');
         $requestedPaymentType = $request->input('payment_type');
-        $isTrialAutopay = in_array($requestedPaymentType, ['razorpay_autopay', 'android_autopay'], true)
-            || $request->boolean('trial_autopay');
+        $isIosIap = $package_data->platform === 'ios'
+            && (in_array($requestedPaymentType, ['ios_iap', 'apple_iap'], true) || $request->boolean('trial_autopay'));
+        $isTrialAutopay = $package_data->platform === 'android'
+            && (in_array($requestedPaymentType, ['razorpay_autopay', 'android_autopay'], true) || $request->boolean('trial_autopay'));
 
-        if ($isTrialAutopay && $package_data->platform !== 'android') {
+        if ($request->boolean('trial_autopay') && !$isTrialAutopay && !$isIosIap) {
             return response()->json([
                 'status' => false,
-                'message' => 'Trial autopay is available only for Android packages.',
+                'message' => 'Trial autopay is available only for Android or iOS subscription packages.',
             ], 422);
         }
 
@@ -161,7 +163,9 @@ class SubscriptionController extends Controller
         $data['referral_credit_used'] = $creditToUse;
         $data['total_amount'] = max(0, (float) $package_data->price - $creditToUse);
 
-        if($get_existing_plan)
+        // An Apple purchase is not complete until StoreKit receipt verification succeeds.
+        // Do not deactivate an existing plan merely because the iOS checkout was opened.
+        if($get_existing_plan && !$isIosIap)
         {
             $active_plan_left_days = $this->check_days_left_plan($get_existing_plan, $data);
             if($package_data->id != $get_existing_plan->package_id)
@@ -186,6 +190,17 @@ class SubscriptionController extends Controller
             $data['subscription_start_date'] = $trialEndsAt->format('Y-m-d H:i:s');
         }
 
+        if ($isIosIap) {
+            // Apple determines trial eligibility and the exact trial end date. Those values
+            // are written only after a verified StoreKit purchase is received.
+            $data['payment_type'] = 'ios_iap';
+            $data['payment_status'] = 'pending';
+            $data['status'] = config('constant.SUBSCRIPTION_STATUS.PENDING');
+            $data['autopay_status'] = config('constant.AUTOPAY_STATUS.PENDING');
+            $data['referral_credit_used'] = 0;
+            $data['total_amount'] = $package_data->price;
+        }
+
         $data['subscription_end_date'] = $this->get_plan_expiration_date( $data['subscription_start_date'], $package_data->duration_unit, $active_plan_left_days, $package_data->duration );
 
         $data['package_data'] = $package_data ?? null;
@@ -203,10 +218,11 @@ class SubscriptionController extends Controller
         return response()->json([
             'status' => true,
             'message' => $message,
-            'data' => $isTrialAutopay ? new SubscriptionResource($subscription) : $subscription,
+            'data' => ($isTrialAutopay || $isIosIap) ? new SubscriptionResource($subscription) : $subscription,
             'referral_credit_balance' => (float) $user->referral_credit_balance,
             'referral_credit_used' => (float) $subscription->referral_credit_used,
             'requires_autopay_authorization' => $isTrialAutopay,
+            'requires_storekit_purchase' => $isIosIap,
             'trial_remaining_days' => $isTrialAutopay ? (int) config('constant.FREE_TRIAL_DAYS', 3) : 0,
         ]);
     }
@@ -221,6 +237,14 @@ class SubscriptionController extends Controller
         $message = __('message.not_found_entry',['name' => __('message.subscription')] );
         if($user_subscription)
         {
+            if ($user_subscription->payment_type === 'ios_iap') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Cancel this subscription from Apple ID Subscriptions. Access remains available until Apple confirms expiry.',
+                    'manage_subscription_url' => 'https://apps.apple.com/account/subscriptions',
+                ], 422);
+            }
+
             $gatewayCancelResponse = null;
             if ($user_subscription->payment_type === 'razorpay_autopay' && !empty($user_subscription->gateway_subscription_id)) {
                 $gatewayCancelResponse = $this->cancelRazorpaySubscription($user_subscription->gateway_subscription_id);

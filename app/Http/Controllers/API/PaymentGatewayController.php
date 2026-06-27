@@ -429,7 +429,8 @@ class PaymentGatewayController extends Controller
             'subscription_id' => 'required|exists:subscriptions,id',
             'product_id' => 'required|string',
             'transaction_id' => 'required|string',
-            'receipt_data' => 'required|string',
+            'receipt_data' => 'nullable|required_without:signed_transaction|string',
+            'signed_transaction' => 'nullable|string',
             'original_transaction_id' => 'nullable|string',
         ]);
 
@@ -455,10 +456,9 @@ class PaymentGatewayController extends Controller
                 ], 422);
             }
 
-            $alreadyUsed = Subscription::where('txn_id', $request->transaction_id)
-                ->where('payment_type', 'ios_iap')
-                ->where('id', '!=', $subscription->id)
-                ->where('payment_status', 'paid')
+            $alreadyUsed = Payment::where('gateway', 'ios_iap')
+                ->where('transaction_id', $request->transaction_id)
+                ->where('subscription_id', '!=', $subscription->id)
                 ->exists();
 
             if ($alreadyUsed) {
@@ -468,17 +468,39 @@ class PaymentGatewayController extends Controller
                 ], 422);
             }
 
-            $verification = $this->verifyAppleReceipt($request->receipt_data);
+            $purchase = null;
+            $verification = [];
+            if ($request->filled('signed_transaction')) {
+                $purchase = $this->verifyAndDecodeAppleJws($request->signed_transaction);
+                $verification = [
+                    'status' => $purchase ? 0 : null,
+                    'environment' => $purchase['environment'] ?? null,
+                    'source' => 'storekit_signed_transaction',
+                ];
+            } else {
+                $verification = $this->verifyAppleReceipt($request->receipt_data);
+                if (($verification['status'] ?? null) === 0) {
+                    $purchase = $this->findApplePurchase($verification, $request->product_id, $request->transaction_id, $request->original_transaction_id);
+                }
+            }
+
             if (($verification['status'] ?? null) !== 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Apple receipt verification failed.',
+                    'message' => 'Apple purchase verification failed.',
                     'apple_status' => $verification['status'] ?? null,
                     'environment' => $verification['environment'] ?? null,
                 ], 422);
             }
 
-            $purchase = $this->findApplePurchase($verification, $request->product_id, $request->transaction_id, $request->original_transaction_id);
+            if ($purchase && (($purchase['product_id'] ?? $purchase['productId'] ?? null) !== $request->product_id
+                || ($purchase['transaction_id'] ?? $purchase['transactionId'] ?? null) !== $request->transaction_id)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Apple transaction does not match the selected product.',
+                ], 422);
+            }
+
             if (!$purchase) {
                 return response()->json([
                     'status' => false,
@@ -494,38 +516,27 @@ class PaymentGatewayController extends Controller
             }
 
             $result = DB::transaction(function () use ($request, $subscription, $user, $verification, $purchase) {
-                $payment = Payment::create([
-                    'user_id' => $user->id,
-                    'subscription_id' => $subscription->id,
-                    'package_id' => $subscription->package_id,
-                    'razorpay_payment_id' => $request->transaction_id,
-                    'gateway' => 'ios_iap',
+                $isTrialPurchase = $this->isAppleTrialPurchase($purchase, $subscription);
+                [$payment, $paymentCreated] = $this->createApplePayment($subscription, $purchase, $verification, $isTrialPurchase);
+
+                $this->updateSubscriptionFromApplePurchase($subscription, $purchase, [
+                    'product_id' => $request->product_id,
                     'transaction_id' => $request->transaction_id,
-                    'gateway_response' => $verification,
-                    'amount' => $subscription->total_amount,
-                    'status' => 'success',
-                    'currency' => 'INR',
-                ]);
+                    'original_transaction_id' => $request->original_transaction_id,
+                    'environment' => $verification['environment'] ?? null,
+                    'receipt_verification' => $verification,
+                ], $isTrialPurchase);
 
-                $subscription->update([
-                    'payment_type' => 'ios_iap',
-                    'txn_id' => $request->transaction_id,
-                    'gateway_subscription_id' => $request->original_transaction_id ?: ($purchase['original_transaction_id'] ?? $request->transaction_id),
-                    'autopay_status' => empty($purchase['expires_date_ms']) ? null : 'active',
-                    'transaction_detail' => [
-                        'product_id' => $request->product_id,
-                        'transaction_id' => $request->transaction_id,
-                        'original_transaction_id' => $request->original_transaction_id ?: ($purchase['original_transaction_id'] ?? null),
-                        'environment' => $verification['environment'] ?? null,
-                        'apple_purchase' => $purchase,
-                    ],
-                ]);
+                // A free trial does not consume referral credit or generate paid benefits.
+                $offerCoupon = (!$isTrialPurchase && $paymentCreated)
+                    ? $this->finalizePaidSubscription($subscription, $user)
+                    : null;
 
-                $offerCoupon = $this->finalizePaidSubscription($subscription, $user);
-
-                return compact('payment', 'offerCoupon');
+                return compact('payment', 'paymentCreated', 'isTrialPurchase', 'offerCoupon');
             });
-            $invoiceUrl = $this->generateAndSendInvoice($result['payment'], $subscription, $user);
+            $invoiceUrl = $result['paymentCreated'] && !$result['isTrialPurchase']
+                ? $this->generateAndSendInvoice($result['payment'], $subscription->fresh(['package']), $user)
+                : null;
 
             return response()->json([
                 'status' => true,
@@ -536,6 +547,7 @@ class PaymentGatewayController extends Controller
                 'referral_credit_used' => (float) $subscription->referral_credit_used,
                 'offer_coupon' => $this->formatOfferCoupons($result['offerCoupon']),
                 'invoice_url' => $invoiceUrl,
+                'access_type' => $result['isTrialPurchase'] ? 'trial' : 'paid',
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -546,7 +558,8 @@ class PaymentGatewayController extends Controller
     {
         $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
-            'receipt_data' => 'required|string',
+            'receipt_data' => 'nullable|required_without:signed_transaction|string',
+            'signed_transaction' => 'nullable|string',
             'product_id' => 'nullable|string',
         ]);
 
@@ -565,17 +578,38 @@ class PaymentGatewayController extends Controller
                 ], 422);
             }
 
-            $verification = $this->verifyAppleReceipt($request->receipt_data);
+            $purchase = null;
+            $verification = [];
+            if ($request->filled('signed_transaction')) {
+                $purchase = $this->verifyAndDecodeAppleJws($request->signed_transaction);
+                $verification = [
+                    'status' => $purchase ? 0 : null,
+                    'environment' => $purchase['environment'] ?? null,
+                    'source' => 'storekit_signed_transaction',
+                ];
+            } else {
+                $verification = $this->verifyAppleReceipt($request->receipt_data);
+                if (($verification['status'] ?? null) === 0) {
+                    $purchase = $this->latestApplePurchaseForProduct($verification, $productId);
+                }
+            }
+
             if (($verification['status'] ?? null) !== 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Apple receipt verification failed.',
+                    'message' => 'Apple subscription verification failed.',
                     'apple_status' => $verification['status'] ?? null,
                     'environment' => $verification['environment'] ?? null,
                 ], 422);
             }
 
-            $purchase = $this->latestApplePurchaseForProduct($verification, $productId);
+            if ($purchase && (($purchase['product_id'] ?? $purchase['productId'] ?? null) !== $productId)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Apple transaction does not match the selected product.',
+                ], 422);
+            }
+
             if (!$purchase) {
                 return response()->json([
                     'status' => false,
@@ -583,7 +617,17 @@ class PaymentGatewayController extends Controller
                 ], 422);
             }
 
-            $this->updateSubscriptionFromApplePurchase($subscription, $purchase, $verification);
+            $result = DB::transaction(function () use ($subscription, $purchase, $verification) {
+                $isTrialPurchase = $this->isAppleTrialPurchase($purchase, $subscription);
+                [$payment, $paymentCreated] = $this->createApplePayment($subscription, $purchase, $verification, $isTrialPurchase);
+                $this->updateSubscriptionFromApplePurchase($subscription, $purchase, $verification, $isTrialPurchase);
+
+                return compact('payment', 'paymentCreated', 'isTrialPurchase');
+            });
+
+            $invoiceUrl = $result['paymentCreated'] && !$result['isTrialPurchase']
+                ? $this->generateAndSendInvoice($result['payment'], $subscription->fresh(['package']), $user)
+                : null;
 
             return response()->json([
                 'status' => true,
@@ -591,6 +635,7 @@ class PaymentGatewayController extends Controller
                 'is_active' => !$this->isApplePurchaseExpired($purchase),
                 'subscription' => $subscription->fresh(),
                 'apple_purchase' => $purchase,
+                'invoice_url' => $invoiceUrl,
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -603,8 +648,17 @@ class PaymentGatewayController extends Controller
         $notification = $this->decodeAppleNotificationPayload($payload);
         $purchase = $notification['purchase'] ?? null;
 
+        if (strtoupper((string) ($notification['notification_type'] ?? '')) === 'TEST') {
+            return response()->json(['status' => true, 'message' => 'Apple test notification verified.']);
+        }
+
         if (!$purchase) {
-            return response()->json(['status' => true, 'message' => 'Notification ignored.']);
+            return response()->json(['status' => false, 'message' => 'Invalid Apple server notification.'], 400);
+        }
+
+        $bundleId = config('services.apple_iap.bundle_id');
+        if (!empty($bundleId) && ($purchase['bundleId'] ?? null) !== $bundleId) {
+            return response()->json(['status' => false, 'message' => 'Apple notification bundle does not match.'], 400);
         }
 
         $gatewaySubscriptionId = $purchase['original_transaction_id']
@@ -631,26 +685,48 @@ class PaymentGatewayController extends Controller
         }
 
         DB::transaction(function () use ($subscription, $purchase, $payload, $notification) {
+            $notificationType = strtoupper((string) ($notification['notification_type'] ?? ''));
+            $notificationSubtype = strtoupper((string) ($notification['subtype'] ?? ''));
+            $isTrialPurchase = $this->isAppleTrialPurchase($purchase, $subscription);
+
             $this->updateSubscriptionFromApplePurchase($subscription, $purchase, [
                 'environment' => $notification['environment'] ?? null,
                 'notification' => $payload,
-            ]);
+            ], $isTrialPurchase);
 
-            $transactionId = $purchase['transaction_id'] ?? $purchase['transactionId'] ?? null;
-            if ($transactionId && !Payment::where('gateway', 'ios_iap')->where('transaction_id', $transactionId)->exists()) {
-                $payment = Payment::create([
-                    'user_id' => $subscription->user_id,
-                    'subscription_id' => $subscription->id,
-                    'package_id' => $subscription->package_id,
-                    'razorpay_payment_id' => $transactionId,
-                    'gateway' => 'ios_iap',
-                    'transaction_id' => $transactionId,
-                    'gateway_subscription_id' => $subscription->gateway_subscription_id,
-                    'gateway_response' => $payload,
-                    'amount' => $subscription->total_amount,
-                    'status' => 'success',
-                    'currency' => 'INR',
+            if (in_array($notificationType, ['DID_FAIL_TO_RENEW', 'GRACE_PERIOD_EXPIRED'], true)) {
+                $subscription->update([
+                    'status' => config('constant.SUBSCRIPTION_STATUS.PAST_DUE'),
+                    'payment_status' => 'failed',
+                    'autopay_status' => config('constant.AUTOPAY_STATUS.FAILED'),
+                    'last_payment_failed_at' => now(),
+                    'failure_reason' => 'Apple could not renew this subscription.',
                 ]);
+                optional($subscription->user)->update(['is_subscribe' => 0]);
+                return;
+            }
+
+            if (in_array($notificationType, ['EXPIRED', 'REVOKE'], true)) {
+                $subscription->update([
+                    'status' => config('constant.SUBSCRIPTION_STATUS.INACTIVE'),
+                    'payment_status' => 'failed',
+                    'autopay_status' => config('constant.AUTOPAY_STATUS.EXPIRED'),
+                    'autopay_cancelled_at' => now(),
+                ]);
+                optional($subscription->user)->update(['is_subscribe' => 0]);
+                return;
+            }
+
+            if ($notificationType === 'DID_CHANGE_RENEWAL_STATUS' && $notificationSubtype === 'AUTO_RENEW_DISABLED') {
+                $subscription->update([
+                    'autopay_status' => config('constant.AUTOPAY_STATUS.CANCELLED'),
+                    'autopay_cancelled_at' => now(),
+                ]);
+                return;
+            }
+
+            [$payment, $paymentCreated] = $this->createApplePayment($subscription, $purchase, $payload, $isTrialPurchase);
+            if ($paymentCreated && !$isTrialPurchase) {
                 $this->generateAndSendInvoice($payment, $subscription->fresh(['user', 'package']), $subscription->user);
             }
         });
@@ -777,20 +853,74 @@ class PaymentGatewayController extends Controller
 
     private function isApplePurchaseExpired(array $purchase): bool
     {
-        if (empty($purchase['expires_date_ms'])) {
+        $expiresMs = $purchase['expires_date_ms'] ?? $purchase['expiresDate'] ?? null;
+        if (empty($expiresMs)) {
             return false;
         }
 
-        return Carbon::createFromTimestamp(((int) $purchase['expires_date_ms']) / 1000)->isPast();
+        return Carbon::createFromTimestamp(((int) $expiresMs) / 1000)->isPast();
     }
 
-    private function updateSubscriptionFromApplePurchase(Subscription $subscription, array $purchase, array $context = []): void
+    private function isAppleTrialPurchase(array $purchase, ?Subscription $subscription = null): bool
+    {
+        $trialFlag = $purchase['is_trial_period'] ?? $purchase['isTrialPeriod'] ?? false;
+        if (filter_var($trialFlag, FILTER_VALIDATE_BOOLEAN)) {
+            return true;
+        }
+
+        $transactionId = $purchase['transaction_id'] ?? $purchase['transactionId'] ?? null;
+        return $subscription
+            && $subscription->status === config('constant.SUBSCRIPTION_STATUS.TRIALING')
+            && $subscription->trial_ends_at
+            && Carbon::parse($subscription->trial_ends_at)->isFuture()
+            && !empty($transactionId)
+            && $transactionId === $subscription->txn_id;
+    }
+
+    private function createApplePayment(Subscription $subscription, array $purchase, array $gatewayResponse, bool $isTrialPurchase): array
+    {
+        $transactionId = $purchase['transaction_id'] ?? $purchase['transactionId'] ?? null;
+        if (empty($transactionId)) {
+            throw new \RuntimeException('Apple transaction ID is missing.');
+        }
+
+        $existingPayment = Payment::where('gateway', 'ios_iap')
+            ->where('transaction_id', $transactionId)
+            ->first();
+        if ($existingPayment) {
+            return [$existingPayment, false];
+        }
+
+        $originalTransactionId = $purchase['original_transaction_id']
+            ?? $purchase['originalTransactionId']
+            ?? $subscription->gateway_subscription_id;
+
+        $payment = Payment::create([
+            'user_id' => $subscription->user_id,
+            'subscription_id' => $subscription->id,
+            'package_id' => $subscription->package_id,
+            'razorpay_payment_id' => $transactionId,
+            'gateway' => 'ios_iap',
+            'transaction_id' => $transactionId,
+            'gateway_subscription_id' => $originalTransactionId,
+            'gateway_response' => $gatewayResponse,
+            'amount' => $isTrialPurchase ? 0 : $subscription->total_amount,
+            'status' => $isTrialPurchase ? 'authorized' : 'success',
+            'method' => $isTrialPurchase ? 'apple_free_trial' : 'apple_iap',
+            'currency' => 'INR',
+        ]);
+
+        return [$payment, true];
+    }
+
+    private function updateSubscriptionFromApplePurchase(Subscription $subscription, array $purchase, array $context = [], ?bool $isTrialPurchase = null): void
     {
         $transactionId = $purchase['transaction_id'] ?? $purchase['transactionId'] ?? null;
         $originalTransactionId = $purchase['original_transaction_id'] ?? $purchase['originalTransactionId'] ?? $transactionId;
         $expiresMs = $purchase['expires_date_ms'] ?? $purchase['expiresDate'] ?? null;
         $purchaseMs = $purchase['purchase_date_ms'] ?? $purchase['purchaseDate'] ?? null;
         $isExpired = $this->isApplePurchaseExpired($purchase);
+        $isTrialPurchase = $isTrialPurchase ?? $this->isAppleTrialPurchase($purchase, $subscription);
 
         if (!empty($purchaseMs)) {
             $subscription->subscription_start_date = Carbon::createFromTimestamp(((int) $purchaseMs) / 1000)->format('Y-m-d H:i:s');
@@ -803,62 +933,131 @@ class PaymentGatewayController extends Controller
         $subscription->payment_type = 'ios_iap';
         $subscription->txn_id = $transactionId ?: $subscription->txn_id;
         $subscription->gateway_subscription_id = $originalTransactionId ?: $subscription->gateway_subscription_id;
-        $subscription->payment_status = $isExpired ? 'failed' : 'paid';
-        $subscription->status = $isExpired ? config('constant.SUBSCRIPTION_STATUS.INACTIVE') : config('constant.SUBSCRIPTION_STATUS.ACTIVE');
-        $subscription->autopay_status = $isExpired ? 'expired' : 'active';
+        $subscription->payment_status = $isExpired || $isTrialPurchase ? ($isExpired ? 'failed' : 'pending') : 'paid';
+        $subscription->status = $isExpired
+            ? config('constant.SUBSCRIPTION_STATUS.INACTIVE')
+            : ($isTrialPurchase ? config('constant.SUBSCRIPTION_STATUS.TRIALING') : config('constant.SUBSCRIPTION_STATUS.ACTIVE'));
+        $subscription->autopay_status = $isExpired
+            ? config('constant.AUTOPAY_STATUS.EXPIRED')
+            : config('constant.AUTOPAY_STATUS.ACTIVE');
+
+        if ($isTrialPurchase) {
+            $subscription->trial_start_at = !empty($purchaseMs)
+                ? Carbon::createFromTimestamp(((int) $purchaseMs) / 1000)->format('Y-m-d H:i:s')
+                : ($subscription->trial_start_at ?: now());
+            $subscription->trial_ends_at = !empty($expiresMs)
+                ? Carbon::createFromTimestamp(((int) $expiresMs) / 1000)->format('Y-m-d H:i:s')
+                : $subscription->trial_ends_at;
+            $subscription->billing_starts_at = $subscription->trial_ends_at;
+            $subscription->mandate_authorized_at = $subscription->mandate_authorized_at ?: now();
+        }
+
+        if (!$isExpired) {
+            $subscription->last_payment_failed_at = null;
+            $subscription->failure_reason = null;
+        }
         $subscription->transaction_detail = array_merge($subscription->transaction_detail ?: [], [
             'apple_purchase' => $purchase,
             'apple_context' => $context,
         ]);
         $subscription->save();
 
-        optional($subscription->user)->update(['is_subscribe' => $isExpired ? 0 : 1]);
+        optional($subscription->user)->update(['is_subscribe' => ($isExpired || $isTrialPurchase) ? 0 : 1]);
     }
 
     private function decodeAppleNotificationPayload(array $payload): array
     {
-        if (!empty($payload['unified_receipt']['latest_receipt_info'][0])) {
-            $items = $payload['unified_receipt']['latest_receipt_info'];
-            usort($items, function ($a, $b) {
-                return (int) ($b['expires_date_ms'] ?? $b['purchase_date_ms'] ?? 0) <=> (int) ($a['expires_date_ms'] ?? $a['purchase_date_ms'] ?? 0);
-            });
-
-            return [
-                'environment' => $payload['environment'] ?? null,
-                'purchase' => $items[0],
-            ];
-        }
-
         if (empty($payload['signedPayload'])) {
             return [];
         }
 
-        $parts = explode('.', $payload['signedPayload']);
-        if (count($parts) < 2) {
-            return [];
-        }
-
-        $decoded = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-        if (!is_array($decoded)) {
+        $decoded = $this->verifyAndDecodeAppleJws($payload['signedPayload']);
+        if (!$decoded) {
             return [];
         }
 
         $data = $decoded['data'] ?? [];
         $signedTransactionInfo = $data['signedTransactionInfo'] ?? null;
-        $purchase = null;
-
-        if ($signedTransactionInfo) {
-            $transactionParts = explode('.', $signedTransactionInfo);
-            if (count($transactionParts) >= 2) {
-                $purchase = json_decode(base64_decode(strtr($transactionParts[1], '-_', '+/')), true);
-            }
-        }
+        $purchase = $signedTransactionInfo ? $this->verifyAndDecodeAppleJws($signedTransactionInfo) : null;
 
         return [
             'environment' => $data['environment'] ?? null,
             'notification_type' => $decoded['notificationType'] ?? null,
+            'subtype' => $decoded['subtype'] ?? null,
             'purchase' => is_array($purchase) ? $purchase : null,
         ];
+    }
+
+    private function verifyAndDecodeAppleJws(string $jws): ?array
+    {
+        $parts = explode('.', $jws);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        $header = json_decode($this->decodeBase64Url($parts[0]), true);
+        if (!is_array($header) || ($header['alg'] ?? null) !== 'ES256' || empty($header['x5c']) || !is_array($header['x5c'])) {
+            return null;
+        }
+
+        $leafCertificate = $this->verifiedAppleLeafCertificate($header['x5c']);
+        if (!$leafCertificate) {
+            return null;
+        }
+
+        try {
+            $decoded = \Firebase\JWT\JWT::decode($jws, new \Firebase\JWT\Key($leafCertificate, 'ES256'));
+            return json_decode(json_encode($decoded), true);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function verifiedAppleLeafCertificate(array $certificateChain): ?string
+    {
+        if (count($certificateChain) < 2) {
+            return null;
+        }
+
+        $rootCertificatePath = config('services.apple_iap.root_certificate_path');
+        if (empty($rootCertificatePath) || !is_readable($rootCertificatePath)) {
+            return null;
+        }
+
+        $leafCertificate = $this->appleCertificatePem($certificateChain[0]);
+        $intermediateCertificate = $this->appleCertificatePem($certificateChain[1]);
+        $rootCertificate = file_get_contents($rootCertificatePath);
+
+        $intermediatePublicKey = openssl_pkey_get_public($intermediateCertificate);
+        $rootPublicKey = openssl_pkey_get_public($rootCertificate);
+        if (!$intermediatePublicKey || !$rootPublicKey) {
+            return null;
+        }
+
+        if (openssl_x509_verify($leafCertificate, $intermediatePublicKey) !== 1
+            || openssl_x509_verify($intermediateCertificate, $rootPublicKey) !== 1) {
+            return null;
+        }
+
+        return $leafCertificate;
+    }
+
+    private function appleCertificatePem(string $certificate): string
+    {
+        return "-----BEGIN CERTIFICATE-----\n"
+            . chunk_split($certificate, 64, "\n")
+            . "-----END CERTIFICATE-----\n";
+    }
+
+    private function decodeBase64Url(string $value): string
+    {
+        $value = strtr($value, '-_', '+/');
+        $padding = strlen($value) % 4;
+        if ($padding > 0) {
+            $value .= str_repeat('=', 4 - $padding);
+        }
+
+        return (string) base64_decode($value, true);
     }
 
     private function activateAutopaySubscriptionAfterCharge(Subscription $subscription, ?array $subscriptionEntity = null): void
