@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Subscription;
+use App\Models\User;
 use App\Http\Resources\SubscriptionResource;
 use Carbon\Carbon;
 
@@ -108,12 +109,22 @@ trait SubscriptionTrait {
         if (!$isTrialActive && !$is_subscribed_users) {
             $isTrialActive = $this->is_trial_active($user_id);
         }
+
+        $user = User::find($user_id);
+        $hasCouponAccess = $user ? $user->hasActiveCouponAccess() : false;
+        $hasAccess = $is_subscribed_users || $isTrialActive || $hasCouponAccess;
         
         return [
             'is_subscribe' => (int) $is_subscribed_users,
             'is_trial_active' => (int) $isTrialActive,
-            'has_access' => (int) ($is_subscribed_users || $isTrialActive),
-            'access_type' => $is_subscribed_users ? 'paid' : ($isTrialActive ? 'trial' : 'none'),
+            'has_coupon_access' => (int) $hasCouponAccess,
+            'coupon_access_ends_at' => $hasCouponAccess && $user->coupon_access_ends_at
+                ? $user->coupon_access_ends_at->toDateTimeString()
+                : null,
+            'has_access' => (int) $hasAccess,
+            'access_type' => $is_subscribed_users
+                ? 'paid'
+                : ($isTrialActive ? 'trial' : ($hasCouponAccess ? 'coupon' : 'none')),
             'subscription_plan' => $subscription_plan,
         ];
         
