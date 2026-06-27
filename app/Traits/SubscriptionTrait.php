@@ -98,14 +98,22 @@ trait SubscriptionTrait {
     {
         $subscription_plan = $this->get_user_active_subscription_plan($user_id);
         $is_subscribed_users = $this->is_subscribed_users($user_id);
+        $trialPlan = null;
         if(!$this->is_plan_active($user_id) && !$is_subscribed_users) {
             $trialPlan = $this->get_user_trial_subscription($user_id);
             $subscription_plan = $trialPlan ? new SubscriptionResource($trialPlan) : $this->user_last_plan($user_id);
         }
+
+        $isTrialActive = (bool) $trialPlan;
+        if (!$isTrialActive && !$is_subscribed_users) {
+            $isTrialActive = $this->is_trial_active($user_id);
+        }
         
         return [
             'is_subscribe' => (int) $is_subscribed_users,
-            'is_trial_active' => (int) $this->is_trial_active($user_id),
+            'is_trial_active' => (int) $isTrialActive,
+            'has_access' => (int) ($is_subscribed_users || $isTrialActive),
+            'access_type' => $is_subscribed_users ? 'paid' : ($isTrialActive ? 'trial' : 'none'),
             'subscription_plan' => $subscription_plan,
         ];
         

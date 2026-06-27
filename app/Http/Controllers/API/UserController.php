@@ -1049,13 +1049,17 @@ public function updateWorkoutMode(Request $request)
         $userData = $user->toArray();
         $userData['user_profile_data'] = $userProfile ? $userProfile->toArray() : null;
         $userData['assigned_workouts'] = $assignedWorkouts->toArray();
+        $subscriptionDetail = $this->subscriptionPlanDetail($user->id);
+        $userData['has_subscription_access'] = $subscriptionDetail['has_access'];
+        $userData['is_trial_active'] = $subscriptionDetail['is_trial_active'];
 
         DB::commit();
 
         return json_custom_response([
             'message' => $message,
             'action'  => $action,
-            'data'    => $userData
+            'data'    => $userData,
+            'subscription_detail' => $subscriptionDetail,
         ]);
 
     } catch (\Throwable $e) {
@@ -1192,10 +1196,16 @@ public function updateWorkoutMode(Request $request)
             $success = $user;
             $success['api_token'] = $user->createToken('auth_token')->plainTextToken;
             $success['profile_image'] = getSingleMedia($user, 'profile_image', null);
+            $subscriptionDetail = $this->subscriptionPlanDetail($user->id);
+            $success['has_subscription_access'] = $subscriptionDetail['has_access'];
+            $success['is_trial_active'] = $subscriptionDetail['is_trial_active'];
             
             unset($success['media']);
 
-            return json_custom_response([ 'data' => $success ], 200 );
+            return json_custom_response([
+                'data' => $success,
+                'subscription_detail' => $subscriptionDetail,
+            ], 200 );
         } else{
             $message = __('auth.failed');
             
@@ -1815,11 +1825,15 @@ public function updateWorkoutMode(Request $request)
         // $user_data->tokens('auth_token')->delete();
         $user_data['api_token'] = $user_data->createToken('auth_token')->plainTextToken;
         $user_data['profile_image'] = getSingleMedia($user_data, 'profile_image', null);
+        $subscriptionDetail = $this->subscriptionPlanDetail($user_data->id);
+        $user_data['has_subscription_access'] = $subscriptionDetail['has_access'];
+        $user_data['is_trial_active'] = $subscriptionDetail['is_trial_active'];
 
         $response = [
             'status'    => true,
             'message'   => $message,
-            'data'      => $user_data
+            'data'      => $user_data,
+            'subscription_detail' => $subscriptionDetail,
         ];
         return json_custom_response($response);
     }
@@ -1892,11 +1906,15 @@ public function updateWorkoutMode(Request $request)
         // $user_data->tokens('auth_token')->delete();
         $user_data['api_token'] = $user_data->createToken('auth_token')->plainTextToken;
         $user_data['profile_image'] = getSingleMedia($user_data, 'profile_image', null);
+        $subscriptionDetail = $this->subscriptionPlanDetail($user_data->id);
+        $user_data['has_subscription_access'] = $subscriptionDetail['has_access'];
+        $user_data['is_trial_active'] = $subscriptionDetail['is_trial_active'];
 
         $response = [
             'status'    => true,
             'message'   => $message,
-            'data'      => $user_data
+            'data'      => $user_data,
+            'subscription_detail' => $subscriptionDetail,
         ];
         return json_custom_response($response);
     }
