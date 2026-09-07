@@ -382,9 +382,30 @@ class UserController extends Controller
     }
     public function assignWorkoutSave(Request $request)
     {
-        $data = $request->all();
-        unset($data['_token']);
-        AssignWorkout::updateOrCreate([ 'user_id' => request('user_id'), 'workout_id' => request('workout_id') ]);
+        $userId = (int) $request->input('user_id');
+        $workoutId = (int) $request->input('workout_id');
+
+        $currentCycle = AssignWorkout::where('user_id', $userId)
+            ->where('is_active', 1)
+            ->max('cycle_no');
+
+        if (!$currentCycle) {
+            $currentCycle = ((int) AssignWorkout::where('user_id', $userId)->max('cycle_no')) + 1;
+        }
+
+        AssignWorkout::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'workout_id' => $workoutId,
+            ],
+            [
+                'status' => 0,
+                'disable' => 0,
+                'cycle_no' => $currentCycle,
+                'assigned_from' => 'admin_manual',
+                'is_active' => 1,
+            ]
+        );
         
         $message = __('message.assignworkout');
 

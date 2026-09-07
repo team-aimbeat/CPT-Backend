@@ -11,11 +11,23 @@ class AssignWorkout extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia;
 
-    protected $fillable = ['user_id','workout_id'];
+    protected $fillable = [
+        'user_id',
+        'workout_id',
+        'status',
+        'disable',
+        'cycle_no',
+        'assigned_from',
+        'is_active',
+    ];
 
     protected $casts = [
             'user_id'      => 'integer',
             'workout_id'   => 'integer',
+            'status'       => 'integer',
+            'disable'      => 'integer',
+            'cycle_no'     => 'integer',
+            'is_active'    => 'integer',
         ];
 
     public function user()
