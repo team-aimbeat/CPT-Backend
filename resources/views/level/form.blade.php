@@ -77,4 +77,4 @@
         </div>
         {!! Form::close() !!}
     </div>
-</x-app-layout>
+</x-app-layout> 
