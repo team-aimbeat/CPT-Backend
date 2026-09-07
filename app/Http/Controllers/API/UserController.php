@@ -1052,6 +1052,8 @@ public function updateWorkoutMode(Request $request)
         $subscriptionDetail = $this->subscriptionPlanDetail($user->id);
         $userData['has_subscription_access'] = $subscriptionDetail['has_access'];
         $userData['is_trial_active'] = $subscriptionDetail['is_trial_active'];
+        $userData['is_company_access_active'] = $subscriptionDetail['is_company_access_active'];
+        $userData['company_access_ends_at'] = $subscriptionDetail['company_access_ends_at'];
 
         DB::commit();
 
@@ -1199,6 +1201,8 @@ public function updateWorkoutMode(Request $request)
             $subscriptionDetail = $this->subscriptionPlanDetail($user->id);
             $success['has_subscription_access'] = $subscriptionDetail['has_access'];
             $success['is_trial_active'] = $subscriptionDetail['is_trial_active'];
+            $success['is_company_access_active'] = $subscriptionDetail['is_company_access_active'];
+            $success['company_access_ends_at'] = $subscriptionDetail['company_access_ends_at'];
             
             unset($success['media']);
 
@@ -1828,6 +1832,8 @@ public function updateWorkoutMode(Request $request)
         $subscriptionDetail = $this->subscriptionPlanDetail($user_data->id);
         $user_data['has_subscription_access'] = $subscriptionDetail['has_access'];
         $user_data['is_trial_active'] = $subscriptionDetail['is_trial_active'];
+        $user_data['is_company_access_active'] = $subscriptionDetail['is_company_access_active'];
+        $user_data['company_access_ends_at'] = $subscriptionDetail['company_access_ends_at'];
 
         $response = [
             'status'    => true,
@@ -1909,6 +1915,8 @@ public function updateWorkoutMode(Request $request)
         $subscriptionDetail = $this->subscriptionPlanDetail($user_data->id);
         $user_data['has_subscription_access'] = $subscriptionDetail['has_access'];
         $user_data['is_trial_active'] = $subscriptionDetail['is_trial_active'];
+        $user_data['is_company_access_active'] = $subscriptionDetail['is_company_access_active'];
+        $user_data['company_access_ends_at'] = $subscriptionDetail['company_access_ends_at'];
 
         $response = [
             'status'    => true,

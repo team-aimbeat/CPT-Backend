@@ -9,10 +9,12 @@ use App\Http\Resources\DietResource;
 use App\Http\Resources\DietDetailResource;
 use App\Models\UserFavouriteDiet;
 use App\Models\Subscription;
+use App\Traits\SubscriptionTrait;
 use Illuminate\Support\Facades\DB;
 
 class DietController extends Controller
 {
+    use SubscriptionTrait;
     
     // public function getList(Request $request)
     // {
@@ -112,8 +114,9 @@ class DietController extends Controller
         ->exists();
 
     $hasCouponAccess = $user->hasActiveCouponAccess();
+    $hasCompanyAccess = $this->has_company_access($user->id);
 
-    $hasAccess = $hasAccess || $hasCouponAccess;
+    $hasAccess = $hasAccess || $hasCouponAccess || $hasCompanyAccess;
 
     if (!$hasAccess) {
         return response()->json([
@@ -247,8 +250,9 @@ class DietController extends Controller
             ->exists();
 
         $hasCouponAccess = $user->hasActiveCouponAccess();
+        $hasCompanyAccess = $this->has_company_access($user->id);
 
-        $hasAccess = $hasAccess || $hasCouponAccess;
+        $hasAccess = $hasAccess || $hasCouponAccess || $hasCompanyAccess;
 
         if (!$hasAccess) {
             return response()->json([

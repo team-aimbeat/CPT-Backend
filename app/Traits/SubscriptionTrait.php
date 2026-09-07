@@ -5,6 +5,7 @@ namespace App\Traits;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Http\Resources\SubscriptionResource;
+use App\Services\CompanyAccessService;
 use Carbon\Carbon;
 
 trait SubscriptionTrait {
@@ -49,9 +50,19 @@ trait SubscriptionTrait {
         return (bool) $this->get_user_trial_subscription($user_id);
     }
 
+    public function get_user_active_company_access($user_id)
+    {
+        return app(CompanyAccessService::class)->activeAccessForUser($user_id);
+    }
+
+    public function has_company_access($user_id)
+    {
+        return (bool) $this->get_user_active_company_access($user_id);
+    }
+
     public function has_subscription_or_trial_access($user_id)
     {
-        return $this->is_subscribed_users($user_id) || $this->is_trial_active($user_id);
+        return $this->is_subscribed_users($user_id) || $this->is_trial_active($user_id) || $this->has_company_access($user_id);
     }
 
     public function get_plan_expiration_date($plan_start_date = '', $duration_unit = '', $left_days = 0, $plan_duration = 1)
@@ -112,11 +123,19 @@ trait SubscriptionTrait {
 
         $user = User::find($user_id);
         $hasCouponAccess = $user ? $user->hasActiveCouponAccess() : false;
-        $hasAccess = $is_subscribed_users || $isTrialActive || $hasCouponAccess;
+        $companyAccess = $this->get_user_active_company_access($user_id);
+        $hasCompanyAccess = (bool) $companyAccess;
+        $hasAccess = $is_subscribed_users || $isTrialActive || $hasCompanyAccess || $hasCouponAccess;
         
         return [
             'is_subscribe' => (int) $is_subscribed_users,
             'is_trial_active' => (int) $isTrialActive,
+            'is_company_access_active' => (int) $hasCompanyAccess,
+            'company_id' => $companyAccess ? $companyAccess->company_id : null,
+            'company_name' => $companyAccess && $companyAccess->company ? $companyAccess->company->name : null,
+            'company_access_ends_at' => $companyAccess && $companyAccess->access_ends_at
+                ? $companyAccess->access_ends_at->toDateTimeString()
+                : null,
             'has_coupon_access' => (int) $hasCouponAccess,
             'coupon_access_ends_at' => $hasCouponAccess && $user->coupon_access_ends_at
                 ? $user->coupon_access_ends_at->toDateTimeString()
@@ -124,7 +143,7 @@ trait SubscriptionTrait {
             'has_access' => (int) $hasAccess,
             'access_type' => $is_subscribed_users
                 ? 'paid'
-                : ($isTrialActive ? 'trial' : ($hasCouponAccess ? 'coupon' : 'none')),
+                : ($isTrialActive ? 'trial' : ($hasCompanyAccess ? 'company' : ($hasCouponAccess ? 'coupon' : 'none'))),
             'subscription_plan' => $subscription_plan,
         ];
         

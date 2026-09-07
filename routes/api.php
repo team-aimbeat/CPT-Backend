@@ -159,6 +159,8 @@ Route::get('/exercise/{exerciseId}', [API\WorkoutController::class, 'getExercise
     Route::post('cancel-subscription',[ API\SubscriptionController::class, 'cancelSubscription']);
     Route::post('apply-coupon', [ API\CouponController::class, 'apply' ]);
     Route::get('offer-coupons', [ API\CouponController::class, 'getOfferCoupons' ]);
+    Route::get('company-access/status', [ API\CompanyAccessController::class, 'status' ]);
+    Route::post('company-access/claim', [ API\CompanyAccessController::class, 'claim' ]);
     Route::get('referral-info', [ API\ReferralController::class, 'getInfo' ]);
     Route::post('policy-acceptance', [ API\PolicyAcceptanceController::class, 'store' ]);
     Route::get('policy-acceptance-status', [ API\PolicyAcceptanceController::class, 'status' ]);

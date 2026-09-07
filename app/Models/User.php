@@ -59,6 +59,19 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         return now()->lt($this->coupon_access_ends_at);
     }
 
+    public function companyEmployeeAccesses()
+    {
+        return $this->hasMany(CompanyEmployeeAccess::class);
+    }
+
+    public function activeCompanyEmployeeAccess()
+    {
+        return $this->companyEmployeeAccesses()
+            ->where('status', 'active')
+            ->where('access_ends_at', '>=', now())
+            ->orderByDesc('access_ends_at');
+    }
+
     public function userProfile() {
         return $this->hasOne(UserProfile::class, 'user_id', 'id');
     }

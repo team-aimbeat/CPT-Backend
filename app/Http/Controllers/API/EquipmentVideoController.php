@@ -5,11 +5,14 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\EquipmentVideo;
 use App\Models\Subscription;
+use App\Traits\SubscriptionTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class EquipmentVideoController extends Controller
 {
+    use SubscriptionTrait;
+
     public function getList(Request $request)
     {
         $user = auth()->user();
@@ -29,8 +32,9 @@ class EquipmentVideoController extends Controller
             ->exists();
 
         $hasCouponAccess = $user->hasActiveCouponAccess();
+        $hasCompanyAccess = $this->has_company_access($user->id);
 
-        $hasAccess = $hasAccess || $hasCouponAccess;
+        $hasAccess = $hasAccess || $hasCouponAccess || $hasCompanyAccess;
 
         $equipmentIds = $request->filled('equipment_ids')
             ? array_filter(explode(',', $request->equipment_ids))

@@ -10,9 +10,12 @@ use App\Http\Resources\ExerciseDetailResource;
 use App\Http\Resources\UserExerciseResource;
 use App\Models\UserExercise;
 use App\Models\Subscription;
+use App\Traits\SubscriptionTrait;
 
 class ExerciseController extends Controller
 {
+    use SubscriptionTrait;
+
     public function getList(Request $request)
     {
         $exercise = Exercise::where('status', 'active');
@@ -167,8 +170,9 @@ class ExerciseController extends Controller
         ->exists();
 
     $hasCouponAccess = $user->hasActiveCouponAccess();
+    $hasCompanyAccess = $this->has_company_access($user->id);
 
-    $hasAccess = $hasAccess || $hasCouponAccess;
+    $hasAccess = $hasAccess || $hasCouponAccess || $hasCompanyAccess;
 
     /* -------------------------------------------------
      | 2. LANGUAGE SETUP

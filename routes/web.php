@@ -27,6 +27,7 @@ use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\WarmupVideoController;
 use App\Http\Controllers\StretchingVideoController;
 
@@ -255,6 +256,7 @@ Route::group(['middleware' => [ 'auth', 'useractive' ], 'prefix'=>'admin'], func
 
     Route::resource('packages',PackageController::class);
     Route::resource('coupons', CouponController::class);
+    Route::resource('companies', CompanyController::class);
     
 
     Route::post('remove-file',[ HomeController::class, 'removeFile' ])->name('remove.file');

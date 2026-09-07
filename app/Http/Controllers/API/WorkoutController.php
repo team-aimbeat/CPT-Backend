@@ -24,11 +24,13 @@ use App\Models\Subscription;
 use App\Models\Level;
 use App\Models\UserProfile;
 use App\Http\Resources\WorkoutDayExerciseResource;
+use App\Traits\SubscriptionTrait;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class WorkoutController extends Controller
 {
+    use SubscriptionTrait;
     
 
 public function getAbsenteeCircularWorkouts(Request $request)
@@ -719,7 +721,8 @@ public function getUserAssignedWorkouts(Request $request)
 
     $hasTrialAccess = (bool) $activeTrialSubscription;
     $hasCouponAccess = $user->hasActiveCouponAccess();
-    $hasAccess = $hasAccess || $hasTrialAccess || $hasCouponAccess;
+    $hasCompanyAccess = $this->has_company_access($user->id);
+    $hasAccess = $hasAccess || $hasTrialAccess || $hasCouponAccess || $hasCompanyAccess;
 
     /* -------------------------------------------------
      | 2. LANGUAGE SETUP
