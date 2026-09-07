@@ -20,10 +20,11 @@ return new class extends Migration
             ->update(['month_no' => 1]);
 
         Schema::table('workout_days', function (Blueprint $table) {
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $sm->listTableIndexes('workout_days');
+            $indexes = DB::select('SHOW INDEX FROM workout_days WHERE Key_name = ?', [
+                'workout_days_workout_id_month_no_week_day_sequence_index',
+            ]);
 
-            if (!array_key_exists('workout_days_workout_id_month_no_week_day_sequence_index', $indexes)) {
+            if (empty($indexes)) {
                 $table->index(
                     ['workout_id', 'month_no', 'week', 'day', 'sequence'],
                     'workout_days_workout_id_month_no_week_day_sequence_index'
