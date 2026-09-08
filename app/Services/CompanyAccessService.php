@@ -83,7 +83,11 @@ class CompanyAccessService
         }
 
         if ($company->max_employees) {
-            $usedSeats = CompanyEmployeeAccess::where('company_id', $company->id)->count();
+            $usedSeats = CompanyEmployeeAccess::where('company_id', $company->id)
+                ->where('status', 'active')
+                ->where('access_ends_at', '>=', now())
+                ->count();
+
             if ($usedSeats >= $company->max_employees) {
                 return [
                     'status' => false,

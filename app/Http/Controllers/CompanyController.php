@@ -6,6 +6,7 @@ use App\Helpers\AuthHelper;
 use App\Models\Company;
 use App\Models\CompanyDomain;
 use App\Models\CompanyEmployee;
+use App\Models\CompanyEmployeeAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -168,6 +169,28 @@ class CompanyController extends Controller
 
     private function syncCompanyLists(Company $company, Request $request)
     {
+        $newEmails = $this->parseEmails($request->input('employee_emails'));
+        $existingEmails = $company->employees()
+            ->pluck('email')
+            ->map(function ($email) {
+                return strtolower(trim($email));
+            })
+            ->values()
+            ->all();
+        $removedEmails = array_values(array_diff($existingEmails, $newEmails));
+
+        if (!empty($removedEmails)) {
+            CompanyEmployeeAccess::where('company_id', $company->id)
+                ->whereIn('email', $removedEmails)
+                ->where('source', 'employee_email')
+                ->where('status', 'active')
+                ->update([
+                    'status' => 'inactive',
+                    'access_ends_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        }
+
         $company->domains()->delete();
         foreach ($this->parseDomains($request->input('domains')) as $domain) {
             $company->domains()->create([
@@ -177,7 +200,7 @@ class CompanyController extends Controller
         }
 
         $company->employees()->delete();
-        foreach ($this->parseEmails($request->input('employee_emails')) as $email) {
+        foreach ($newEmails as $email) {
             $company->employees()->create([
                 'email' => $email,
                 'status' => 'active',
