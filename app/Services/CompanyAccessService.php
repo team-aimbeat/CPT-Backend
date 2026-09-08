@@ -62,6 +62,15 @@ class CompanyAccessService
             ];
         }
 
+        if ($this->requiresEmailVerification($user, $eligibility)) {
+            return [
+                'status' => false,
+                'message' => 'Please verify your work email before claiming company access.',
+                'access' => null,
+                'company' => $eligibility['company'],
+            ];
+        }
+
         $company = $eligibility['company'];
         $existingCompanyAccess = CompanyEmployeeAccess::where('company_id', $company->id)
             ->where(function ($query) use ($user, $email) {
@@ -102,11 +111,12 @@ class CompanyAccessService
                 'email' => $email,
                 'access_starts_at' => $now,
                 'access_ends_at' => $now->copy()->addDays((int) $company->free_access_days),
-                'verified_at' => $user->email_verified_at,
+                'verified_at' => $user->email_verified_at ?: $now,
                 'source' => $eligibility['source'],
                 'status' => 'active',
                 'metadata' => [
                     'matched_by' => $eligibility['matched_by'],
+                    'email_verified' => !empty($user->email_verified_at),
                 ],
             ]);
 
@@ -164,6 +174,13 @@ class CompanyAccessService
         }
 
         return null;
+    }
+
+    public function requiresEmailVerification(User $user, $eligibility)
+    {
+        return empty($user->email_verified_at)
+            && $eligibility
+            && ($eligibility['source'] ?? null) !== 'employee_email';
     }
 
     public function normalizeEmail($email)

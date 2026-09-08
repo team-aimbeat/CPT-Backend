@@ -23,10 +23,13 @@ class CompanyAccessController extends Controller
 
         $access = $companyAccessService->activeAccessForUser($user->id);
         $eligibility = $companyAccessService->findEligibleCompanyForEmail($user->email);
+        $requiresEmailVerification = $companyAccessService->requiresEmailVerification($user, $eligibility);
 
         return response()->json([
             'status' => true,
             'is_eligible' => (bool) $eligibility,
+            'can_claim_company_access' => (bool) $eligibility && !$access && !$requiresEmailVerification,
+            'requires_email_verification' => $requiresEmailVerification,
             'has_company_access' => (bool) $access,
             'company_access' => $this->formatCompanyAccess($access),
             'eligible_company' => $eligibility ? $this->formatCompany($eligibility['company']) : null,
