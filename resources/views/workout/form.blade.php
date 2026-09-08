@@ -15,7 +15,7 @@
     #table_list.workout-days-table td {
         vertical-align: top;
         white-space: nowrap;
-    }
+    } 
 
     #table_list.workout-days-table th:nth-child(1),
     #table_list.workout-days-table td:nth-child(1) { min-width: 60px; }
