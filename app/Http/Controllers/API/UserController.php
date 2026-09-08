@@ -352,11 +352,21 @@ class UserController extends Controller
 
     private function matchingGoalIds($goalId): array
     {
+        $goalIds = [];
+
         if ($goalId === null || $goalId === '') {
-            return [0];
+            $goalIds[] = 0;
+        } else {
+            $goalIds[] = (int) $goalId;
         }
 
-        return array_values(array_unique([(int) $goalId, 0]));
+        $bothGoalIds = DB::table('body_parts')
+            ->whereRaw('LOWER(TRIM(title)) = ?', ['both'])
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_unique(array_merge($goalIds, $bothGoalIds, [0])));
     }
 
         

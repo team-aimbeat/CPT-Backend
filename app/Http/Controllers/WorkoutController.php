@@ -112,7 +112,7 @@ class WorkoutController extends Controller
                             'workout_id' => $workout->id,
                             'workout_day_id' => $workoutday->id,
                             'exercise_id' => (int)$exerciseId,
-                            'alternate_exercise_id' => $request->alternate_exercise_ids[$i][$key] ?? null,
+                            'alternate_exercise_id' => $this->nullableExerciseId($request->alternate_exercise_ids[$i][$key] ?? null),
                             'exercise_title' => $request->exercise_titles[$i][$key] ?? null,
                             'instruction' => $request->exercise_description[$i][$key] ?? null,
                             'alternate_exercise_description' => $request->alternate_exercise_description[$i][$key] ?? null,
@@ -312,7 +312,7 @@ class WorkoutController extends Controller
                             'workout_id'      => $workout->id,
                             'workout_day_id'  => $workoutDay->id,
                             'exercise_id'     => (int) $exerciseId,
-                            'alternate_exercise_id' => $request->alternate_exercise_ids[$i][$key] ?? null,
+                            'alternate_exercise_id' => $this->nullableExerciseId($request->alternate_exercise_ids[$i][$key] ?? null),
                             'exercise_title'  => $request->exercise_titles[$i][$key] ?? null,
                             'instruction'     => $request->exercise_description[$i][$key] ?? null,
                             'alternate_exercise_description' => $request->alternate_exercise_description[$i][$key] ?? null,
@@ -336,6 +336,15 @@ class WorkoutController extends Controller
         $filename = $label . '.' . $file->getClientOriginalExtension();
 
         return Storage::disk('s3')->putFileAs($dir, $file, $filename);
+    }
+
+    protected function nullableExerciseId($exerciseId): ?int
+    {
+        if ($exerciseId === null || $exerciseId === '') {
+            return null;
+        }
+
+        return (int) $exerciseId;
     }
 
 

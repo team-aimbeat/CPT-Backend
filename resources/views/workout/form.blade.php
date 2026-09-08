@@ -57,6 +57,25 @@
         width: 100%;
         min-width: 340px;
     }
+
+    #table_list.workout-days-table .alternate-exercise-field {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 290px;
+    }
+
+    #table_list.workout-days-table .alternate-exercise-field .select2-container {
+        flex: 1 1 auto;
+    }
+
+    #table_list.workout-days-table .clear-alternate-exercise {
+        flex: 0 0 34px;
+        width: 34px;
+        height: 44px;
+        padding: 0;
+        line-height: 1;
+    }
 </style>
 @endpush
 
@@ -185,6 +204,14 @@
             }
         });
 
+        $(document).on('click', '.clear-alternate-exercise', function () {
+            $(this)
+                .closest('.alternate-exercise-field')
+                .find('select')
+                .val(null)
+                .trigger('change');
+        });
+
     });
 
 })(jQuery);
@@ -195,9 +222,11 @@
 @php
     $id = $id ?? null;
     $data = $data ?? null;
-    $goalOptions = ['' => 'Select Goal', 0 => 'Both'];
+    $goalOptions = ['' => 'Select Goal'];
 
-    if ($id && $data && (int) $data->goal_id !== 0 && $data->goal) {
+    if ($id && $data && (int) $data->goal_id === 0) {
+        $goalOptions[0] = 'Both';
+    } elseif ($id && $data && $data->goal) {
         $goalOptions[$data->goal->id] = $data->goal->title;
     }
 @endphp
@@ -351,11 +380,14 @@
 </td>
 
 <td>
-{{ Form::select("alternate_exercise_ids[$i][]",['' => 'Select Alternate'] + $alternateExerciseData,$alternateExerciseIds[0] ?? null,[
-    'class'=>'select2js select2-clearable',
-    'data-ajax--url'=>route('ajax-list',['type'=>'exercise']),
-    'data-placeholder' => 'Select Alternate'
-]) }}
+<div class="alternate-exercise-field">
+    {{ Form::select("alternate_exercise_ids[$i][]",['' => 'Select Alternate'] + $alternateExerciseData,$alternateExerciseIds[0] ?? null,[
+        'class'=>'select2js select2-clearable',
+        'data-ajax--url'=>route('ajax-list',['type'=>'exercise']),
+        'data-placeholder' => 'Select Alternate'
+    ]) }}
+    <button type="button" class="btn btn-light btn-sm clear-alternate-exercise" title="Clear alternate">x</button>
+</div>
 </td>
 
 <td>
@@ -397,7 +429,10 @@
 <input type="text" name="exercise_titles[0][]" class="form-control exercise-title-input" placeholder="Exercise Title">
 </td>
 <td>
-{{ Form::select('alternate_exercise_ids[0][]',['' => 'Select Alternate'],null,['class'=>'select2js select2-clearable','data-ajax--url'=>route('ajax-list',['type'=>'exercise']),'data-placeholder'=>'Select Alternate']) }}
+<div class="alternate-exercise-field">
+    {{ Form::select('alternate_exercise_ids[0][]',['' => 'Select Alternate'],null,['class'=>'select2js select2-clearable','data-ajax--url'=>route('ajax-list',['type'=>'exercise']),'data-placeholder'=>'Select Alternate']) }}
+    <button type="button" class="btn btn-light btn-sm clear-alternate-exercise" title="Clear alternate">x</button>
+</div>
 </td>
 <td>
 <textarea name="alternate_exercise_description[0][]" class="form-control tinymce-description"></textarea>
