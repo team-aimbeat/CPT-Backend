@@ -33,15 +33,6 @@ class CompanyAccessService
             ];
         }
 
-        if (empty($user->email_verified_at)) {
-            return [
-                'status' => false,
-                'message' => 'Please verify your work email before claiming company access.',
-                'access' => null,
-                'company' => null,
-            ];
-        }
-
         $activeAccess = $this->activeAccessForUser($user->id);
         if ($activeAccess) {
             return [
