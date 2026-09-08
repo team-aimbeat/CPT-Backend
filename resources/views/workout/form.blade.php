@@ -73,7 +73,14 @@
     }
 
     function initSelect2() {
-        $('.select2tagsjs, .select2js').select2({ width: '100%' });
+        $('.select2tagsjs, .select2js').not('.select2-clearable').select2({ width: '100%' });
+        $('.select2-clearable').select2({
+            width: '100%',
+            allowClear: true,
+            placeholder: function () {
+                return $(this).data('placeholder') || $(this).attr('placeholder') || 'Select';
+            }
+        });
     }
 
     function initTinyMCE() {
@@ -188,6 +195,11 @@
 @php
     $id = $id ?? null;
     $data = $data ?? null;
+    $goalOptions = ['' => 'Select Goal', 0 => 'Both'];
+
+    if ($id && $data && (int) $data->goal_id !== 0 && $data->goal) {
+        $goalOptions[$data->goal->id] = $data->goal->title;
+    }
 @endphp
 <x-app-layout>
 <div>
@@ -220,9 +232,9 @@
     <div class="col-md-4">
         {{ Form::label('goal_id','Goal *') }}
         {{ Form::select('goal_id',
-            isset($id)?[$data->goal->id=>$data->goal->title]:[],
+            $goalOptions,
             old('goal_id',$data->goal_id ?? null),
-            ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),'required']
+            ['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'bodypart']),'data-placeholder'=>'Select Goal','required']
         )}}
     </div>
 
@@ -339,10 +351,10 @@
 </td>
 
 <td>
-{{ Form::select("alternate_exercise_ids[$i][]",$alternateExerciseData,$alternateExerciseIds[0] ?? null,[
-    'class'=>'select2js',
+{{ Form::select("alternate_exercise_ids[$i][]",['' => 'Select Alternate'] + $alternateExerciseData,$alternateExerciseIds[0] ?? null,[
+    'class'=>'select2js select2-clearable',
     'data-ajax--url'=>route('ajax-list',['type'=>'exercise']),
-    'placeholder' => 'Select Alternate'
+    'data-placeholder' => 'Select Alternate'
 ]) }}
 </td>
 
@@ -385,7 +397,7 @@
 <input type="text" name="exercise_titles[0][]" class="form-control exercise-title-input" placeholder="Exercise Title">
 </td>
 <td>
-{{ Form::select('alternate_exercise_ids[0][]',[],null,['class'=>'select2js','data-ajax--url'=>route('ajax-list',['type'=>'exercise']),'placeholder'=>'Select Alternate']) }}
+{{ Form::select('alternate_exercise_ids[0][]',['' => 'Select Alternate'],null,['class'=>'select2js select2-clearable','data-ajax--url'=>route('ajax-list',['type'=>'exercise']),'data-placeholder'=>'Select Alternate']) }}
 </td>
 <td>
 <textarea name="alternate_exercise_description[0][]" class="form-control tinymce-description"></textarea>

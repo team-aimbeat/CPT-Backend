@@ -1565,7 +1565,7 @@ public function getUserAssignedWorkouts(Request $request)
         }
 
         $nextWorkoutIds = Workout::where('level_id', $nextLevel->id)
-            ->where('goal_id', $profile->goal)
+            ->whereIn('goal_id', $this->matchingGoalIds($profile->goal))
             ->where('workout_type_id', $profile->workout_mode)
             ->where(function ($query) use ($gender) {
                 $query->whereIn('gender', ['both', $gender])
@@ -1659,6 +1659,15 @@ public function getUserAssignedWorkouts(Request $request)
         }
 
         return null;
+    }
+
+    private function matchingGoalIds($goalId): array
+    {
+        if ($goalId === null || $goalId === '') {
+            return [0];
+        }
+
+        return array_values(array_unique([(int) $goalId, 0]));
     }
 
     private function resolveNextLevel(Level $currentLevel, $workoutMode = null): ?Level

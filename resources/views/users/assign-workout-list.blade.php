@@ -14,7 +14,7 @@
                 $assignworkout->gender ? 'Gender: '.ucfirst($assignworkout->gender) : null,
                 optional($assignworkout->level)->title ? 'Level: '.optional($assignworkout->level)->title : null,
                 optional($assignworkout->workouttype)->title ? 'Workout Type: '.optional($assignworkout->workouttype)->title : null,
-                optional($assignworkout->goal)->title ? 'Goal: '.optional($assignworkout->goal)->title : null,
+                (int) $assignworkout->goal_id === 0 ? 'Goal: Both' : (optional($assignworkout->goal)->title ? 'Goal: '.optional($assignworkout->goal)->title : null),
             ]);
             $isCurrentCycleWorkout = isset($activeAssignedWorkoutIds) && $activeAssignedWorkoutIds->contains((int) $assignworkout->id);
         @endphp

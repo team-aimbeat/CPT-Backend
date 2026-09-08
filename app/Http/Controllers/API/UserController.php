@@ -210,6 +210,7 @@ class UserController extends Controller
 
             $levelId         = $userProfile->workout_level;
             $goalId          = $userProfile->goal;
+            $goalIds         = $this->matchingGoalIds($goalId);
             $workoutTypeId   = $userProfile->workout_mode;
             $gender          = $user->gender ? strtolower(trim($user->gender)) : null;
             $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
@@ -224,7 +225,7 @@ class UserController extends Controller
                     ->update(['is_active' => 0]);
 
                 $workoutIds = Workout::where('level_id', $levelId)
-                    ->where('goal_id', $goalId)
+                    ->whereIn('goal_id', $goalIds)
                     ->where('workout_type_id', $workoutTypeId)
                     ->when($gender, function ($query, $gender) {
                         $query->where(function ($query) use ($gender) {
@@ -347,6 +348,15 @@ class UserController extends Controller
         }
 
         return null;
+    }
+
+    private function matchingGoalIds($goalId): array
+    {
+        if ($goalId === null || $goalId === '') {
+            return [0];
+        }
+
+        return array_values(array_unique([(int) $goalId, 0]));
     }
 
         
@@ -574,6 +584,7 @@ public function updateWorkoutMode(Request $request)
 
         $gender = $user->gender ? strtolower(trim($user->gender)) : null;
         $workoutDaysPlan = $this->resolveWorkoutDaysPlan($profile->workout_days);
+        $goalIds = $this->matchingGoalIds($profile->goal);
 
         if (!$gender || !$workoutDaysPlan) {
             DB::rollBack();
@@ -592,7 +603,7 @@ public function updateWorkoutMode(Request $request)
             ->where('assign_workouts.user_id', $user->id)
             ->where('workouts.workout_type_id', $newMode)
             ->where('workouts.level_id', $profile->workout_level)
-            ->where('workouts.goal_id', $profile->goal)
+            ->whereIn('workouts.goal_id', $goalIds)
             ->where(function ($query) use ($gender) {
                 $query->whereIn('workouts.gender', ['both', $gender])
                     ->orWhereNull('workouts.gender');
@@ -651,7 +662,7 @@ public function updateWorkoutMode(Request $request)
 
         $workoutIds = Workout::where('workout_type_id', $newMode)
             ->where('level_id', $profile->workout_level)
-            ->where('goal_id', $profile->goal)
+            ->whereIn('goal_id', $goalIds)
             ->where(function ($query) use ($gender) {
                 $query->whereIn('gender', ['both', $gender])
                     ->orWhereNull('gender');
@@ -973,6 +984,7 @@ public function updateWorkoutMode(Request $request)
 
         $levelId = $userProfile->workout_level ?? null;
         $goalId  = $userProfile->goal ?? null;
+        $goalIds = $this->matchingGoalIds($goalId);
         $modeId  = $userProfile->workout_mode ?? null;
         $gender = $user->gender ? strtolower(trim($user->gender)) : null;
         $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
@@ -997,7 +1009,7 @@ public function updateWorkoutMode(Request $request)
                 $workoutDaysPlan = $this->resolveWorkoutDaysPlan($userProfile->workout_days);
 
                 $workoutIds = Workout::where('level_id', $levelId)
-                    ->where('goal_id', $goalId)
+                    ->whereIn('goal_id', $goalIds)
                     ->where('workout_type_id', $modeId)
                     ->when($gender, function ($query, $gender) {
                         $query->where(function ($query) use ($gender) {
@@ -1396,8 +1408,10 @@ public function updateWorkoutMode(Request $request)
             $newCycle = ($lastCycle ?? 0) + 1;
 
             // 🔹 Fetch workouts for new plan
+            $newGoalIds = $this->matchingGoalIds($newGoal);
+
             $workoutIds = Workout::where('level_id', $newLevel)
-                ->where('goal_id', $newGoal)
+                ->whereIn('goal_id', $newGoalIds)
                 ->where('workout_type_id', $newMode)
                 ->where(function ($query) use ($newGender) {
                     $query->whereIn('gender', ['both', $newGender])

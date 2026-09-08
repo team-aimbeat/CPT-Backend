@@ -404,7 +404,7 @@
                                                     Gender: {{ $workout->gender ? ucfirst($workout->gender) : '-' }},
                                                     Level: {{ optional($workout->level)->title ?? '-' }},
                                                     Type: {{ optional($workout->workouttype)->title ?? '-' }},
-                                                    Goal: {{ optional($workout->goal)->title ?? '-' }})
+                                                    Goal: {{ (int) $workout->goal_id === 0 ? 'Both' : (optional($workout->goal)->title ?? '-') }})
                                                 </span>
                                             @endif
                                         </td>

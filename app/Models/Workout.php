@@ -18,6 +18,7 @@ class Workout extends Model implements HasMedia
         'workout_type_id'   => 'integer',
         'workout_days_plan' => 'integer',
         'level_id'          => 'integer',
+        'goal_id'           => 'integer',
         'is_premium'        => 'integer',
     ];
 
