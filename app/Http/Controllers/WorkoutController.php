@@ -353,7 +353,7 @@ class WorkoutController extends Controller
         return (int) $exerciseId;
     }
 
-    protected function syncWorkoutAssignmentsForExistingUsers(Workout $workout): int
+    public function syncWorkoutAssignmentsForExistingUsers(Workout $workout, bool $dryRun = false): int
     {
         $workout->loadMissing(['goal', 'level', 'workouttype']);
 
@@ -382,15 +382,17 @@ class WorkoutController extends Controller
                         continue;
                     }
 
-                    AssignWorkout::create([
-                        'user_id' => $profile->user_id,
-                        'workout_id' => $workout->id,
-                        'status' => 0,
-                        'disable' => 0,
-                        'cycle_no' => $this->resolveAssignmentCycleNo((int) $profile->user_id),
-                        'assigned_from' => 'workout_auto_sync',
-                        'is_active' => 1,
-                    ]);
+                    if (!$dryRun) {
+                        AssignWorkout::create([
+                            'user_id' => $profile->user_id,
+                            'workout_id' => $workout->id,
+                            'status' => 0,
+                            'disable' => 0,
+                            'cycle_no' => $this->resolveAssignmentCycleNo((int) $profile->user_id),
+                            'assigned_from' => 'workout_auto_sync',
+                            'is_active' => 1,
+                        ]);
+                    }
 
                     $assignedCount++;
                 }
