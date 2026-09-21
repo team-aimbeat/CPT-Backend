@@ -368,7 +368,7 @@ class WorkoutController extends Controller
                 $query->where('user_type', 'user')
                     ->where('status', 'active');
             })
-            ->chunkById(200, function ($profiles) use ($workout, &$assignedCount) {
+            ->chunkById(200, function ($profiles) use ($workout, $dryRun, &$assignedCount) {
                 foreach ($profiles as $profile) {
                     if (!$profile->user || !$this->profileMatchesWorkout($profile, $workout)) {
                         continue;
