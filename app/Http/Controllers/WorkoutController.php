@@ -10,7 +10,9 @@ use App\Models\Workout;
 use App\Models\WorkoutDayExercise;
 use App\Models\WorkoutDay;
 use App\Http\Requests\WorkoutRequest;
+use App\Models\AssignWorkout;
 use App\Models\Exercise;
+use App\Models\UserProfile;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -122,6 +124,8 @@ class WorkoutController extends Controller
                 }
             }
         }
+
+        $this->syncWorkoutAssignmentsForExistingUsers($workout);
 
         return redirect()
             ->route('workout.index')
@@ -323,10 +327,12 @@ class WorkoutController extends Controller
             }
         }
 
-    return redirect()
-        ->route('workout.index')
-        ->withSuccess(__('message.update_form', ['form' => __('message.workout')]));
-}
+        $this->syncWorkoutAssignmentsForExistingUsers($workout);
+
+        return redirect()
+            ->route('workout.index')
+            ->withSuccess(__('message.update_form', ['form' => __('message.workout')]));
+    }
 
     protected function storeWorkoutVideo($file, $label)
     {
@@ -345,6 +351,183 @@ class WorkoutController extends Controller
         }
 
         return (int) $exerciseId;
+    }
+
+    protected function syncWorkoutAssignmentsForExistingUsers(Workout $workout): int
+    {
+        $workout->loadMissing(['goal', 'level', 'workouttype']);
+
+        if (!$this->workoutCanBeAutoAssigned($workout)) {
+            return 0;
+        }
+
+        $assignedCount = 0;
+
+        UserProfile::with('user')
+            ->whereHas('user', function ($query) {
+                $query->where('user_type', 'user')
+                    ->where('status', 'active');
+            })
+            ->chunkById(200, function ($profiles) use ($workout, &$assignedCount) {
+                foreach ($profiles as $profile) {
+                    if (!$profile->user || !$this->profileMatchesWorkout($profile, $workout)) {
+                        continue;
+                    }
+
+                    $alreadyAssigned = AssignWorkout::where('user_id', $profile->user_id)
+                        ->where('workout_id', $workout->id)
+                        ->exists();
+
+                    if ($alreadyAssigned) {
+                        continue;
+                    }
+
+                    AssignWorkout::create([
+                        'user_id' => $profile->user_id,
+                        'workout_id' => $workout->id,
+                        'status' => 0,
+                        'disable' => 0,
+                        'cycle_no' => $this->resolveAssignmentCycleNo((int) $profile->user_id),
+                        'assigned_from' => 'workout_auto_sync',
+                        'is_active' => 1,
+                    ]);
+
+                    $assignedCount++;
+                }
+            });
+
+        return $assignedCount;
+    }
+
+    protected function workoutCanBeAutoAssigned(Workout $workout): bool
+    {
+        return $workout->status === 'active'
+            && !empty($workout->level_id)
+            && $workout->goal_id !== null
+            && $workout->goal_id !== ''
+            && !empty($workout->workout_type_id)
+            && !empty($workout->workout_days_plan);
+    }
+
+    protected function profileMatchesWorkout(UserProfile $profile, Workout $workout): bool
+    {
+        return $this->profileModeMatchesWorkout($profile, $workout)
+            && $this->profileLevelMatchesWorkout($profile, $workout)
+            && $this->profileGoalMatchesWorkout($profile, $workout)
+            && $this->profileGenderMatchesWorkout($profile, $workout)
+            && (int) $this->resolveWorkoutDaysPlan($profile->workout_days) === (int) $workout->workout_days_plan;
+    }
+
+    protected function profileModeMatchesWorkout(UserProfile $profile, Workout $workout): bool
+    {
+        if (is_numeric($profile->workout_mode) && (int) $profile->workout_mode === (int) $workout->workout_type_id) {
+            return true;
+        }
+
+        return UserProfile::normalizeWorkoutMode($profile->workout_mode)
+            === UserProfile::normalizeWorkoutMode(optional($workout->workouttype)->title);
+    }
+
+    protected function profileLevelMatchesWorkout(UserProfile $profile, Workout $workout): bool
+    {
+        if (is_numeric($profile->workout_level) && (int) $profile->workout_level === (int) $workout->level_id) {
+            return true;
+        }
+
+        return UserProfile::normalizeWorkoutLevel($profile->workout_level)
+            === UserProfile::normalizeWorkoutLevel(optional($workout->level)->title);
+    }
+
+    protected function profileGoalMatchesWorkout(UserProfile $profile, Workout $workout): bool
+    {
+        if ($this->isBothGoal($workout->goal_id, optional($workout->goal)->title)) {
+            return true;
+        }
+
+        if ($this->isBothGoal($profile->goal, $profile->goal)) {
+            return true;
+        }
+
+        if (is_numeric($profile->goal) && (int) $profile->goal === (int) $workout->goal_id) {
+            return true;
+        }
+
+        return $this->normalizeGoal($profile->goal) === $this->normalizeGoal(optional($workout->goal)->title);
+    }
+
+    protected function profileGenderMatchesWorkout(UserProfile $profile, Workout $workout): bool
+    {
+        $workoutGender = Str::lower(trim((string) ($workout->gender ?? 'both')));
+
+        if ($workoutGender === '' || $workoutGender === 'both') {
+            return true;
+        }
+
+        $userGender = Str::lower(trim((string) optional($profile->user)->gender));
+
+        return $userGender !== '' && $userGender === $workoutGender;
+    }
+
+    protected function resolveAssignmentCycleNo(int $userId): int
+    {
+        $activeCycle = AssignWorkout::where('user_id', $userId)
+            ->where('is_active', 1)
+            ->max('cycle_no');
+
+        if ($activeCycle) {
+            return (int) $activeCycle;
+        }
+
+        $lastCycle = AssignWorkout::where('user_id', $userId)->max('cycle_no');
+
+        return $lastCycle ? (int) $lastCycle : 1;
+    }
+
+    protected function resolveWorkoutDaysPlan($workoutDays): ?int
+    {
+        if ($workoutDays === null) {
+            return null;
+        }
+
+        if (is_array($workoutDays)) {
+            $numericDays = array_filter($workoutDays, function ($item) {
+                return is_numeric($item) && trim((string) $item) !== '';
+            });
+
+            if (!empty($numericDays)) {
+                return (int) reset($numericDays);
+            }
+
+            return count($workoutDays);
+        }
+
+        if (is_numeric($workoutDays)) {
+            return (int) $workoutDays;
+        }
+
+        if (is_string($workoutDays)) {
+            $parts = array_filter(array_map('trim', explode(',', $workoutDays)), function ($item) {
+                return $item !== '';
+            });
+
+            if (count($parts) === 1 && is_numeric($parts[0])) {
+                return (int) $parts[0];
+            }
+
+            return count($parts);
+        }
+
+        return null;
+    }
+
+    protected function isBothGoal($goalId, $goalTitle): bool
+    {
+        return (int) $goalId === 0 || $this->normalizeGoal($goalTitle) === 'both';
+    }
+
+    protected function normalizeGoal($goal): string
+    {
+        return preg_replace('/[^a-z0-9]+/', '', Str::lower(trim((string) $goal))) ?? '';
     }
 
 
